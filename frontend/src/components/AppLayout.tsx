@@ -11,13 +11,15 @@ import {
     X,
     Users,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    ArrowRightLeft
 } from 'lucide-react'
 import { useState } from 'react'
 
 const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/romaneio', label: 'Romaneio', icon: ClipboardList },
+    { to: '/movimentacoes', label: 'Movimentações', icon: ArrowRightLeft },
     { to: '/produtos', label: 'Produtos', icon: Boxes },
     { to: '/categorias', label: 'Categorias', icon: Tags },
     { to: '/clientes', label: 'Clientes', icon: Users },

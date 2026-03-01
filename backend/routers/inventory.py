@@ -5,7 +5,7 @@ from backend.core.database import get_db
 from backend.core.security import get_current_user
 from backend.core.limiter import limiter
 from backend.models.users import User
-from backend.schemas.inventory import InventoryMovementCreate, InventoryMovementResponse, StockLevel
+from backend.schemas.inventory import InventoryMovementCreate, InventoryMovementResponse, StockLevel, InventoryMovementPaginatedResponse, MovementType
 from backend.crud import inventory as crud
 from backend.config.logger import get_dynamic_logger
 
@@ -31,18 +31,33 @@ def create_movement(
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
-@router.get("/movements", response_model=List[InventoryMovementResponse])
+@router.get("/movements", response_model=InventoryMovementPaginatedResponse)
 @limiter.limit("60/minute")
 def list_movements(
     request: Request,
     product_id: Optional[int] = Query(None),
+    search: Optional[str] = Query(None),
+    movement_type: Optional[MovementType] = Query(None),
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     try:
-        return crud.get_movements(db, product_id=product_id, skip=skip, limit=limit)
+        items, total = crud.get_movements(
+            db, 
+            product_id=product_id, 
+            search=search, 
+            movement_type=movement_type, 
+            skip=skip, 
+            limit=limit
+        )
+        return {
+            "items": items,
+            "total": total,
+            "page": (skip // limit) + 1,
+            "per_page": limit
+        }
     except HTTPException:
         raise
     except Exception as e:

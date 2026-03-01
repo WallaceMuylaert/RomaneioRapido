@@ -13,6 +13,7 @@ import AppLayout from './components/AppLayout'
 import { Toaster } from 'react-hot-toast'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import MovementsPage from './pages/MovementsPage'
 import './index.css'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -106,6 +107,10 @@ const router = createBrowserRouter([
       {
         path: "/romaneio",
         element: <RomaneioPage />,
+      },
+      {
+        path: "/movimentacoes",
+        element: <MovementsPage />,
       },
       {
         path: "/perfil",

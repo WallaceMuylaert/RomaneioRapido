@@ -41,7 +41,7 @@ export default function DashboardPage() {
                 const dbProducts = productsRes.data.items || productsRes.data
                 const numProducts = productsRes.data.total || dbProducts.length
 
-                const allMovements = movementsRes.data || []
+                const allMovements = movementsRes.data.items || (Array.isArray(movementsRes.data) ? movementsRes.data : [])
                 const todayStr = new Date().toISOString().split('T')[0]
                 const filteredMovs = allMovements.filter((m: any) => m.created_at && m.created_at.startsWith(todayStr))
 
@@ -145,7 +145,10 @@ export default function DashboardPage() {
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Produtos Registrados</p>
                 </div>
 
-                <div className="glass-card rounded-[2rem] p-8 relative overflow-hidden group">
+                <div
+                    onClick={() => navigate('/movimentacoes')}
+                    className="glass-card rounded-[2rem] p-8 relative overflow-hidden group cursor-pointer hover:border-brand-200 hover:shadow-lg transition-all"
+                >
                     <div className="absolute -right-4 -top-4 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
                     <div className="flex items-center justify-between mb-6">
                         <div className="w-12 h-12 rounded-2xl bg-brand-50 flex items-center justify-center shadow-sm ring-1 ring-brand-100/50">
@@ -158,7 +161,10 @@ export default function DashboardPage() {
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Movimentações Hoje</p>
                 </div>
 
-                <div className="glass-card rounded-[2rem] p-8 relative overflow-hidden group">
+                <div
+                    onClick={() => navigate('/produtos')}
+                    className="glass-card rounded-[2rem] p-8 relative overflow-hidden group cursor-pointer hover:border-orange-200 hover:shadow-lg transition-all"
+                >
                     <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/5 rounded-full blur-2xl group-hover:bg-orange-500/10 transition-colors" />
                     <div className="flex items-center justify-between mb-6">
                         <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center shadow-sm ring-1 ring-orange-100/50">

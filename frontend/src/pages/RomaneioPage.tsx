@@ -127,6 +127,8 @@ export default function RomaneioPage() {
         const groups: Record<string, any> = {}
         const singles: any[] = []
 
+        if (!Array.isArray(movements)) return []
+
         movements.forEach(m => {
             if (m.romaneio_id) {
                 if (!groups[m.romaneio_id]) {
@@ -305,8 +307,8 @@ export default function RomaneioPage() {
     const fetchMovements = async () => {
         setLoading(true)
         try {
-            const res = await api.get('/inventory/movements')
-            setMovements(res.data)
+            const res = await api.get('/inventory/movements', { params: { movement_type: 'OUT', limit: 300 } })
+            setMovements(res.data.items || (Array.isArray(res.data) ? res.data : []))
         } catch (err) {
             console.error('Erro ao buscar movimentações:', err)
         } finally {

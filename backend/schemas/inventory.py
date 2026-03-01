@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional, Any
+from typing import Optional, Any, List
 from datetime import datetime
 from backend.models.inventory import MovementType
 
@@ -37,6 +37,13 @@ class InventoryMovementResponse(InventoryMovementBase):
     client: Optional[ClientInfo] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class InventoryMovementPaginatedResponse(BaseModel):
+    items: List[InventoryMovementResponse]
+    total: int
+    page: int
+    per_page: int
 
 
 class StockLevel(BaseModel):

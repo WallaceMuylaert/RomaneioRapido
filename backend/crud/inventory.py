@@ -43,14 +43,36 @@ def create_movement(db: Session, movement: InventoryMovementCreate, user_id: int
     return db_movement
 
 
-def get_movements(db: Session, product_id: int = None, skip: int = 0, limit: int = 100):
+def get_movements(
+    db: Session, 
+    product_id: int = None, 
+    search: str = None,
+    movement_type: MovementType = None,
+    skip: int = 0, 
+    limit: int = 100
+):
     query = db.query(InventoryMovement).options(
         joinedload(InventoryMovement.product),
         joinedload(InventoryMovement.client)
     )
+    
     if product_id:
         query = query.filter(InventoryMovement.product_id == product_id)
-    return query.order_by(InventoryMovement.created_at.desc()).offset(skip).limit(limit).all()
+    
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            (InventoryMovement.product_name_snapshot.ilike(search_filter)) |
+            (InventoryMovement.product_barcode_snapshot.ilike(search_filter))
+        )
+        
+    if movement_type:
+        query = query.filter(InventoryMovement.movement_type == movement_type)
+        
+    total = query.count()
+    items = query.order_by(InventoryMovement.created_at.desc()).offset(skip).limit(limit).all()
+    
+    return items, total
 
 
 def get_stock_levels(db: Session):

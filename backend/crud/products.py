@@ -53,10 +53,27 @@ def get_product_by_sku(db: Session, sku: str):
 
 
 def create_product(db: Session, product: ProductCreate):
+    from backend.models.inventory import InventoryMovement
     db_product = Product(**product.model_dump())
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
+
+    # Criar movimentação inicial se houver estoque
+    if db_product.stock_quantity > 0:
+        initial_movement = InventoryMovement(
+            product_id=db_product.id,
+            quantity=db_product.stock_quantity,
+            movement_type='IN',
+            notes='Estoque Inicial (Cadastro)',
+            product_name_snapshot=db_product.name,
+            product_barcode_snapshot=db_product.barcode,
+            unit_price_snapshot=db_product.price,
+            unit_snapshot=db_product.unit
+        )
+        db.add(initial_movement)
+        db.commit()
+
     return db_product
 
 

@@ -126,7 +126,7 @@ export default function ProductsPage() {
 
     const handleScanResult = async (code: string) => {
         try {
-            const res = await api.get(`/ products / barcode / ${code.trim()} `)
+            const res = await api.get(`/products/barcode/${code.trim()}`)
             if (res.data) {
                 const productInfo = Array.isArray(res.data) ? res.data[0] : res.data
                 if (productInfo) {
@@ -289,7 +289,7 @@ export default function ProductsPage() {
             }
 
             if (editingProduct) {
-                await api.put(`/ products / ${editingProduct.id} `, payload)
+                await api.put(`/products/${editingProduct.id}`, payload)
             } else {
                 await api.post('/products/', payload)
             }
@@ -306,7 +306,7 @@ export default function ProductsPage() {
 
     const handleDelete = async (id: number) => {
         try {
-            await api.delete(`/ products / ${id} `)
+            await api.delete(`/products/${id}`)
             setDeleteConfirm(null)
             toast.success('Produto excluído com sucesso')
             fetchProducts()
@@ -335,13 +335,13 @@ export default function ProductsPage() {
                 <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
                 <div className="absolute right-0 top-10 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right overflow-hidden">
                     <button
-                        onClick={() => { openEdit(p); setOpenMenuId(null); }}
+                        onClick={(e) => { e.stopPropagation(); openEdit(p); setOpenMenuId(null); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors text-left"
                     >
                         <Pencil className="w-4 h-4" /> Editar Produto
                     </button>
                     <button
-                        onClick={() => { setDeleteConfirm(p.id); setOpenMenuId(null); }}
+                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(p.id); setOpenMenuId(null); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors text-left border-t border-slate-50"
                     >
                         <Trash2 className="w-4 h-4" /> Excluir Registro
@@ -771,7 +771,7 @@ export default function ProductsPage() {
                     onScan={async (code) => {
                         setCameraOpen(false)
                         try {
-                            const res = await api.get(`/ products / barcode / ${code.trim()} `)
+                            const res = await api.get(`/products/barcode/${code.trim()}`)
                             if (res.data) {
                                 // Se for array, pega o primeiro, senão usa o objeto direto
                                 const productInfo = Array.isArray(res.data) ? res.data[0] : res.data
