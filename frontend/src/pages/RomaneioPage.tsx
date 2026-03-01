@@ -21,6 +21,7 @@ import type { CartItem } from '../components/RomaneioExportModal'
 import { isIntegerUnit } from '../utils/units'
 import ClientModal from '../components/ClientModal'
 import MovementDetailsModal from '../components/MovementDetailsModal'
+import ConfirmModal from '../components/ConfirmModal'
 
 interface Product {
     id: number
@@ -91,6 +92,7 @@ export default function RomaneioPage() {
         requested: number,
         unit: string
     }[] | null>(null)
+    const [itemToRemove, setItemToRemove] = useState<number | null>(null)
 
     // Bloqueador de Navegação do React Router (Para rotas externas)
     const blocker = useBlocker(
@@ -754,7 +756,7 @@ export default function RomaneioPage() {
                                                         onClick={() => {
                                                             const newQty = Math.max(0, item.quantity - 1)
                                                             if (newQty === 0) {
-                                                                removeFromCart(item.id)
+                                                                setItemToRemove(item.id)
                                                             } else {
                                                                 updateCartQuantity(item.id, String(newQty), item.unit)
                                                             }
@@ -782,7 +784,7 @@ export default function RomaneioPage() {
                                                 </div>
 
                                                 <button
-                                                    onClick={() => removeFromCart(item.id)}
+                                                    onClick={() => setItemToRemove(item.id)}
                                                     className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -1319,6 +1321,21 @@ export default function RomaneioPage() {
                 </div>
             )}
 
+            <ConfirmModal
+                isOpen={itemToRemove !== null}
+                onClose={() => setItemToRemove(null)}
+                onConfirm={() => {
+                    if (itemToRemove !== null) {
+                        removeFromCart(itemToRemove)
+                        setItemToRemove(null)
+                    }
+                }}
+                title="Remover Item?"
+                message="Tem certeza que deseja remover este produto do romaneio?"
+                confirmText="Sim, remover"
+                cancelText="Cancelar"
+                type="danger"
+            />
         </div>
     )
 }
