@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useBlocker } from 'react-router-dom'
 import api from '../services/api'
 import { toast } from 'react-hot-toast'
 import {
@@ -90,8 +91,12 @@ export default function RomaneioPage() {
         requested: number,
         unit: string
     }[] | null>(null)
-    const [showNavigationConfirm, setShowNavigationConfirm] = useState(false)
-    const [pendingTab, setPendingTab] = useState<'romaneio' | 'movimentacoes' | 'estoque' | null>(null)
+
+    // Bloqueador de Navegação do React Router (Para rotas externas)
+    const blocker = useBlocker(
+        ({ currentLocation, nextLocation }) =>
+            cartItems.length > 0 && currentLocation.pathname !== nextLocation.pathname
+    );
 
     // Agrupamento de Movimentações para permitir Re-gerar Romaneios
     const groupedMovements = useMemo(() => {
@@ -203,12 +208,7 @@ export default function RomaneioPage() {
     }, [cartItems])
 
     const handleTabChange = (tab: 'romaneio' | 'movimentacoes' | 'estoque') => {
-        if (activeTab === 'romaneio' && cartItems.length > 0 && tab !== 'romaneio') {
-            setPendingTab(tab)
-            setShowNavigationConfirm(true)
-        } else {
-            setActiveTab(tab)
-        }
+        setActiveTab(tab)
     }
 
     // Busca Esperta: Autocomplete em tempo real ao digitar
@@ -1286,10 +1286,10 @@ export default function RomaneioPage() {
                 </div>
             )}
 
-            {/* Modal de Confirmação de Navegação (Substitui Alerta Nativo) */}
-            {showNavigationConfirm && (
+            {/* Modal de Confirmação de Navegação (Para saída da rota) */}
+            {blocker.state === 'blocked' && (
                 <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => setShowNavigationConfirm(false)} />
+                    <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => blocker.reset()} />
                     <div className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
                         <div className="px-8 py-8 flex flex-col items-center text-center">
                             <div className="w-16 h-16 bg-red-100 text-red-600 rounded-3xl flex items-center justify-center mb-6 shadow-lg shadow-red-100/50">
@@ -1297,26 +1297,19 @@ export default function RomaneioPage() {
                             </div>
                             <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Abandonar Romaneio?</h2>
                             <p className="text-sm font-bold text-slate-500 leading-relaxed px-2">
-                                Você tem itens no carrinho que serão <span className="text-red-600">perdidos</span> se mudar de tela agora.
+                                Você tem itens no carrinho que serão <span className="text-red-600">perdidos</span> se sair desta tela agora.
                             </p>
                         </div>
 
                         <div className="p-8 pt-0 flex flex-col gap-3">
                             <button
-                                onClick={() => {
-                                    if (pendingTab) setActiveTab(pendingTab)
-                                    setShowNavigationConfirm(false)
-                                    setPendingTab(null)
-                                }}
+                                onClick={() => blocker.proceed()}
                                 className="w-full h-14 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black text-sm transition-all active:scale-95 shadow-xl shadow-red-600/20"
                             >
                                 Sim, desejo sair
                             </button>
                             <button
-                                onClick={() => {
-                                    setShowNavigationConfirm(false)
-                                    setPendingTab(null)
-                                }}
+                                onClick={() => blocker.reset()}
                                 className="w-full h-14 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-sm transition-all active:scale-95"
                             >
                                 Continuar Editando
@@ -1325,6 +1318,7 @@ export default function RomaneioPage() {
                     </div>
                 </div>
             )}
+
         </div>
     )
 }

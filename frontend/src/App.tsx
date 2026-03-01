@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import LandingPage from './pages/LandingPage'
@@ -43,55 +43,90 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return token ? <Navigate to="/dashboard" replace /> : <>{children}</>
 }
 
-function AppRoutes() {
-  return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={
-        <PublicRoute>
-          <LoginPage />
-        </PublicRoute>
-      } />
-      <Route path="/cadastro" element={<Navigate to="/login" replace />} />
-      <Route path="/forgot-password" element={
-        <PublicRoute>
-          <ForgotPasswordPage />
-        </PublicRoute>
-      } />
-      <Route path="/reset-password" element={
-        <PublicRoute>
-          <ResetPasswordPage />
-        </PublicRoute>
-      } />
-
-      {/* Rotas protegidas com layout */}
-      <Route element={
-        <PrivateRoute>
-          <AppLayout />
-        </PrivateRoute>
-      }>
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/produtos" element={<ProductsPage />} />
-        <Route path="/categorias" element={<CategoriesPage />} />
-        <Route path="/categorias/:id" element={<CategoryProductsPage />} />
-        <Route path="/clientes" element={<ClientsPage />} />
-        <Route path="/romaneio" element={<RomaneioPage />} />
-        <Route path="/perfil" element={<ProfilePage />} />
-      </Route>
-
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  )
-}
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <LandingPage />,
+  },
+  {
+    path: "/login",
+    element: (
+      <PublicRoute>
+        <LoginPage />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/cadastro",
+    element: <Navigate to="/login" replace />,
+  },
+  {
+    path: "/forgot-password",
+    element: (
+      <PublicRoute>
+        <ForgotPasswordPage />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/reset-password",
+    element: (
+      <PublicRoute>
+        <ResetPasswordPage />
+      </PublicRoute>
+    ),
+  },
+  {
+    element: (
+      <PrivateRoute>
+        <AppLayout />
+      </PrivateRoute>
+    ),
+    children: [
+      {
+        path: "/dashboard",
+        element: <DashboardPage />,
+      },
+      {
+        path: "/produtos",
+        element: <ProductsPage />,
+      },
+      {
+        path: "/categorias",
+        element: <CategoriesPage />,
+      },
+      {
+        path: "/categorias/:id",
+        element: <CategoryProductsPage />,
+      },
+      {
+        path: "/clientes",
+        element: <ClientsPage />,
+      },
+      {
+        path: "/romaneio",
+        element: <RomaneioPage />,
+      },
+      {
+        path: "/perfil",
+        element: <ProfilePage />,
+      },
+    ],
+  },
+  {
+    path: "*",
+    element: <Navigate to="/" replace />,
+  },
+]);
 
 function App() {
   return (
-    <BrowserRouter>
+    <>
       <Toaster position="top-right" />
       <AuthProvider>
-        <AppRoutes />
+        <RouterProvider router={router} />
       </AuthProvider>
-    </BrowserRouter>
+    </>
   )
 }
 
