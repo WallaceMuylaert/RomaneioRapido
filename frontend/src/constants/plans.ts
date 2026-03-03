@@ -13,6 +13,8 @@ export interface Plan {
     highlight: boolean
     limit_products: number
     limit_categories: number
+    limit_api_keys: number
+    api_rate_limit: string
     color: string
     hidden?: boolean
 }
@@ -31,6 +33,8 @@ export const PLANS: Plan[] = [
         highlight: false,
         limit_products: 10,
         limit_categories: 2,
+        limit_api_keys: 0,
+        api_rate_limit: '0/minute',
         color: 'emerald'
     },
     {
@@ -47,6 +51,8 @@ export const PLANS: Plan[] = [
         highlight: false,
         limit_products: 30,
         limit_categories: 3,
+        limit_api_keys: 0,
+        api_rate_limit: '0/minute',
         color: 'blue'
     },
     {
@@ -58,11 +64,14 @@ export const PLANS: Plan[] = [
         features: [
             'Até 50 produtos',
             'Até 5 categorias',
-            'Suporte prioritário'
+            'Suporte prioritário',
+            'Acesso API (2 chaves, 60 req/min)'
         ],
         highlight: true,
         limit_products: 50,
         limit_categories: 5,
+        limit_api_keys: 2,
+        api_rate_limit: '60/minute',
         color: 'blue'
     },
     {
@@ -74,11 +83,14 @@ export const PLANS: Plan[] = [
         features: [
             'Até 100 produtos',
             'Até 10 categorias',
-            'Suporte 24/7'
+            'Suporte 24/7',
+            'Acesso API (5 chaves, 120 req/min)'
         ],
         highlight: false,
         limit_products: 100,
         limit_categories: 10,
+        limit_api_keys: 5,
+        api_rate_limit: '120/minute',
         color: 'purple'
     },
     {
@@ -90,12 +102,16 @@ export const PLANS: Plan[] = [
             'Produtos ilimitados',
             'Categorias ilimitadas',
             'Suporte prioritário',
-            'Gestão total'
+            'Gestão total',
+            'Acesso API (20 chaves, 300 req/min)'
         ],
         highlight: false,
         limit_products: 999999,
         limit_categories: 999999,
+        limit_api_keys: 20,
+        api_rate_limit: '300/minute',
         color: 'slate',
         hidden: true
     }
 ]
+

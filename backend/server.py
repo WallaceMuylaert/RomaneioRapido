@@ -16,6 +16,7 @@ from backend.models.categories import Category
 from backend.models.products import Product
 from backend.models.inventory import InventoryMovement
 from backend.models.clients import Client
+from backend.models.api_keys import ApiKey
 from sqlalchemy.orm import configure_mappers
 
 logger = get_dynamic_logger("server")

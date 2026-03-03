@@ -18,12 +18,29 @@ import {
     Key,
     Zap,
     Eye,
-    EyeOff
+    EyeOff,
+    Copy,
+    Plus,
+    Trash2,
+    KeyRound,
+    ArrowUpRight,
+    ShieldAlert,
+    CheckCircle2
 } from 'lucide-react'
 import ImageCropper from '../components/ImageCropper'
 import { PLANS } from '../constants/plans'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { maskPhone } from '../utils/masks'
+
+interface ApiKeyItem {
+    id: number
+    name: string
+    key_prefix: string
+    is_active: boolean
+    created_at: string | null
+    last_used_at: string | null
+    expires_at: string | null
+}
 
 const calculatePasswordStrength = (password: string): { score: number, color: string, label: string } => {
     if (!password) return { score: 0, color: 'bg-slate-200', label: '' }
@@ -70,6 +87,16 @@ export default function ProfilePage() {
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
+    // API Keys state
+    const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([])
+    const [isLoadingApiKeys, setIsLoadingApiKeys] = useState(false)
+    const [isCreatingApiKey, setIsCreatingApiKey] = useState(false)
+    const [apiKeyName, setApiKeyName] = useState('')
+    const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null)
+    const [keyCopied, setKeyCopied] = useState(false)
+    const [revokingKeyId, setRevokingKeyId] = useState<number | null>(null)
+    const [confirmRevokeId, setConfirmRevokeId] = useState<number | null>(null)
+
     useEffect(() => {
         if (user) {
             setForm(prev => ({
@@ -96,6 +123,66 @@ export default function ProfilePage() {
         }
     }
 
+    const canUseApiKeys = ['plus', 'pro', 'enterprise'].includes(user?.plan_id || 'free')
+
+    const fetchApiKeys = async () => {
+        if (!canUseApiKeys) return
+        setIsLoadingApiKeys(true)
+        try {
+            const res = await api.get('/api-keys')
+            setApiKeys(res.data)
+        } catch (err) {
+            console.error('Erro ao buscar API Keys:', err)
+        } finally {
+            setIsLoadingApiKeys(false)
+        }
+    }
+
+    const handleCreateApiKey = async () => {
+        if (!apiKeyName.trim()) {
+            toast.error('Informe um nome para a chave.')
+            return
+        }
+        setIsCreatingApiKey(true)
+        try {
+            const res = await api.post('/api-keys', { name: apiKeyName.trim() })
+            setNewlyCreatedKey(res.data.full_key)
+            setApiKeyName('')
+            setKeyCopied(false)
+            fetchApiKeys()
+            toast.success('Chave de API criada com sucesso!')
+        } catch (err: any) {
+            toast.error(err.response?.data?.detail || 'Erro ao criar chave de API')
+        } finally {
+            setIsCreatingApiKey(false)
+        }
+    }
+
+    const handleRevokeApiKey = async (keyId: number) => {
+        setRevokingKeyId(keyId)
+        try {
+            await api.delete(`/api-keys/${keyId}`)
+            toast.success('Chave revogada com sucesso.')
+            setConfirmRevokeId(null)
+            fetchApiKeys()
+        } catch (err: any) {
+            toast.error(err.response?.data?.detail || 'Erro ao revogar chave')
+        } finally {
+            setRevokingKeyId(null)
+        }
+    }
+
+    const handleCopyKey = async (key: string) => {
+        try {
+            await navigator.clipboard.writeText(key)
+            setKeyCopied(true)
+            toast.success('Chave copiada!')
+            setTimeout(() => setKeyCopied(false), 3000)
+        } catch {
+            toast.error('Falha ao copiar.')
+        }
+    }
+
     useEffect(() => {
         fetchUsageData()
     }, [])
@@ -103,6 +190,9 @@ export default function ProfilePage() {
     useEffect(() => {
         if (activeTab === 'subscription') {
             fetchUsageData()
+        }
+        if (activeTab === 'security' && canUseApiKeys) {
+            fetchApiKeys()
         }
     }, [activeTab])
 
@@ -567,6 +657,207 @@ export default function ProfilePage() {
                                     </button>
                                 </div>
                             </form>
+
+                            {/* ═══════ API KEYS SECTION ═══════ */}
+                            <div className="mt-16 pt-12 border-t-2 border-slate-100/80">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-10 h-10 rounded-2xl bg-brand-50 flex items-center justify-center">
+                                        <KeyRound className="w-5 h-5 text-brand-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-extrabold text-slate-800 tracking-tight">Chaves de API</h3>
+                                        <p className="text-sm font-medium text-slate-500 mt-0.5">Integre com sistemas externos usando suas chaves pessoais.</p>
+                                    </div>
+                                </div>
+
+                                {!canUseApiKeys ? (
+                                    /* Banner de upgrade para planos inferiores */
+                                    <div className="mt-8 p-8 bg-gradient-to-br from-brand-50 via-white to-brand-50/30 rounded-[2rem] border border-brand-100/60 shadow-lg shadow-brand-100/20 relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-40 h-40 bg-brand-100 rounded-full blur-[60px] -mr-10 -mt-10 opacity-40" />
+                                        <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6">
+                                            <div className="w-16 h-16 rounded-[1.5rem] bg-brand-100 flex items-center justify-center shrink-0 shadow-sm">
+                                                <ShieldAlert className="w-8 h-8 text-brand-600" />
+                                            </div>
+                                            <div className="flex-1 text-center sm:text-left">
+                                                <h4 className="text-lg font-extrabold text-slate-800 mb-1">Recurso exclusivo do plano Plus</h4>
+                                                <p className="text-sm font-medium text-slate-500 leading-relaxed">
+                                                    Gere chaves de API para integrar o RomaneioRapido com outros sistemas. Faça upgrade para desbloquear esse recurso.
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => setActiveTab('subscription')}
+                                                className="h-12 px-6 font-bold bg-brand-600 text-white rounded-2xl hover:bg-brand-700 transition-all shadow-lg shadow-brand-500/30 flex items-center gap-2 active:scale-95 shrink-0"
+                                            >
+                                                <ArrowUpRight className="w-5 h-5" />
+                                                Ver Planos
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="mt-8 space-y-8">
+                                        {/* Modal de chave recém-criada */}
+                                        {newlyCreatedKey && (
+                                            <div className="p-6 bg-emerald-50 rounded-3xl border-2 border-emerald-200 shadow-lg shadow-emerald-100/50 animate-in fade-in zoom-in-95 duration-300">
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                                                    <h4 className="text-lg font-extrabold text-emerald-900">Chave criada com sucesso!</h4>
+                                                </div>
+                                                <div className="p-4 bg-white rounded-2xl border border-emerald-100 shadow-inner mb-4">
+                                                    <code className="text-sm font-mono font-bold text-slate-700 break-all select-all">{newlyCreatedKey}</code>
+                                                </div>
+                                                <div className="flex flex-col sm:flex-row items-center gap-3">
+                                                    <button
+                                                        onClick={() => handleCopyKey(newlyCreatedKey)}
+                                                        className={`h-10 px-5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${keyCopied
+                                                                ? 'bg-emerald-600 text-white'
+                                                                : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                                            }`}
+                                                    >
+                                                        {keyCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                                        {keyCopied ? 'Copiada!' : 'Copiar Chave'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setNewlyCreatedKey(null)}
+                                                        className="h-10 px-5 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all"
+                                                    >
+                                                        Fechar
+                                                    </button>
+                                                </div>
+                                                <p className="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-2 rounded-xl mt-4 flex items-center gap-2">
+                                                    <AlertCircle className="w-4 h-4 shrink-0" />
+                                                    Guarde esta chave em local seguro. Ela não será exibida novamente.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* Formulário de criação */}
+                                        <div className="p-6 bg-white rounded-3xl border border-slate-200/80 shadow-sm">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Nova Chave</span>
+                                                <span className="text-xs font-bold text-slate-400">
+                                                    {apiKeys.filter(k => k.is_active).length} / {currentPlan.limit_api_keys} ativas
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col sm:flex-row gap-3">
+                                                <input
+                                                    value={apiKeyName}
+                                                    onChange={e => setApiKeyName(e.target.value)}
+                                                    placeholder="Ex: Integração ERP, App Mobile..."
+                                                    maxLength={100}
+                                                    className="flex-1 h-12 px-5 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all shadow-sm"
+                                                />
+                                                <button
+                                                    onClick={handleCreateApiKey}
+                                                    disabled={isCreatingApiKey || !apiKeyName.trim()}
+                                                    className="h-12 px-6 font-bold bg-brand-600 text-white rounded-2xl hover:bg-brand-700 transition-all shadow-lg shadow-brand-500/30 flex items-center gap-2 active:scale-95 disabled:opacity-60 shrink-0"
+                                                >
+                                                    {isCreatingApiKey ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                                                    Gerar Chave
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Lista de chaves */}
+                                        {isLoadingApiKeys ? (
+                                            <div className="flex items-center justify-center py-12">
+                                                <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
+                                            </div>
+                                        ) : apiKeys.length === 0 ? (
+                                            <div className="text-center py-12">
+                                                <KeyRound className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                                                <p className="text-sm font-bold text-slate-400">Nenhuma chave de API criada.</p>
+                                                <p className="text-xs font-medium text-slate-300 mt-1">Crie sua primeira chave para começar a integrar.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {apiKeys.map(k => (
+                                                    <div
+                                                        key={k.id}
+                                                        className={`group p-5 rounded-2xl border transition-all duration-300 ${k.is_active
+                                                                ? 'bg-white border-slate-200/80 hover:border-brand-200 hover:shadow-md'
+                                                                : 'bg-slate-50/50 border-slate-100 opacity-60'
+                                                            }`}
+                                                    >
+                                                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                                            <div className="flex items-center gap-4 min-w-0">
+                                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${k.is_active ? 'bg-brand-50 text-brand-600' : 'bg-slate-100 text-slate-400'
+                                                                    }`}>
+                                                                    <Key className="w-5 h-5" />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-sm font-bold text-slate-800 truncate">{k.name}</span>
+                                                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest ${k.is_active
+                                                                                ? 'bg-emerald-50 text-emerald-600'
+                                                                                : 'bg-red-50 text-red-500'
+                                                                            }`}>
+                                                                            {k.is_active ? 'Ativa' : 'Revogada'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-3 mt-1">
+                                                                        <code className="text-xs font-mono font-bold text-slate-400">{k.key_prefix}•••••••</code>
+                                                                        {k.created_at && (
+                                                                            <span className="text-[11px] font-medium text-slate-300">
+                                                                                Criada em {new Date(k.created_at).toLocaleDateString('pt-BR')}
+                                                                            </span>
+                                                                        )}
+                                                                        {k.last_used_at && (
+                                                                            <span className="text-[11px] font-medium text-slate-300">
+                                                                                · Último uso {new Date(k.last_used_at).toLocaleDateString('pt-BR')}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {k.is_active && (
+                                                                <div className="shrink-0">
+                                                                    {confirmRevokeId === k.id ? (
+                                                                        <div className="flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
+                                                                            <span className="text-xs font-bold text-red-600">Confirmar?</span>
+                                                                            <button
+                                                                                onClick={() => handleRevokeApiKey(k.id)}
+                                                                                disabled={revokingKeyId === k.id}
+                                                                                className="h-8 px-3 rounded-lg text-xs font-bold bg-red-500 text-white hover:bg-red-600 transition-all flex items-center gap-1 disabled:opacity-60"
+                                                                            >
+                                                                                {revokingKeyId === k.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                                                                                Sim
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => setConfirmRevokeId(null)}
+                                                                                className="h-8 px-3 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all"
+                                                                            >
+                                                                                Não
+                                                                            </button>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <button
+                                                                            onClick={() => setConfirmRevokeId(k.id)}
+                                                                            className="h-9 px-4 rounded-xl text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 transition-all flex items-center gap-1.5 opacity-0 group-hover:opacity-100"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                            Revogar
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Info de rate limit */}
+                                        <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                            <ShieldCheck className="w-5 h-5 text-slate-400 shrink-0" />
+                                            <p className="text-xs font-medium text-slate-500 leading-relaxed">
+                                                Cada chave é autenticada via header <code className="px-1.5 py-0.5 bg-white rounded-md border border-slate-200 text-[11px] font-mono font-bold text-slate-600">X-API-Key</code>.
+                                                Seu plano permite <strong>{currentPlan.api_rate_limit.replace('/minute', ' requisições/minuto')}</strong>.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
