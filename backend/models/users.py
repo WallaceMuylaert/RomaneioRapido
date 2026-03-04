@@ -14,7 +14,7 @@ class User(Base):
     store_name = Column(String, nullable=True)
     photo_base64 = Column(Text, nullable=True)
     is_admin = Column(Boolean, default=False)
-    plan_id = Column(String, default="free")
+    plan_id = Column(String, default="trial")
     is_active = Column(Boolean, default=True)
     
     # Password recovery

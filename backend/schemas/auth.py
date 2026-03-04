@@ -42,6 +42,8 @@ class UserResponse(UserBase):
     plan_id: str
     is_active: bool
     created_at: Optional[datetime] = None
+    trial_expired: bool = False
+    trial_days_remaining: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 

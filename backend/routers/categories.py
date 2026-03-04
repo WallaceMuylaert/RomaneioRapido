@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
 from backend.core.security import get_current_user
+from backend.core.trial_utils import require_active_plan
 from backend.core.limiter import limiter
 from backend.models.users import User
 from backend.schemas.categories import CategoryCreate, CategoryUpdate, CategoryResponse, ReorderRequest
@@ -45,10 +46,10 @@ def get_category(request: Request, category_id: int, db: Session = Depends(get_d
 
 @router.post("/", response_model=CategoryResponse)
 @limiter.limit("30/minute")
-def create_category(request: Request, category: CategoryCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def create_category(request: Request, category: CategoryCreate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
     try:
         # Validação de Limite do Plano
-        plan = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["free"])
+        plan = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["trial"])
         current_count = db.query(Category).count()
         if current_count >= plan["limit_categories"]:
             raise HTTPException(
@@ -67,7 +68,7 @@ def create_category(request: Request, category: CategoryCreate, db: Session = De
 
 @router.post("/reorder")
 @limiter.limit("60/minute")
-def reorder_categories(request: Request, reorder_request: ReorderRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def reorder_categories(request: Request, reorder_request: ReorderRequest, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
     try:
         logger.info(f"Usuário {current_user.email} reordenou {len(reorder_request.items)} categorias")
         crud.reorder_categories(db, reorder_request.items)
@@ -81,7 +82,7 @@ def reorder_categories(request: Request, reorder_request: ReorderRequest, db: Se
 
 @router.put("/{category_id}", response_model=CategoryResponse)
 @limiter.limit("60/minute")
-def update_category(request: Request, category_id: int, category: CategoryUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def update_category(request: Request, category_id: int, category: CategoryUpdate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
     try:
         logger.info(f"Usuário {current_user.email} atualizou categoria ID={category_id}")
         updated = crud.update_category(db, category_id, category)
@@ -97,7 +98,7 @@ def update_category(request: Request, category_id: int, category: CategoryUpdate
 
 @router.delete("/{category_id}", response_model=CategoryResponse)
 @limiter.limit("30/minute")
-def delete_category(request: Request, category_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def delete_category(request: Request, category_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
     try:
         logger.warning(f"Usuário {current_user.email} deletou a categoria ID={category_id}")
         deleted = crud.delete_category(db, category_id)

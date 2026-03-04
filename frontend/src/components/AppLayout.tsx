@@ -12,9 +12,11 @@ import {
     Users,
     ChevronLeft,
     ChevronRight,
-    ArrowRightLeft
+    ArrowRightLeft,
+    Clock
 } from 'lucide-react'
 import { useState } from 'react'
+import TrialExpiredBanner from './TrialExpiredBanner'
 
 const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -91,6 +93,20 @@ export default function AppLayout() {
                     ))}
                 </nav>
 
+                {/* Trial Badge */}
+                {user?.plan_id === 'trial' && !user?.trial_expired && (
+                    <div className={`mx-3 mb-2 ${isCollapsed ? 'px-1' : 'px-3'}`}>
+                        <div className={`flex items-center gap-2 bg-amber-50 border border-amber-200/60 rounded-xl text-amber-700 ${isCollapsed ? 'justify-center p-2' : 'px-3 py-2'}`}>
+                            <Clock className="w-4 h-4 shrink-0" />
+                            {!isCollapsed && (
+                                <span className="text-xs font-bold whitespace-nowrap">
+                                    Trial: {user.trial_days_remaining ?? 0} {(user.trial_days_remaining ?? 0) === 1 ? 'dia' : 'dias'}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* User */}
                 <div className={`py-5 border-t border-slate-100/50 bg-slate-50/30 transition-all ${isCollapsed ? 'px-2' : 'px-4'}`}>
                     <div
@@ -146,6 +162,9 @@ export default function AppLayout() {
                     <Outlet />
                 </main>
             </div>
+
+            {/* Trial Expired Banner (overlay) */}
+            <TrialExpiredBanner />
         </div >
     )
 }

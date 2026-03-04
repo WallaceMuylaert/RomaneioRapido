@@ -41,7 +41,7 @@ def create_key(
     """Gera uma nova API Key. A chave completa só é retornada aqui."""
     _require_api_key_plan(current_user)
 
-    plan_config = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["free"])
+    plan_config = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["trial"])
     max_keys = plan_config.get("limit_api_keys", 0)
     active_count = count_active_api_keys(db, current_user.id)
 

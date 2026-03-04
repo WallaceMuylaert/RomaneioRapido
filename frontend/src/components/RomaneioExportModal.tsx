@@ -83,6 +83,7 @@ export default function RomaneioExportModal({ isOpen, customerName, customerPhon
                 <title>Romaneio - ${customerName}</title>
                 <style>
                     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #111827; }
+                    body::before { content: 'romaneiorapido.com.br'; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 60px; color: rgba(0,0,0,0.06); font-weight: 900; pointer-events: none; z-index: 9999; white-space: nowrap; }
                     .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #e5e7eb; padding-bottom: 20px; }
                     .title { font-size: 24px; font-weight: bold; margin-bottom: 8px; }
                     .info { color: #4B5563; font-size: 14px; margin-bottom: 4px; }
@@ -160,6 +161,7 @@ export default function RomaneioExportModal({ isOpen, customerName, customerPhon
                     /* Largura típica de bobina 80mm e fonte monoespaçada parecida com cupom fiscal */
                     @page { margin: 0; }
                     body { font-family: 'Courier New', Courier, monospace; width: 300px; padding: 10px; color: #000; margin: 0 auto; font-size: 12px; line-height: 1.2; }
+                    body::before { content: 'romaneiorapido.com.br'; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 24px; color: rgba(0,0,0,0.06); font-weight: 900; pointer-events: none; z-index: 9999; white-space: nowrap; }
                     .center { text-align: center; }
                     .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
                     .bold { font-weight: bold; }

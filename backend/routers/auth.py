@@ -50,7 +50,12 @@ def login(request: Request, login_data: LoginRequest, db: Session = Depends(get_
 @limiter.limit("120/minute")
 def get_me(request: Request, current_user: User = Depends(get_current_user)):
     try:
-        return current_user
+        from backend.core.trial_utils import is_trial_expired, get_trial_days_remaining
+
+        user_data = UserResponse.model_validate(current_user)
+        user_data.trial_expired = is_trial_expired(current_user)
+        user_data.trial_days_remaining = get_trial_days_remaining(current_user)
+        return user_data
     except Exception as e:
         logger.error(f"Erro ao buscar dados do usuário: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")

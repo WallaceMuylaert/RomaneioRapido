@@ -71,7 +71,7 @@ export default function ProfilePage() {
     const [usage, setUsage] = useState({
         products: { used: 0, limit: 10 },
         categories: { used: 0, limit: 2 },
-        plan_id: user?.plan_id || 'free'
+        plan_id: user?.plan_id || 'trial'
     })
 
     const [form, setForm] = useState({
@@ -123,7 +123,7 @@ export default function ProfilePage() {
         }
     }
 
-    const canUseApiKeys = ['plus', 'pro', 'enterprise'].includes(user?.plan_id || 'free')
+    const canUseApiKeys = ['plus', 'pro', 'enterprise'].includes(user?.plan_id || 'trial')
 
     const fetchApiKeys = async () => {
         if (!canUseApiKeys) return
@@ -277,7 +277,7 @@ export default function ProfilePage() {
     }
 
     const currentPlan = PLANS.find(p => p.id === (user?.plan_id || usage.plan_id)) || PLANS[0]
-    const effectivePlanId = user?.plan_id === 'enterprise' ? 'pro' : (user?.plan_id || 'free');
+    const effectivePlanId = user?.plan_id === 'enterprise' ? 'pro' : (user?.plan_id || 'trial');
 
     return (
         <div className="max-w-5xl mx-auto pb-24 px-4 sm:px-6 relative">
@@ -709,8 +709,8 @@ export default function ProfilePage() {
                                                     <button
                                                         onClick={() => handleCopyKey(newlyCreatedKey)}
                                                         className={`h-10 px-5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${keyCopied
-                                                                ? 'bg-emerald-600 text-white'
-                                                                : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                                            ? 'bg-emerald-600 text-white'
+                                                            : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
                                                             }`}
                                                     >
                                                         {keyCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -774,8 +774,8 @@ export default function ProfilePage() {
                                                     <div
                                                         key={k.id}
                                                         className={`group p-5 rounded-2xl border transition-all duration-300 ${k.is_active
-                                                                ? 'bg-white border-slate-200/80 hover:border-brand-200 hover:shadow-md'
-                                                                : 'bg-slate-50/50 border-slate-100 opacity-60'
+                                                            ? 'bg-white border-slate-200/80 hover:border-brand-200 hover:shadow-md'
+                                                            : 'bg-slate-50/50 border-slate-100 opacity-60'
                                                             }`}
                                                     >
                                                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -788,8 +788,8 @@ export default function ProfilePage() {
                                                                     <div className="flex items-center gap-2">
                                                                         <span className="text-sm font-bold text-slate-800 truncate">{k.name}</span>
                                                                         <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest ${k.is_active
-                                                                                ? 'bg-emerald-50 text-emerald-600'
-                                                                                : 'bg-red-50 text-red-500'
+                                                                            ? 'bg-emerald-50 text-emerald-600'
+                                                                            : 'bg-red-50 text-red-500'
                                                                             }`}>
                                                                             {k.is_active ? 'Ativa' : 'Revogada'}
                                                                         </span>

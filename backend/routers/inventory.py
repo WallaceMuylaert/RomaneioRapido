@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
 from backend.core.security import get_current_user
+from backend.core.trial_utils import require_active_plan
 from backend.core.limiter import limiter
 from backend.models.users import User
 from backend.schemas.inventory import InventoryMovementCreate, InventoryMovementResponse, StockLevel, InventoryMovementPaginatedResponse, MovementType
@@ -19,7 +20,7 @@ def create_movement(
     request: Request,
     movement: InventoryMovementCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_active_plan)
 ):
     try:
         logger.info(f"Usuário {current_user.email} registrou movimentação de {movement.quantity} para o produto ID={movement.product_id} do tipo {movement.movement_type}")

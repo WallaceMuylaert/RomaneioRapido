@@ -21,7 +21,8 @@ def create_user(db: Session, email: str, password: str, full_name: str, is_admin
         email=email,
         hashed_password=hashed_password,
         full_name=full_name,
-        is_admin=is_admin
+        is_admin=is_admin,
+        plan_id="enterprise" if is_admin else "trial"
     )
     db.add(db_user)
     db.commit()

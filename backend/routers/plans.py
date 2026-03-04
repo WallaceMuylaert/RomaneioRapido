@@ -18,7 +18,7 @@ def get_usage(db: Session = Depends(get_db), current_user: User = Depends(get_cu
     product_count = db.query(Product).count()
     category_count = db.query(Category).count()
     
-    plan = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["free"])
+    plan = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["trial"])
     
     return {
         "products": {

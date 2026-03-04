@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, File, Upl
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
 from backend.core.security import get_current_user
+from backend.core.trial_utils import require_active_plan
 from backend.core.limiter import limiter
 from backend.models.users import User
 from backend.schemas.products import ProductCreate, ProductUpdate, ProductResponse
@@ -81,10 +82,10 @@ def get_product(request: Request, product_id: int, db: Session = Depends(get_db)
 
 @router.post("/", response_model=ProductResponse)
 @limiter.limit("30/minute")
-def create_product(request: Request, product: ProductCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def create_product(request: Request, product: ProductCreate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
     try:
         # Validação de Limite do Plano
-        plan = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["free"])
+        plan = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["trial"])
         current_count = crud.count_products(db)
         if current_count >= plan["limit_products"]:
             raise HTTPException(
@@ -111,7 +112,7 @@ def create_product(request: Request, product: ProductCreate, db: Session = Depen
 
 @router.put("/{product_id}", response_model=ProductResponse)
 @limiter.limit("60/minute")
-def update_product(request: Request, product_id: int, product: ProductUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def update_product(request: Request, product_id: int, product: ProductUpdate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
     try:
         logger.info(f"Usuário {current_user.email} modificou o produto ID={product_id}")
         updated = crud.update_product(db, product_id, product)
@@ -127,7 +128,7 @@ def update_product(request: Request, product_id: int, product: ProductUpdate, db
 
 @router.delete("/{product_id}", response_model=ProductResponse)
 @limiter.limit("30/minute")
-def delete_product(request: Request, product_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def delete_product(request: Request, product_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
     try:
         logger.warning(f"Usuário {current_user.email} solicitou exclusão do produto ID={product_id}")
         deleted = crud.delete_product(db, product_id)
