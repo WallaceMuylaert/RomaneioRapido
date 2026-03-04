@@ -14,6 +14,7 @@ import { Toaster } from 'react-hot-toast'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import MovementsPage from './pages/MovementsPage'
+import ErrorPage from './pages/ErrorPage'
 import './index.css'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -48,6 +49,7 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <LandingPage />,
+    errorElement: <ErrorPage />,
   },
   {
     path: "/login",
@@ -83,6 +85,7 @@ const router = createBrowserRouter([
         <AppLayout />
       </PrivateRoute>
     ),
+    errorElement: <ErrorPage />,
     children: [
       {
         path: "/dashboard",
@@ -119,8 +122,12 @@ const router = createBrowserRouter([
     ],
   },
   {
+    path: "/error",
+    element: <ErrorPage />,
+  },
+  {
     path: "*",
-    element: <Navigate to="/" replace />,
+    element: <ErrorPage code={404} />,
   },
 ]);
 
