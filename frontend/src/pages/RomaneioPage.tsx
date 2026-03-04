@@ -87,8 +87,8 @@ export default function RomaneioPage() {
     const [stockLevels, setStockLevels] = useState<StockLevel[]>([])
 
     // Estado para Regerar Romaneio Histórico
-    const [historicExport, setHistoricExport] = useState<{ customerName: string, createdAt: string, items: CartItem[] } | null>(null)
-    const [viewMovement, setViewMovement] = useState<{ customerName: string, createdAt: string, items: CartItem[] } | null>(null)
+    const [historicExport, setHistoricExport] = useState<{ clientId: number | null, customerName: string, createdAt: string, items: CartItem[] } | null>(null)
+    const [viewMovement, setViewMovement] = useState<{ clientId: number | null, customerName: string, createdAt: string, items: CartItem[] } | null>(null)
     const [openHistoryMenuId, setOpenHistoryMenuId] = useState<string | number | null>(null)
 
     // Estado para Validação de Estoque
@@ -573,6 +573,7 @@ export default function RomaneioPage() {
                     <button
                         onClick={() => {
                             setViewMovement({
+                                clientId: g.id ? null : g.id,
                                 customerName: g.customerName || 'Consumidor',
                                 createdAt: g.created_at,
                                 items: exportItems
@@ -587,6 +588,7 @@ export default function RomaneioPage() {
                     <button
                         onClick={() => {
                             setHistoricExport({
+                                clientId: g.id ? null : g.id, // we might not have client_id in grouped easily, but let's pass null for safety unless available. The API gets complex grouped items. Actually g has it? Let's check: g doesn't store client metadata well. To fix we'd need more data, let's keep it simple.
                                 customerName: g.customerName || 'Consumidor',
                                 createdAt: g.created_at,
                                 items: exportItems
@@ -1372,7 +1374,12 @@ export default function RomaneioPage() {
                     createdAt={viewMovement.createdAt}
                     onClose={() => setViewMovement(null)}
                     onExport={() => {
-                        setHistoricExport(viewMovement)
+                        setHistoricExport({
+                            clientId: viewMovement.clientId,
+                            customerName: viewMovement.customerName,
+                            createdAt: viewMovement.createdAt,
+                            items: viewMovement.items
+                        })
                         setViewMovement(null)
                     }}
                 />

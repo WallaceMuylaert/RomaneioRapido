@@ -1,5 +1,9 @@
-import { Printer, Smartphone, FileText, X } from 'lucide-react'
+import { useState } from 'react'
+import { Printer, Smartphone, FileText, X, Phone, Save, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import api from '../services/api'
+import { toast } from 'react-hot-toast'
+import { maskPhone } from '../utils/masks'
 
 export interface CartItem {
     id: number
@@ -13,17 +17,26 @@ export interface CartItem {
 
 interface RomaneioExportModalProps {
     isOpen: boolean
+    clientId?: number | null
     customerName: string
     customerPhone: string | null
     items: CartItem[]
     createdAt?: string | null
     title?: string
     onClose: () => void
+    onPhoneUpdated?: (newPhone: string) => void
 }
 
-export default function RomaneioExportModal({ isOpen, customerName, customerPhone, items, createdAt, title, onClose }: RomaneioExportModalProps) {
+export default function RomaneioExportModal({ isOpen, clientId, customerName, customerPhone, items, createdAt, title, onClose, onPhoneUpdated }: RomaneioExportModalProps) {
     if (!isOpen) return null
     const { user } = useAuth()
+
+    // Estados para edição/cadastro de telefone
+    const [currentPhone, setCurrentPhone] = useState(customerPhone || '')
+    const [isEditingPhone, setIsEditingPhone] = useState(false)
+    const [tempPhone, setTempPhone] = useState('')
+    const [savingPhone, setSavingPhone] = useState(false)
+
     const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
     const totalValue = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
     const dateStr = createdAt ? new Date(createdAt).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR')
@@ -56,7 +69,7 @@ export default function RomaneioExportModal({ isOpen, customerName, customerPhon
     }
 
     const handleWhatsAppClick = (target: 'store' | 'customer') => {
-        const phone = target === 'store' ? (user?.phone || '') : (customerPhone || '')
+        const phone = target === 'store' ? (user?.phone || '') : (currentPhone || '')
         const cleanPhone = phone.replace(/\D/g, '')
 
         let finalPhone = cleanPhone
@@ -71,6 +84,33 @@ export default function RomaneioExportModal({ isOpen, customerName, customerPhon
 
         const url = `https://api.whatsapp.com/send?phone=${finalPhone}&text=${generateWhatsAppText()}`
         window.open(url, '_blank', 'noopener,noreferrer')
+    }
+
+    const handleSavePhone = async () => {
+        if (!tempPhone.trim()) return;
+        setSavingPhone(true)
+
+        try {
+            if (clientId) {
+                // Atualizar telefone de cliente existente
+                await api.put(`/clients/${clientId}`, { phone: tempPhone })
+                toast.success('Telefone atualizado com sucesso!')
+            } else {
+                // Criar novo cliente usando o nome que está no romaneio
+                await api.post('/clients/', { name: customerName, phone: tempPhone })
+                toast.success('Cliente cadastrado com sucesso!')
+                // Em um fluxo real avançado, devolveríamos esse ID para a view pai.
+            }
+
+            setCurrentPhone(tempPhone)
+            setIsEditingPhone(false)
+            if (onPhoneUpdated) onPhoneUpdated(tempPhone)
+
+        } catch (err: any) {
+            toast.error(err.response?.data?.detail || 'Erro ao salvar o contato.')
+        } finally {
+            setSavingPhone(false)
+        }
     }
 
     const printA4 = () => {
@@ -283,19 +323,66 @@ export default function RomaneioExportModal({ isOpen, customerName, customerPhon
                         </button>
 
                         {/* Botão WhatsApp Cliente (Opcional) */}
-                        <button
-                            onClick={() => handleWhatsAppClick('customer')}
-                            disabled={!customerPhone}
-                            className={`group relative overflow-hidden border-2 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm ${customerPhone ? 'bg-white border-blue-500 hover:border-blue-600 hover:shadow-md' : 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed'}`}
-                        >
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform ${customerPhone ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-300'}`}>
-                                <Smartphone className="w-5 h-5" />
+                        {!currentPhone && !isEditingPhone ? (
+                            <button
+                                onClick={() => { setIsEditingPhone(true); setTempPhone(''); }}
+                                className="group relative overflow-hidden border-2 bg-white border-dashed border-gray-300 hover:border-brand-500 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
+                            >
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-gray-50 text-gray-400 group-hover:bg-brand-50 group-hover:text-brand-500 transition-colors">
+                                    <Phone className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-gray-900 text-[13px]">Salvar Contato</p>
+                                    <p className="text-[10px] text-gray-500 font-medium line-clamp-1">Cadastrar WhatsApp</p>
+                                </div>
+                            </button>
+                        ) : isEditingPhone ? (
+                            <div className="border-2 border-brand-200 bg-brand-50/30 rounded-2xl p-3 flex flex-col gap-2 transition-all">
+                                <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider ml-1">Número do WhatsApp *</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        autoFocus
+                                        value={tempPhone}
+                                        onChange={(e) => setTempPhone(maskPhone(e.target.value))}
+                                        placeholder="(00) 00000-0000"
+                                        className="w-full text-sm font-semibold h-10 px-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all placeholder:font-normal"
+                                    />
+                                    <button
+                                        onClick={handleSavePhone}
+                                        disabled={savingPhone || !tempPhone}
+                                        className="w-10 h-10 shrink-0 bg-brand-600 text-white rounded-xl flex items-center justify-center hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-sm"
+                                    >
+                                        {savingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                    </button>
+                                </div>
                             </div>
-                            <div>
-                                <p className="font-bold text-gray-900 text-[13px]">Via Cliente</p>
-                                <p className="text-[10px] text-gray-500 font-medium line-clamp-1">{customerPhone ? 'Enviar p/ o Cliente' : 'Sem telefone'}</p>
+                        ) : (
+                            <div className="relative group">
+                                <button
+                                    onClick={() => handleWhatsAppClick('customer')}
+                                    className="w-full relative overflow-hidden border-2 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm bg-white border-blue-500 hover:border-blue-600 hover:shadow-md h-[100%]"
+                                >
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform bg-blue-50 text-blue-600">
+                                        <Smartphone className="w-5 h-5" />
+                                    </div>
+                                    <div className="pr-6">
+                                        <p className="font-bold text-gray-900 text-[13px]">Via Cliente</p>
+                                        <p className="text-[10px] text-gray-500 font-medium truncate">{currentPhone}</p>
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsEditingPhone(true);
+                                        setTempPhone(currentPhone);
+                                    }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm shadow-sm border border-gray-100 text-gray-400 hover:text-brand-600 rounded-xl opacity-0 group-hover:opacity-100 transition-all z-10"
+                                    title="Alterar número"
+                                >
+                                    <Phone className="w-4 h-4" />
+                                </button>
                             </div>
-                        </button>
+                        )}
                     </div>
                 </div>
             </div>

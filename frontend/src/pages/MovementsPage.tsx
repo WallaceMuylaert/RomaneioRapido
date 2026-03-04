@@ -48,7 +48,7 @@ export default function MovementsPage() {
     const [typeFilter, setTypeFilter] = useState<string>('')
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [sharingMovement, setSharingMovement] = useState<Movement | null>(null)
-    const [exportingMovement, setExportingMovement] = useState<{ customerName: string, createdAt: string, phone: string | null, image: string | null, items: CartItem[] } | null>(null)
+    const [exportingMovement, setExportingMovement] = useState<{ clientId: number | null, customerName: string, createdAt: string, phone: string | null, image: string | null, items: CartItem[] } | null>(null)
     const [openMenuId, setOpenMenuId] = useState<number | null>(null)
 
     // Debounce search
@@ -279,6 +279,7 @@ export default function MovementsPage() {
                                                                     <button
                                                                         onClick={() => {
                                                                             setExportingMovement({
+                                                                                clientId: m.client?.id || null,
                                                                                 customerName: m.client?.name || (m.notes?.startsWith('Romaneio: ') ? m.notes.replace('Romaneio: ', '').trim() : (m.notes || 'Consumidor')),
                                                                                 createdAt: m.created_at,
                                                                                 phone: m.client?.phone || null,
@@ -361,6 +362,7 @@ export default function MovementsPage() {
                     onClose={() => setSharingMovement(null)}
                     onExport={() => {
                         setExportingMovement({
+                            clientId: sharingMovement.client?.id || null,
                             customerName: sharingMovement.client?.name || (sharingMovement.notes?.startsWith('Romaneio: ') ? sharingMovement.notes.replace('Romaneio: ', '').trim() : (sharingMovement.notes || 'Consumidor')),
                             createdAt: sharingMovement.created_at,
                             phone: sharingMovement.client?.phone || null,
@@ -383,6 +385,7 @@ export default function MovementsPage() {
             {exportingMovement && (
                 <RomaneioExportModal
                     isOpen={!!exportingMovement}
+                    clientId={exportingMovement.clientId}
                     customerName={exportingMovement.customerName}
                     customerPhone={exportingMovement.phone}
                     items={exportingMovement.items}

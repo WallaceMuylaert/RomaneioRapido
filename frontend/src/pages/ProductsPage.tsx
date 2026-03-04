@@ -59,6 +59,11 @@ export default function ProductsPage() {
     const [cameraOpen, setCameraOpen] = useState(false)
     const [focusedIndex, setFocusedIndex] = useState(-1)
 
+    // Create category on the fly
+    const [isCreatingCategory, setIsCreatingCategory] = useState(false)
+    const [newCategoryName, setNewCategoryName] = useState('')
+    const [creatingCategoryLoader, setCreatingCategoryLoader] = useState(false)
+
     // Image Upload State
     const [imagePreview, setImagePreview] = useState<string | null>(null)
     const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
@@ -223,6 +228,8 @@ export default function ProductsPage() {
         })
         setImagePreview(null)
         setCropImageSrc(null)
+        setIsCreatingCategory(false)
+        setNewCategoryName('')
         setModalOpen(true)
     }
 
@@ -243,6 +250,8 @@ export default function ProductsPage() {
         })
         setImagePreview(p.image_base64 || null)
         setCropImageSrc(null)
+        setIsCreatingCategory(false)
+        setNewCategoryName('')
         setModalOpen(true)
     }
 
@@ -268,6 +277,24 @@ export default function ProductsPage() {
         }
         reader.readAsDataURL(blob)
         setCropImageSrc(null)
+    }
+
+    const handleCreateCategory = async () => {
+        if (!newCategoryName.trim()) return;
+        setCreatingCategoryLoader(true)
+        try {
+            const res = await api.post('/categories/', { name: newCategoryName.trim(), description: null })
+            const newCat = res.data
+            setCategories(prev => [...prev, newCat])
+            setForm(prev => ({ ...prev, category_id: String(newCat.id) }))
+            setIsCreatingCategory(false)
+            setNewCategoryName('')
+            toast.success('Categoria criada!')
+        } catch (err: any) {
+            toast.error(err.response?.data?.detail || 'Erro ao criar categoria')
+        } finally {
+            setCreatingCategoryLoader(false)
+        }
     }
 
     const handleSubmit = async (e: FormEvent) => {
@@ -730,16 +757,62 @@ export default function ProductsPage() {
                             {/* Categoria */}
                             <div>
                                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Categoria</label>
-                                <select
-                                    value={form.category_id}
-                                    onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-                                    className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all appearance-none"
-                                >
-                                    <option value="">Sem categoria</option>
-                                    {categories.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
+                                {!isCreatingCategory ? (
+                                    <div className="flex gap-2">
+                                        <select
+                                            value={form.category_id}
+                                            onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+                                            className="flex-1 h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all appearance-none"
+                                        >
+                                            <option value="">Sem categoria</option>
+                                            {categories.map(c => (
+                                                <option key={c.id} value={c.id}>{c.name}</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsCreatingCategory(true)}
+                                            className="w-10 h-10 flex shrink-0 items-center justify-center bg-gray-50 text-gray-600 border border-gray-200 rounded-xl hover:bg-white hover:text-blue-600 hover:border-blue-200 transition-colors shadow-sm"
+                                            title="Nova Categoria"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2 animate-in fade-in slide-in-from-right-4 duration-300">
+                                        <input
+                                            autoFocus
+                                            value={newCategoryName}
+                                            onChange={(e) => setNewCategoryName(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleCreateCategory();
+                                                }
+                                            }}
+                                            className="flex-1 h-10 px-3 text-sm bg-blue-50/50 border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-blue-300 text-blue-900 font-semibold"
+                                            placeholder="Nome da categoria..."
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsCreatingCategory(false)
+                                                setNewCategoryName('')
+                                            }}
+                                            className="w-10 h-10 flex shrink-0 items-center justify-center bg-gray-50 text-gray-400 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleCreateCategory}
+                                            disabled={creatingCategoryLoader || !newCategoryName.trim()}
+                                            className="w-10 h-10 flex shrink-0 items-center justify-center bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+                                        >
+                                            {creatingCategoryLoader ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Botões */}
