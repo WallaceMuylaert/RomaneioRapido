@@ -22,15 +22,15 @@ export interface Plan {
 export const PLANS: Plan[] = [
     {
         id: 'trial',
-        name: 'Plano A',
+        name: 'Start',
         price: 'Grátis',
         period: '7 dias',
-        description: 'Teste o sistema por 7 dias gratuitamente.',
+        description: 'Dê o primeiro passo e experimente nossa plataforma sem compromisso.',
         features: [
             'Até 10 produtos (SKU)',
             'Até 3 categorias',
             'Impressão de romaneios',
-            '7 dias de acesso grátis'
+            '7 dias de acesso completo sem custos'
         ],
         highlight: false,
         limit_products: 10,
@@ -41,15 +41,15 @@ export const PLANS: Plan[] = [
     },
     {
         id: 'basic',
-        name: 'Plano B',
+        name: 'Essencial',
         price: 'R$ 99',
         period: '/mês',
-        description: 'Para negócios em início de operação.',
+        description: 'A fundação ideal para organizar e tracionar suas vendas.',
         features: [
             'Até 100 produtos (SKU)',
             'Até 10 categorias',
-            'Suporte via email',
-            'Impressão de romaneios'
+            'Suporte dedicado via email',
+            'Impressão de romaneios ilimitada'
         ],
         highlight: false,
         limit_products: 100,
@@ -60,16 +60,16 @@ export const PLANS: Plan[] = [
     },
     {
         id: 'plus',
-        name: 'Plano C',
+        name: 'Profissional',
         price: 'R$ 199',
         period: '/mês',
-        description: 'Para negócios em crescimento.',
+        description: 'O plano favorito para empresas que necessitam de escala.',
         features: [
             'Até 200 produtos (SKU)',
             'Até 20 categorias',
-            'Suporte prioritário',
+            'Suporte técnico prioritário',
             'Acesso API (2 chaves, 60 req/min)',
-            'Impressão de romaneios'
+            'Impressão de romaneios otimizada'
         ],
         highlight: true,
         limit_products: 200,
@@ -80,16 +80,16 @@ export const PLANS: Plan[] = [
     },
     {
         id: 'pro',
-        name: 'Plano D',
+        name: 'Premium',
         price: 'R$ 299',
         period: '/mês',
-        description: 'Para negócios consolidados. Sem limites.',
+        description: 'Poder máximo para operações consolidadas. Sem limites.',
         features: [
             'Produtos ilimitados (300+ SKU)',
-            'Categorias ilimitadas',
-            'Suporte 24/7',
-            'Acesso API (5 chaves, 120 req/min)',
-            'Impressão de romaneios'
+            'Categorias infinitas',
+            'Suporte VIP 24/7',
+            'Acesso API Avançado (5 chaves, 120 req/min)',
+            'Performance e prioridade máxima'
         ],
         highlight: false,
         limit_products: 999999,
@@ -101,13 +101,13 @@ export const PLANS: Plan[] = [
     {
         id: 'enterprise',
         name: 'Enterprise',
-        price: 'Ilimitado',
-        description: 'Plano exclusivo para administradores.',
+        price: 'Sob Consulta',
+        description: 'Solução sob medida e exclusiva para grandes corporações.',
         features: [
-            'Produtos ilimitados',
-            'Categorias ilimitadas',
-            'Suporte prioritário',
-            'Gestão total',
+            'Gestão de múltiplos CNPJs',
+            'Infraestrutura dedicada',
+            'Gerente de conta exclusivo',
+            'Gestão total corporativa',
             'Acesso API (20 chaves, 300 req/min)'
         ],
         highlight: false,
