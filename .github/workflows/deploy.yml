@@ -1,0 +1,58 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_VM_ID }}
+          username: root
+          key: ${{ secrets.HOSTINGER_API_KEY }}
+          port: 22
+          timeout: 60s
+          command_timeout: 30m
+          script_stop: true
+          script: |
+            set -e
+            echo "🚀 Iniciando deploy..."
+            
+            cd /root/RomaneioRapido || cd ~/RomaneioRapido
+            
+            echo "📥 Atualizando código..."
+            git fetch --all
+            git reset --hard origin/main
+            
+            echo "🛑 Parando containers antigos..."
+            docker compose -f docker-compose.yml down --remove-orphans || true
+            
+            echo "🧹 Limpando imagens não utilizadas..."
+            docker image prune -f || true
+            
+            echo "🔨 Buildando e iniciando containers..."
+            docker compose -f docker-compose.yml build --no-cache
+            docker compose -f docker-compose.yml up -d
+            
+            echo "⏳ Aguardando banco de dados..."
+            sleep 10
+            
+            echo "✅ Verificando status dos containers..."
+            docker compose -f docker-compose.yml ps
+            
+            echo "🎉 Deploy concluído com sucesso!"
