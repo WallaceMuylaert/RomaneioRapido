@@ -9,7 +9,23 @@ logger = get_dynamic_logger("init_db")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def init_db(db: Session = next(database.get_db())):
+def init_db(db: Session = None):
+    # Se não passar uma sessão, pega uma do gerador e garante o fechamento
+    if db is None:
+        db_gen = database.get_db()
+        db = next(db_gen)
+        try:
+            _run_init(db)
+        finally:
+            # Tenta fechar o gerador para executar o finally do get_db
+            try:
+                next(db_gen)
+            except StopIteration:
+                pass
+    else:
+        _run_init(db)
+
+def _run_init(db: Session):
     admin_email = os.getenv("PGADMIN_DEFAULT_EMAIL")
     admin_password = os.getenv("PGADMIN_DEFAULT_PASSWORD")
 

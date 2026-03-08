@@ -6,7 +6,8 @@ from sqlalchemy import create_engine, text, inspect
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Adiciona a raiz do projeto ao sys.path para permitir imports do pacote 'backend'
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from dotenv import load_dotenv
 
@@ -113,27 +114,54 @@ def run_migrations():
     print("=" * 50)
     print("🚀 Starting Dynamic Migration")
     print("=" * 50)
-    
+
+    from backend.core import database
     from backend.models.users import User
     from backend.models.products import Product
     from backend.models.categories import Category
-    from backend.models.inventory import InventoryMovement
+    from backend.models.inventory import InventoryMovement, MovementType as _MT
     from backend.models.clients import Client
-    
+    from backend.models.api_keys import ApiKey
+    from sqlalchemy import Enum as _SAEnum
+
+    # Cria enums manualmente se necessário
+    try:
+        print("\n🔧 Checking/Creating Enums...")
+        _mt_enum = _SAEnum(_MT, name="movementtype")
+        _mt_enum.create(bind=database.engine, checkfirst=True)
+        print("  ✅ Enums checked/created")
+    except Exception as e:
+        print(f"  ⚠️ Warning creating enum: {e}")
+
+    # Cria todas as tabelas (DDL principal)
+    print("\n📦 Ensuring all tables exist (Metadata.create_all)...")
+    database.Base.metadata.create_all(bind=database.engine, checkfirst=True)
+    print("  ✅ Tables checked/created")
+
     models = [
         User,
         Category,
         Product,
         InventoryMovement,
         Client,
+        ApiKey
     ]
-    
+
     for model in models:
         try:
             sync_model_to_db(model)
         except Exception as e:
             print(f"  ❌ Error syncing {model.__tablename__}: {e}")
-    
+
+    # Inicializa o Admin se necessário
+    try:
+        print("\n👤 Checking/Initializing Admin User...")
+        from backend.core.init_db import init_db
+        init_db()
+        print("  ✅ Admin initialization finished")
+    except Exception as e:
+        print(f"  ❌ Error initializing admin: {e}")
+
     print("\n" + "=" * 50)
     print("✅ Migration completed!")
     print("=" * 50)

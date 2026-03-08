@@ -20,20 +20,10 @@ from backend.models.inventory import InventoryMovement
 from backend.models.clients import Client
 from backend.models.api_keys import ApiKey
 from sqlalchemy.orm import configure_mappers
+from backend.core.router_loader import include_routers
 
 logger = get_dynamic_logger("server")
 configure_mappers()
-
-from backend.core.router_loader import include_routers
-
-if os.getenv("TESTING") != "1":
-    from backend.models.inventory import MovementType as _MT
-    from sqlalchemy import Enum as _SAEnum
-    _mt_enum = _SAEnum(_MT, name="movementtype")
-    _mt_enum.create(bind=database.engine, checkfirst=True)
-    database.Base.metadata.create_all(bind=database.engine, checkfirst=True)
-    from backend.core.init_db import init_db
-    init_db()
 
 # Em produção (ENVIRONMENT=production) desativa /docs, /redoc e /openapi.json
 _is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
@@ -68,7 +58,8 @@ _allowed_hosts_env = os.getenv("ALLOWED_HOSTS", "")
 if _allowed_hosts_env:
     _allowed_hosts = [h.strip() for h in _allowed_hosts_env.split(",")]
 elif _is_production:
-    _allowed_hosts = ["romaneiorapido.com.br", "www.romaneiorapido.com.br"]
+    # Em produção, permitimos os domínios oficiais e o nome do serviço interno
+    _allowed_hosts = ["romaneiorapido.com.br", "www.romaneiorapido.com.br", "backend", "localhost", "127.0.0.1"]
 else:
     _allowed_hosts = ["localhost", "127.0.0.1", "backend"]
 
