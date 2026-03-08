@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import { toast } from 'react-hot-toast'
 import { maskPhone } from '../utils/masks'
+import AlertModal from './AlertModal'
 
 export interface CartItem {
     id: number
@@ -36,6 +37,19 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
     const [isEditingPhone, setIsEditingPhone] = useState(false)
     const [tempPhone, setTempPhone] = useState('')
     const [savingPhone, setSavingPhone] = useState(false)
+
+    // Estado do AlertModal
+    const [alertConfig, setAlertConfig] = useState<{
+        isOpen: boolean,
+        title: string,
+        message: string,
+        type: 'warning' | 'error' | 'success' | 'info'
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'info'
+    })
 
     const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
     const totalValue = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
@@ -78,7 +92,14 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
         }
 
         if (!finalPhone) {
-            alert(target === 'store' ? 'Telefone da loja não configurado no perfil!' : 'Este cliente não possui telefone cadastrado!')
+            setAlertConfig({
+                isOpen: true,
+                title: 'Atenção',
+                message: target === 'store'
+                    ? 'O telefone da loja não está configurado no seu perfil! Vá até a tela de perfil para configurar.'
+                    : 'Este cliente não possui um telefone cadastrado para o envio.',
+                type: 'warning'
+            })
             return
         }
 
@@ -386,6 +407,14 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                     </div>
                 </div>
             </div>
-        </div>
+
+            <AlertModal
+                isOpen={alertConfig.isOpen}
+                onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+            />
+        </div >
     )
 }
