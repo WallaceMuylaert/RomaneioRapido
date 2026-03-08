@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from backend.models.products import Product
 from backend.schemas.products import ProductCreate, ProductUpdate
@@ -28,9 +29,9 @@ def get_products(db: Session, skip: int = 0, limit: int = 100, search: str = Non
     
     if sort_by == "name":
         if order.lower() == "desc":
-            query = query.order_by(db.func.length(Product.name).desc(), Product.name.desc())
+            query = query.order_by(func.length(Product.name).desc(), Product.name.desc())
         else:
-            query = query.order_by(db.func.length(Product.name).asc(), Product.name.asc())
+            query = query.order_by(func.length(Product.name).asc(), Product.name.asc())
     else:
         if order.lower() == "desc":
             query = query.order_by(column.desc())

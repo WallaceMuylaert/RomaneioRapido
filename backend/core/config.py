@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
 
     # Stripe
+    STRIPE_ENABLED: bool = True
     STRIPE_SECRET_KEY: Optional[str] = None
     STRIPE_PUBLISHABLE_KEY: Optional[str] = None
     STRIPE_WEBHOOK_SECRET: Optional[str] = None
