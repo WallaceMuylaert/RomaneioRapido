@@ -39,22 +39,23 @@ jobs:
             git fetch --all
             git reset --hard origin/main
             
-            echo "🛑 Parando containers antigos..."
+            echo "🛑 Parando containers do projeto..."
             docker compose -f docker-compose.prod.yml down --remove-orphans || true
             
-            echo "🧹 Limpando caches do Docker (Fix BuildKit errors)..."
-            # Limpa cache de build corrompido que causa 'failed to prepare extraction snapshot'
-            docker builder prune -f
-            docker system prune -f
+            echo "🧹 Limpando cache de build (Seguro para outras aplicações)..."
+            # Builder prune limpa apenas cache de build, não remove outros containers/imagens em uso
+            docker builder prune -p 24h -f || docker builder prune -f
             
-            echo "🔨 Buildando e iniciando containers..."
+            echo "🔨 Buildando containers..."
             docker compose -f docker-compose.prod.yml build --no-cache
+            
+            echo "🚀 Subindo novos containers..."
             docker compose -f docker-compose.prod.yml up -d
             
-            echo "⏳ Aguardando banco de dados..."
+            echo "⏳ Aguardando serviços..."
             sleep 10
             
-            echo "✅ Verificando status dos containers..."
+            echo "✅ Verificando status..."
             docker compose -f docker-compose.prod.yml ps
             
-            echo "🎉 Deploy concluído com sucesso!"
+            echo "🎉 Deploy concluído!"
