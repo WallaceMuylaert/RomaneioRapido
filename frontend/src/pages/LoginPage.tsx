@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import LoadingOverlay from '../components/LoadingOverlay'
-import { Package, Eye, EyeOff, Loader2, ArrowLeft, Zap, BarChart3, ScanBarcode, User, Mail, Lock } from 'lucide-react'
+import { Eye, EyeOff, Loader2, ArrowLeft, Zap, BarChart3, ScanBarcode, User, Mail, Lock } from 'lucide-react'
+import logo from '../assets/romaneiorapido_logo.png'
 import { toast } from 'react-hot-toast'
 import api from '../services/api'
 
@@ -92,8 +93,8 @@ export default function LoginPage() {
 
                 {/* Conteúdo Central */}
                 <div className="max-w-md relative z-10">
-                    <div className="w-16 h-16 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-10 border border-white/20 shadow-2xl">
-                        <Package className="w-8 h-8 text-brand-400" />
+                    <div className="w-16 h-16 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-10 border border-white/20 shadow-2xl p-3">
+                        <img src={logo} alt="Logo" className="w-full h-full object-contain" />
                     </div>
                     <h1 className="text-5xl font-black text-white leading-[1.1] mb-8 tracking-tighter">
                         Controle seu estoque com <span className="text-brand-400">velocidade</span> máxima.
@@ -131,8 +132,8 @@ export default function LoginPage() {
                 {/* Mobile Header (Apenas em Mobile) */}
                 <div className="lg:hidden p-6 flex items-center justify-between border-b border-slate-100">
                     <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/')}>
-                        <div className="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
-                            <Package className="w-5 h-5 text-white" />
+                        <div className="h-9 flex items-center justify-center">
+                            <img src={logo} alt="Logo" className="h-8 object-contain" />
                         </div>
                         <span className="font-black text-slate-900 tracking-tight">Romaneio<span className="text-brand-600">Rapido</span></span>
                     </div>

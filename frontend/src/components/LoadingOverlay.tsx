@@ -1,4 +1,4 @@
-import { Package } from 'lucide-react'
+import logo from '../assets/romaneiorapido_logo.png'
 
 interface LoadingOverlayProps {
     message?: string;
@@ -15,8 +15,8 @@ export default function LoadingOverlay({ message = 'Carregando...' }: LoadingOve
                 {/* Logo Container with rotating ring */}
                 <div className="relative w-24 h-24 mb-10">
                     {/* Inner Glass Card */}
-                    <div className="absolute inset-0 bg-white/80 backdrop-blur-xl rounded-3xl border border-white shadow-2xl flex items-center justify-center z-10 animate-scale-pulse">
-                        <Package className="w-10 h-10 text-brand-600 animate-bounce-slow" />
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-xl rounded-3xl border border-white shadow-2xl flex items-center justify-center z-10 animate-scale-pulse p-4">
+                        <img src={logo} alt="Logo" className="w-full h-full object-contain animate-bounce-slow" />
                     </div>
 
                     {/* Rotating Ring */}

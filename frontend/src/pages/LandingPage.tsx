@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import logo from '../assets/romaneiorapido_logo.png'
 import {
     Package,
     BarChart3,
@@ -31,8 +32,8 @@ export default function LandingPage() {
             <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
                 <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
                     <a href="/" className="flex items-center gap-2.5 group">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:rotate-12 group-hover:scale-110 transition-all duration-300">
-                            <Package className="w-4 h-4 text-white" />
+                        <div className="h-8 flex items-center justify-center">
+                            <img src={logo} alt="Logo" className="h-7 object-contain" />
                         </div>
                         <span className="text-lg font-bold text-gray-900">Romaneio<span className="text-blue-600">Rapido</span></span>
                     </a>
@@ -138,8 +139,8 @@ export default function LandingPage() {
                                         {/* Interface Header */}
                                         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 hover:bg-gray-50 transition-colors">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform duration-500">
-                                                    <Package className="w-5 h-5 text-white" />
+                                                <div className="h-10 flex items-center justify-center">
+                                                    <img src={logo} alt="Logo" className="h-8 object-contain" />
                                                 </div>
                                                 <div>
                                                     <span className="text-sm font-black text-gray-900 block leading-tight">Painel Principal</span>
@@ -382,8 +383,8 @@ export default function LandingPage() {
                         <div className="flex flex-col md:flex-row justify-between gap-8">
                             <div>
                                 <div className="flex items-center gap-2.5 mb-3">
-                                    <div className="w-7 h-7 bg-blue-600 rounded-md flex items-center justify-center">
-                                        <Package className="w-3.5 h-3.5 text-white" />
+                                    <div className="h-7 flex items-center justify-center">
+                                        <img src={logo} alt="Logo" className="h-6 object-contain" />
                                     </div>
                                     <span className="text-sm font-bold text-gray-900">RomaneioRapido</span>
                                 </div>
