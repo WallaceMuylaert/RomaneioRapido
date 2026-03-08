@@ -31,7 +31,7 @@ export default function CategoriesPage() {
     const [isReordering, setIsReordering] = useState(false)
     const [reorderList, setReorderList] = useState<Category[]>([])
     const [savingOrder, setSavingOrder] = useState(false)
-    const [sortingAZ, setSortingAZ] = useState(false)
+    const [sortingAZ] = useState(false)
 
     // Drag state
     const dragItem = useRef<number | null>(null)
@@ -124,21 +124,11 @@ export default function CategoriesPage() {
         }
     }
 
-    const sortAZ = async () => {
-        if (categories.length < 2) return
-        setSortingAZ(true)
-        try {
-            const sorted = [...categories].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
-            const items = sorted.map((cat, i) => ({ id: cat.id, position: i }))
-            await api.post('/categories/reorder', { items })
-            await fetchCategories()
-            toast.success('Categorias ordenadas de A-Z com sucesso!')
-        } catch (err) {
-            console.error('Erro ao ordenar A-Z:', err)
-            toast.error('Erro ao ordenar categorias')
-        } finally {
-            setSortingAZ(false)
-        }
+    const sortAZ = () => {
+        if (reorderList.length < 2) return
+        const sorted = [...reorderList].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+        setReorderList(sorted)
+        toast.success('Categorias ordenadas de A-Z (clique em Salvar para confirmar)')
     }
 
     // Drag and Drop handlers
@@ -211,41 +201,41 @@ export default function CategoriesPage() {
 
     return (
         <div>
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h1 className="text-xl font-bold text-gray-900">Categorias</h1>
-                    <div className="flex items-center gap-4 mt-1">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div>
+                        <h1 className="text-xl font-bold text-gray-900">Categorias</h1>
                         <p className="text-sm text-gray-400">{categories.length} categoria{categories.length !== 1 ? 's' : ''}</p>
-                        {!isReordering && (
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    placeholder="Buscar categoria..."
-                                    value={searchQuery}
-                                    onChange={(e) => {
-                                        setSearchQuery(e.target.value)
-                                        setFocusedIndex(-1)
-                                    }}
-                                    onKeyDown={handleSearchKeyDown}
-                                    className="h-8 pl-8 pr-3 text-xs bg-slate-100 border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:bg-white w-48 transition-all"
-                                />
-                                <Tags className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                            </div>
-                        )}
                     </div>
+                    {!isReordering && (
+                        <div className="relative w-full sm:w-auto">
+                            <input
+                                type="text"
+                                placeholder="Buscar categoria..."
+                                value={searchQuery}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value)
+                                    setFocusedIndex(-1)
+                                }}
+                                onKeyDown={handleSearchKeyDown}
+                                className="h-9 pl-8 pr-3 text-xs bg-slate-100 border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:bg-white w-full sm:w-48 transition-all"
+                            />
+                            <Tags className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                        </div>
+                    )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                     {!isReordering ? (
                         <>
                             {categories.length > 1 && (
                                 <button
                                     onClick={startReorder}
-                                    className="h-9 px-4 text-[13px] font-semibold border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                    className="h-9 flex-1 sm:flex-none px-4 text-[13px] font-semibold border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
                                 >
                                     <GripVertical className="w-4 h-4" /> Reorganizar
                                 </button>
                             )}
-                            <button onClick={openCreate} className="h-9 px-4 text-[13px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2">
+                            <button onClick={openCreate} className="h-9 flex-1 sm:flex-none px-4 text-[13px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center justify-center gap-2">
                                 <Plus className="w-4 h-4" /> Nova Categoria
                             </button>
                         </>
@@ -254,20 +244,20 @@ export default function CategoriesPage() {
                             <button
                                 onClick={sortAZ}
                                 disabled={sortingAZ || savingOrder}
-                                className="h-9 px-4 text-[13px] font-semibold border border-blue-200 text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-2 disabled:opacity-60"
+                                className="h-9 flex-1 sm:flex-none px-4 text-[13px] font-semibold border border-blue-200 text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
                             >
-                                {sortingAZ ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowDownAZ className="w-4 h-4" />} A-Z
+                                <ArrowDownAZ className="w-4 h-4" /> A-Z
                             </button>
                             <button
                                 onClick={cancelReorder}
-                                className="h-9 px-4 text-[13px] font-semibold border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                className="h-9 flex-1 sm:flex-none px-4 text-[13px] font-semibold border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
                             >
                                 <X className="w-4 h-4" /> Cancelar
                             </button>
                             <button
                                 onClick={saveOrder}
                                 disabled={savingOrder || sortingAZ}
-                                className="h-9 px-4 text-[13px] font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-60"
+                                className="h-9 flex-1 sm:flex-none px-4 text-[13px] font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-60"
                             >
                                 {savingOrder ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                 Salvar Ordem

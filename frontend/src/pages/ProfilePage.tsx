@@ -31,6 +31,8 @@ import ImageCropper from '../components/ImageCropper'
 import { PLANS } from '../constants/plans'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { maskPhone } from '../utils/masks'
+import PaymentStatusModal from '../components/PaymentStatusModal'
+import type { PaymentStatus } from '../components/PaymentStatusModal'
 
 interface ApiKeyItem {
     id: number
@@ -97,6 +99,12 @@ export default function ProfilePage() {
     const [revokingKeyId, setRevokingKeyId] = useState<number | null>(null)
     const [confirmRevokeId, setConfirmRevokeId] = useState<number | null>(null)
 
+    // Estados para verificação de pagamento
+    const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('processing')
+    const [showPaymentModal, setShowPaymentModal] = useState(false)
+    const [paymentError, setPaymentError] = useState<string | undefined>()
+    const [verificationAttempts, setVerificationAttempts] = useState(0)
+
     useEffect(() => {
         if (user) {
             setForm(prev => ({
@@ -110,6 +118,61 @@ export default function ProfilePage() {
             setImagePreview(user.photo_base64 || null)
         }
     }, [user])
+
+    // Tratar retorno do Stripe Checkout com Polling Realista
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search)
+        const sessionId = params.get('session_id')
+        const checkoutStatus = params.get('checkout')
+
+        if (sessionId) {
+            setShowPaymentModal(true)
+            setPaymentStatus('processing')
+            setActiveTab('subscription')
+
+            let isMounted = true
+            const maxAttempts = 15 // ~30 segundos de polling
+            let pollTimer: any
+
+            const checkStatus = async () => {
+                if (!isMounted) return
+                try {
+                    const response = await api.get(`/plans/session-status/${sessionId}`)
+                    const { status, payment_status, plan_updated } = response.data
+
+                    if (status === 'complete' && payment_status === 'paid' && plan_updated) {
+                        setPaymentStatus('success')
+                        // Limpar parâmetros da URL após sucesso
+                        window.history.replaceState({}, '', window.location.pathname)
+                    } else if (status === 'expired' || payment_status === 'failed') {
+                        setPaymentStatus('failed')
+                        setPaymentError('O pagamento expirou ou foi recusado pela sua instituição financeira.')
+                    } else if (verificationAttempts > maxAttempts) {
+                        setPaymentStatus('pending')
+                    } else {
+                        // Continuar tentando se ainda estiver processando ou o webhook não bateu
+                        setVerificationAttempts(prev => prev + 1)
+                        pollTimer = setTimeout(checkStatus, 2000)
+                    }
+                } catch (err) {
+                    if (!isMounted) return
+                    console.error("Erro ao verificar status do pagamento:", err)
+                    setPaymentStatus('failed')
+                    setPaymentError('Não conseguimos verificar o status do seu pagamento. Verifique seu e-mail ou entre em contato.')
+                }
+            }
+
+            checkStatus()
+            return () => {
+                isMounted = false
+                clearTimeout(pollTimer)
+            }
+        } else if (checkoutStatus === 'cancel') {
+            toast('Checkout cancelado.', { icon: '⚠️' })
+            setActiveTab('subscription')
+            window.history.replaceState({}, '', window.location.pathname)
+        }
+    }, [verificationAttempts]) // Adicionamos verificationAttempts para re-rodar o loop se necessário (embora o setTimeout já cuide)
 
     const fetchUsageData = async () => {
         setIsLoadingUsage(true)
@@ -259,6 +322,13 @@ export default function ProfilePage() {
         if (planId === user?.plan_id) return
         setIsSubscribing(planId)
         try {
+            // Planos pagos: redirecionar para Stripe Checkout
+            if (['basic', 'plus', 'pro'].includes(planId)) {
+                const res = await api.post('/plans/checkout', { plan_id: planId })
+                window.location.href = res.data.checkout_url
+                return
+            }
+            // Fallback para planos sem pagamento
             await api.patch('/plans/subscribe', { plan_id: planId })
             toast.success('Plano atualizado com sucesso!')
             setTimeout(() => {
@@ -268,6 +338,15 @@ export default function ProfilePage() {
             toast.error(err.response?.data?.detail || 'Erro ao atualizar assinatura')
         } finally {
             setIsSubscribing(null)
+        }
+    }
+
+    const handleManageSubscription = async () => {
+        try {
+            const res = await api.post('/plans/portal')
+            window.location.href = res.data.portal_url
+        } catch (err: any) {
+            toast.error(err.response?.data?.detail || 'Erro ao abrir portal de assinatura')
         }
     }
 
@@ -287,32 +366,34 @@ export default function ProfilePage() {
 
             <div className="pt-8 pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Configurações</h1>
-                    <p className="text-sm font-medium text-slate-500 mt-1">Gerencie suas preferências com facilidade</p>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">Configurações</h1>
+                    <p className="text-xs sm:text-sm font-medium text-slate-500 mt-1">Gerencie suas preferências com facilidade</p>
                 </div>
 
-                {/* Refined Segmented Control */}
-                <div className="flex bg-white/80 backdrop-blur shadow-sm border border-slate-200/60 p-1.5 rounded-2xl w-fit">
-                    {(['general', 'subscription', 'security'] as const).map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`flex items-center gap-2.5 px-6 py-2.5 rounded-[10px] text-sm font-semibold transition-all duration-300 ${activeTab === tab
-                                ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100/50'
-                                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                                }`}
-                        >
-                            {tab === 'general' && <UserIcon className="w-4 h-4" />}
-                            {tab === 'subscription' && <Crown className="w-4 h-4" />}
-                            {tab === 'security' && <ShieldCheck className="w-4 h-4" />}
-                            {tab === 'general' ? 'Geral' : tab === 'subscription' ? 'Assinatura' : 'Segurança'}
-                        </button>
-                    ))}
+                {/* Refined Segmented Control - Mobile Responsive */}
+                <div className="flex bg-white/80 backdrop-blur shadow-sm border border-slate-200/60 p-1 rounded-xl sm:rounded-2xl w-full sm:w-fit overflow-x-auto no-scrollbar">
+                    <div className="flex min-w-full sm:min-w-0">
+                        {(['general', 'subscription', 'security'] as const).map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-[10px] text-xs sm:text-sm font-semibold transition-all duration-300 whitespace-now-row flex-1 sm:flex-initial ${activeTab === tab
+                                    ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100/50'
+                                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                                    }`}
+                            >
+                                {tab === 'general' && <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                                {tab === 'subscription' && <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                                {tab === 'security' && <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                                <span>{tab === 'general' ? 'Geral' : tab === 'subscription' ? 'Assinatura' : 'Segurança'}</span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            <div className="glass-card rounded-[2.5rem] overflow-hidden">
-                <div className="p-8 sm:p-12">
+            <div className="glass-card rounded-3xl sm:rounded-[2.5rem] overflow-hidden">
+                <div className="p-6 sm:p-12">
                     {activeTab === 'general' && (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
 
@@ -435,19 +516,19 @@ export default function ProfilePage() {
                                     <div className="bg-white border border-brand-100 rounded-[2.5rem] p-8 sm:p-10 shadow-xl shadow-brand-100/50 relative overflow-hidden group/plan">
                                         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-full blur-[80px] -mr-20 -mt-20 transition-transform duration-1000 group-hover/plan:scale-125" />
 
-                                        <div className="relative z-10 flex flex-col md:flex-row gap-10 items-center md:items-start justify-between">
-                                            <div className="flex-1 text-center md:text-left">
-                                                <div className="flex flex-col sm:flex-row items-center gap-4 mb-4 justify-center md:justify-start">
-                                                    <h4 className="text-4xl font-extrabold text-slate-800 tracking-tight">{currentPlan.name}</h4>
+                                        <div className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-10 items-center lg:items-start justify-between">
+                                            <div className="flex-1 text-center lg:text-left">
+                                                <div className="flex flex-col sm:flex-row items-center gap-4 mb-4 justify-center lg:justify-start">
+                                                    <h4 className="text-3xl sm:text-4xl font-extrabold text-slate-800 tracking-tight">{currentPlan.name}</h4>
                                                     <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100/50 text-xs font-black uppercase tracking-widest rounded-full flex items-center gap-2 shadow-sm">
                                                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" /> Ativo
                                                     </span>
                                                 </div>
-                                                <p className="text-slate-500 text-base font-medium max-w-sm mx-auto md:mx-0 leading-relaxed">{currentPlan.description}</p>
+                                                <p className="text-slate-500 text-sm sm:text-base font-medium max-w-sm mx-auto lg:mx-0 leading-relaxed">{currentPlan.description}</p>
                                             </div>
 
                                             {/* Progress Meters */}
-                                            <div className="w-full md:w-[28rem] flex-shrink-0 space-y-7 bg-slate-50/50 p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-inner">
+                                            <div className="w-full lg:w-[28rem] flex-shrink-0 space-y-6 bg-slate-50/50 p-5 sm:p-8 rounded-3xl sm:rounded-[2rem] border border-slate-100 shadow-inner">
                                                 <div className="group/progress">
                                                     <div className="flex justify-between items-end mb-3">
                                                         <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Produtos</span>
@@ -480,6 +561,19 @@ export default function ProfilePage() {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Botão Gerenciar Assinatura (Stripe Portal) */}
+                                    {user?.plan_id && !['trial'].includes(user.plan_id) && (
+                                        <div className="mt-6 flex justify-center md:justify-start">
+                                            <button
+                                                onClick={handleManageSubscription}
+                                                className="h-12 px-6 font-bold bg-slate-100 text-slate-700 rounded-2xl hover:bg-brand-600 hover:text-white transition-all shadow-sm flex items-center gap-2 active:scale-95"
+                                            >
+                                                <CreditCard className="w-5 h-5" />
+                                                Gerenciar Assinatura
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Upgrades List */}
@@ -489,7 +583,7 @@ export default function ProfilePage() {
                                         <p className="text-slate-500 font-medium mt-1 text-sm">Escolha a melhor opção para o tamanho do seu negócio.</p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-fr">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 auto-rows-fr">
                                         {PLANS.filter(p => !p.hidden).map((p) => {
                                             const isSelected = p.id === effectivePlanId
                                             const isPopular = p.highlight
@@ -498,52 +592,52 @@ export default function ProfilePage() {
                                             return (
                                                 <div
                                                     key={p.id}
-                                                    className={`group p-8 rounded-[2.5rem] border transition-all duration-300 flex flex-col h-full relative overflow-hidden ${isSelected
+                                                    className={`group p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] border transition-all duration-300 flex flex-col h-full relative overflow-hidden ${isSelected
                                                         ? 'border-brand-300 bg-brand-50 shadow-xl shadow-brand-200/50 ring-2 ring-brand-100'
-                                                        : 'border-slate-200/80 bg-white hover:border-brand-300 hover:shadow-2xl hover:shadow-slate-200/50 hover:-translate-y-2'
+                                                        : 'border-slate-200/80 bg-white hover:border-brand-300 hover:shadow-2xl hover:shadow-slate-200/50 hover:sm:-translate-y-2'
                                                         }`}
                                                 >
                                                     {isPopular && !isSelected && (
                                                         <div className="absolute -top-4 -right-4 w-24 h-24 bg-brand-100 rounded-full blur-2xl opacity-50 transition-transform duration-500 group-hover:scale-150" />
                                                     )}
 
-                                                    <div className="flex flex-col items-center sm:items-start lg:items-center xl:items-start gap-5 mb-8 text-center sm:text-left lg:text-center xl:text-left">
-                                                        <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center shrink-0 transition-all ${isSelected ? 'bg-brand-600 text-white shadow-xl shadow-brand-500/30' : 'bg-slate-100 text-slate-500 group-hover:bg-brand-100 group-hover:text-brand-600 group-hover:shadow-lg'
+                                                    <div className="flex flex-col items-center sm:items-start lg:items-center xl:items-start gap-4 sm:gap-5 mb-6 sm:mb-8 text-center sm:text-left lg:text-center xl:text-left">
+                                                        <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[1.5rem] flex items-center justify-center shrink-0 transition-all ${isSelected ? 'bg-brand-600 text-white shadow-xl shadow-brand-500/30' : 'bg-slate-100 text-slate-500 group-hover:bg-brand-100 group-hover:text-brand-600 group-hover:shadow-lg'
                                                             }`}>
-                                                            <CreditCard className="w-7 h-7" />
+                                                            <CreditCard className="w-6 h-6 sm:w-7 sm:h-7" />
                                                         </div>
-                                                        <div className="mt-2 sm:mt-0">
-                                                            <h4 className="font-extrabold text-slate-800 text-2xl tracking-tight leading-none mb-3">{p.name}</h4>
-                                                            {isPopular && <span className="inline-block text-[10px] font-black bg-brand-600 text-white px-3 py-1.5 rounded-lg uppercase tracking-widest shadow-sm ring-4 ring-brand-100/50">Mais Popular</span>}
+                                                        <div className="mt-1 sm:mt-0">
+                                                            <h4 className="font-extrabold text-slate-800 text-xl sm:text-2xl tracking-tight leading-none mb-2 sm:mb-3">{p.name}</h4>
+                                                            {isPopular && <span className="inline-block text-[9px] sm:text-[10px] font-black bg-brand-600 text-white px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg uppercase tracking-widest shadow-sm ring-4 ring-brand-100/50">Mais Popular</span>}
                                                         </div>
                                                     </div>
 
-                                                    <div className="mb-10 flex-grow">
-                                                        <ul className="space-y-4">
+                                                    <div className="mb-8 sm:mb-10 flex-grow">
+                                                        <ul className="space-y-3 sm:space-y-4">
                                                             {p.features.slice(0, 3).map((feat, i) => (
-                                                                <li key={i} className="flex items-start gap-3 text-[14px] font-semibold text-slate-600 justify-center sm:justify-start lg:justify-center xl:justify-start">
-                                                                    <Check className={`w-5 h-5 shrink-0 mt-0 ${isSelected ? 'text-brand-600' : 'text-slate-300 group-hover:text-brand-500'}`} />
+                                                                <li key={i} className="flex items-start gap-2.5 sm:gap-3 text-xs sm:text-[14px] font-semibold text-slate-600 justify-center sm:justify-start lg:justify-center xl:justify-start">
+                                                                    <Check className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 mt-0.5 sm:mt-0 ${isSelected ? 'text-brand-600' : 'text-slate-300 group-hover:text-brand-500'}`} />
                                                                     <span className="leading-relaxed text-left">{feat}</span>
                                                                 </li>
                                                             ))}
                                                         </ul>
                                                     </div>
 
-                                                    <div className="border-t border-slate-100/80 pt-8 mt-auto">
-                                                        <div className="flex items-baseline justify-center sm:justify-start lg:justify-center xl:justify-start gap-2 mb-6">
-                                                            <p className="font-black text-slate-800 text-4xl tracking-tighter">{p.price}</p>
-                                                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">/ mês</p>
+                                                    <div className="border-t border-slate-100/80 pt-6 sm:pt-8 mt-auto">
+                                                        <div className="flex items-baseline justify-center sm:justify-start lg:justify-center xl:justify-start gap-1.5 sm:gap-2 mb-4 sm:mb-6">
+                                                            <p className="font-black text-slate-800 text-3xl sm:text-4xl tracking-tighter">{p.price}</p>
+                                                            <p className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest">/ mês</p>
                                                         </div>
                                                         <button
                                                             onClick={() => !isSelected && handleSubscribe(p.id)}
                                                             disabled={isSelected || isSubscribing === p.id}
-                                                            className={`w-full h-14 rounded-[1.25rem] text-[15px] font-black transition-all flex items-center justify-center gap-2 ${isSelected
+                                                            className={`w-full h-12 sm:h-14 rounded-xl sm:rounded-[1.25rem] text-sm sm:text-[15px] font-black transition-all flex items-center justify-center gap-2 ${isSelected
                                                                 ? 'bg-brand-600 text-white shadow-xl shadow-brand-500/30 cursor-default ring-4 ring-brand-100'
                                                                 : 'bg-slate-100 text-slate-700 hover:bg-brand-600 hover:text-white shadow-sm hover:shadow-brand-500/20 hover:scale-[1.02]'
                                                                 }`}
                                                         >
                                                             {isSubscribing === p.id
-                                                                ? <Loader2 className="w-5 h-5 animate-spin" />
+                                                                ? <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                                                                 : isSelected ? 'Plano Atual' : 'Assinar Plano'}
                                                         </button>
                                                     </div>
@@ -870,6 +964,19 @@ export default function ProfilePage() {
                     onCancel={() => setCropImageSrc(null)}
                 />
             )}
+
+            <PaymentStatusModal
+                isOpen={showPaymentModal}
+                status={paymentStatus}
+                error={paymentError}
+                onClose={() => {
+                    setShowPaymentModal(false)
+                    if (paymentStatus === 'success') {
+                        window.location.reload()
+                    }
+                }}
+                planName={PLANS.find(p => p.id === usage.plan_id)?.name}
+            />
         </div>
     )
 }

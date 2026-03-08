@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import logo from '../assets/romaneiorapido_logo.png'
 import {
-    Package,
     LayoutDashboard,
     Boxes,
     Tags,
@@ -59,8 +59,12 @@ export default function AppLayout() {
 
                 {/* Logo */}
                 <div className={`h-16 flex items-center border-b border-slate-100/50 group cursor-pointer transition-all ${isCollapsed ? 'justify-center px-0' : 'px-6 gap-3'}`} onClick={() => navigate('/dashboard')}>
-                    <div className="w-8 h-8 bg-brand-600 rounded-xl flex items-center justify-center group-hover:rotate-12 group-hover:scale-110 transition-all duration-300 shadow-lg shadow-brand-500/20 shrink-0">
-                        <Package className="w-4 h-4 text-white" />
+                    <div className={`flex items-center justify-center transition-all duration-300 ${isCollapsed ? 'w-10 h-10' : 'w-auto h-10'}`}>
+                        <img
+                            src={logo}
+                            alt="RomaneioRápido"
+                            className={`transition-all duration-300 object-contain ${isCollapsed ? 'h-8 w-8' : 'h-8'}`}
+                        />
                     </div>
                     {!isCollapsed && (
                         <span className="text-base font-bold text-slate-900 tracking-tight whitespace-nowrap animate-in fade-in duration-300">
@@ -150,8 +154,8 @@ export default function AppLayout() {
                         <Menu className="w-6 h-6" />
                     </button>
                     <div className="flex items-center gap-2.5 group cursor-pointer" onClick={() => navigate('/dashboard')}>
-                        <div className="w-7 h-7 bg-brand-600 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-all shadow-md shadow-brand-500/20">
-                            <Package className="w-3.5 h-3.5 text-white" />
+                        <div className="h-7 flex items-center justify-center">
+                            <img src={logo} alt="Logo" className="h-6 object-contain" />
                         </div>
                         <span className="text-sm font-bold text-slate-900">Romaneio<span className="text-brand-600">Rapido</span></span>
                     </div>

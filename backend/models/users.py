@@ -16,6 +16,10 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     plan_id = Column(String, default="trial")
     is_active = Column(Boolean, default=True)
+
+    # Stripe
+    stripe_customer_id = Column(String, unique=True, index=True, nullable=True)
+    stripe_subscription_id = Column(String, nullable=True)
     
     # Password recovery
     reset_token = Column(String, index=True, nullable=True)

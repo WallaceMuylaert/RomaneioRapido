@@ -92,9 +92,6 @@ export default function LoginPage() {
 
                 {/* Conteúdo Central */}
                 <div className="max-w-md relative z-10">
-                    <div className="w-16 h-16 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-10 border border-white/20 shadow-2xl">
-                        <Package className="w-8 h-8 text-brand-400" />
-                    </div>
                     <h1 className="text-5xl font-black text-white leading-[1.1] mb-8 tracking-tighter">
                         Controle seu estoque com <span className="text-brand-400">velocidade</span> máxima.
                     </h1>

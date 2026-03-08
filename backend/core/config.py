@@ -17,6 +17,15 @@ class Settings(BaseSettings):
     SMTP_FROM: Optional[str] = None
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # Stripe
+    STRIPE_ENABLED: bool = True
+    STRIPE_SECRET_KEY: Optional[str] = None
+    STRIPE_PUBLISHABLE_KEY: Optional[str] = None
+    STRIPE_WEBHOOK_SECRET: Optional[str] = None
+    STRIPE_PRICE_BASIC: Optional[str] = None
+    STRIPE_PRICE_PLUS: Optional[str] = None
+    STRIPE_PRICE_PRO: Optional[str] = None
+
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env"),
         env_file_encoding="utf-8",

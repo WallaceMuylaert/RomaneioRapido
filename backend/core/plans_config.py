@@ -1,3 +1,5 @@
+import os
+
 # Configuração de Planos - Replicado para validação backend
 PLANS_CONFIG = {
     "trial": {"limit_products": 10, "limit_categories": 3, "limit_api_keys": 0, "api_rate_limit": "0/minute", "trial_days": 7},
@@ -8,3 +10,13 @@ PLANS_CONFIG = {
 }
 
 PLANS_WITH_API_ACCESS = {"plus", "pro", "enterprise"}
+
+# Mapeamento plan_id -> Stripe Price ID (carregado do .env)
+STRIPE_PRICE_MAP = {
+    "basic": os.getenv("STRIPE_PRICE_BASIC"),
+    "plus": os.getenv("STRIPE_PRICE_PLUS"),
+    "pro": os.getenv("STRIPE_PRICE_PRO"),
+}
+
+# Mapeamento inverso: price_id -> plan_id
+PRICE_TO_PLAN_MAP = {v: k for k, v in STRIPE_PRICE_MAP.items() if v}
