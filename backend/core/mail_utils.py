@@ -40,12 +40,32 @@ def send_reset_password_email(email_to: str, token: str):
     message.attach(MIMEText(html_content, "html"))
 
     try:
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            server.starttls()
-            server.login(settings.SMTP_USER, settings.SMTP_PASS)
-            server.sendmail(message["From"], email_to, message.as_string())
+        # SMTP_PORT 465 geralmente usa SSL/TLS direto
+        # SMTP_PORT 587 geralmente usa STARTTLS
+        timeout = 10  # segundos
+        
+        if settings.SMTP_PORT == 465:
+            with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=timeout) as server:
+                server.login(settings.SMTP_USER, settings.SMTP_PASS)
+                server.sendmail(message["From"], email_to, message.as_string())
+        else:
+            with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=timeout) as server:
+                if settings.SMTP_PORT == 587:
+                    server.starttls()
+                server.login(settings.SMTP_USER, settings.SMTP_PASS)
+                server.sendmail(message["From"], email_to, message.as_string())
+                
         logger.info(f"E-mail de recuperação enviado para {email_to}")
         return True
+    except ConnectionRefusedError:
+        logger.error(f"Conexão recusada ao tentar enviar e-mail para {email_to} via {settings.SMTP_HOST}:{settings.SMTP_PORT}")
+        return False
+    except smtplib.SMTPAuthenticationError:
+        logger.error(f"Falha de autenticação SMTP para o usuário {settings.SMTP_USER}")
+        return False
+    except smtplib.SMTPConnectError:
+        logger.error(f"Erro de conexão SMTP para {settings.SMTP_HOST}")
+        return False
     except Exception as e:
-        logger.error(f"Erro ao enviar e-mail para {email_to}: {e}")
+        logger.error(f"Erro inesperado ao enviar e-mail para {email_to}: {type(e).__name__}: {e}")
         return False

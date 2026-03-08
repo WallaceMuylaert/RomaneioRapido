@@ -1,5 +1,5 @@
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
 from backend.core.security import verify_password, create_access_token, get_current_user, get_password_hash
@@ -90,7 +90,7 @@ def update_me(request: Request, update_data: UserUpdate, db: Session = Depends(g
 
 @router.post("/forgot-password")
 @limiter.limit("5/minute")
-def forgot_password(request: Request, data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+def forgot_password(request: Request, data: ForgotPasswordRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     try:
         user = get_user_by_email(db, data.email)
         if user:
@@ -103,7 +103,12 @@ def forgot_password(request: Request, data: ForgotPasswordRequest, db: Session =
             user.reset_token_expires = datetime.now() + timedelta(hours=1)
             db.commit()
             
-            send_reset_password_email(user.email, token)
+            # Executa o envio de e-mail em segundo plano para evitar 502/Timeout
+            background_tasks.add_task(send_reset_password_email, user.email, token)
+            logger.info(f"Solicitação de recuperação de senha para {user.email} - e-mail enviado via background task.")
+        else:
+            # Log interno para depuração (não revelado ao frontend)
+            logger.warning(f"Solicitação de recuperação de senha ignorada: email {data.email} não encontrado no banco.")
             
         # Mesmo que o usuário não exista, retornamos sucesso por segurança (impedir enumeração)
         return {"message": "Se o e-mail existir em nossa base, um link de recuperação será enviado."}
