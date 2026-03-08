@@ -13,8 +13,10 @@ def get_category(db: Session, category_id: int):
 
 def create_category(db: Session, category: CategoryCreate):
     # Assign position as the next available
-    max_pos = db.query(Category).count()
-    db_category = Category(**category.model_dump(), position=max_pos)
+    from sqlalchemy import func
+    max_pos = db.query(func.max(Category.position)).scalar()
+    new_pos = (max_pos + 1) if max_pos is not None else 0
+    db_category = Category(**category.model_dump(), position=new_pos)
     db.add(db_category)
     db.commit()
     db.refresh(db_category)
