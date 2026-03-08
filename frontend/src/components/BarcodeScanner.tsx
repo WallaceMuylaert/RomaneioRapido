@@ -11,7 +11,9 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
     const scannerRef = useRef<Html5Qrcode | null>(null)
     const containerId = "reader"
     const [scanSuccess, setScanSuccess] = useState(false)
-    const [permissionError, setPermissionError] = useState(false)
+    const [errorMessage, setErrorMessage] = useState<string | null>(null)
+    const [isSecureContext, setIsSecureContext] = useState(true)
+    const [needsPermission, setNeedsPermission] = useState(true)
     const isScanningRef = useRef(false)
 
     const stopScanner = async () => {
@@ -26,50 +28,69 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
 
     const startScanner = async () => {
         if (!scannerRef.current) return
-        setPermissionError(false)
+        setErrorMessage(null)
+        setNeedsPermission(false)
+
+        // Verifica se o contexto é seguro (HTTPS ou localhost)
+        if (!window.isSecureContext) {
+            setIsSecureContext(false)
+            setErrorMessage("A câmera só pode ser acessada em conexões seguras (HTTPS).")
+            return
+        }
 
         try {
-            // Explicitly request camera permissions first
-            const cameras = await Html5Qrcode.getCameras()
-            if (cameras && cameras.length > 0) {
-                await stopScanner()
+            await stopScanner()
 
-                const config = {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.0
-                }
+            const config = {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0,
+                rememberLastUsedCamera: true
+            }
 
+            // Tenta iniciar com a câmera traseira (environment)
+            try {
                 await scannerRef.current.start(
                     { facingMode: "environment" },
                     config,
                     (decodedText) => {
-                        // Evitar múltiplas chamadas consecutivas
                         if (isScanningRef.current) return
                         isScanningRef.current = true
-
-                        console.log("CÓDIGO ENCONTRADO:", decodedText)
                         setScanSuccess(true)
-
-                        // Feedback tátil
                         if (navigator.vibrate) navigator.vibrate([100, 50, 100])
-
-                        // Mostra o sucesso por 1 segundo antes de fechar e processar
                         setTimeout(() => {
                             onScan(decodedText)
                             stopScanner().then(onClose)
                         }, 1000)
                     },
-                    () => {
-                        // Ignora erros normais (quando nenhum código é achado no frame)
-                    }
+                    () => { }
                 )
-            } else {
-                setPermissionError(true)
+            } catch (err) {
+                console.warn("Falha ao iniciar com environment, tentando qualquer câmera...", err)
+                // Fallback: tenta qualquer câmera disponível
+                await scannerRef.current.start(
+                    { facingMode: "user" }, // Tenta a frontal como último recurso
+                    config,
+                    (decodedText) => {
+                        if (isScanningRef.current) return
+                        isScanningRef.current = true
+                        setScanSuccess(true)
+                        if (navigator.vibrate) navigator.vibrate([100, 50, 100])
+                        setTimeout(() => {
+                            onScan(decodedText)
+                            stopScanner().then(onClose)
+                        }, 1000)
+                    },
+                    () => { }
+                )
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("FALHA AO INICIAR:", err)
-            setPermissionError(true)
+            if (err?.includes?.("NotAllowedError") || err?.name === "NotAllowedError") {
+                setErrorMessage("Permissão de câmera negada. Por favor, permita o acesso nas configurações do seu navegador.")
+            } else {
+                setErrorMessage("Não foi possível acessar a câmera. Verifique se ela não está sendo usada por outro app.")
+            }
         }
     }
 
@@ -77,12 +98,16 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
         const html5QrCode = new Html5Qrcode(containerId)
         scannerRef.current = html5QrCode
 
-        const timer = setTimeout(() => {
-            startScanner()
-        }, 500)
+        // Verifica se já temos permissão (tenta descobrir sem disparar o prompt)
+        navigator.permissions?.query?.({ name: 'camera' as PermissionName }).then(status => {
+            if (status.state === 'granted') {
+                startScanner()
+            }
+        }).catch(() => {
+            // Se falhar a checagem, apenas deixa o usuário clicar no botão
+        })
 
         return () => {
-            clearTimeout(timer)
             stopScanner()
         }
     }, [])
@@ -107,7 +132,32 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
                 </div>
 
                 <div className="p-4 bg-gray-900 border-x border-gray-900 relative">
-                    <div className="relative rounded-2xl overflow-hidden bg-black aspect-square shadow-2xl">
+                    <div className="relative rounded-2xl overflow-hidden bg-black aspect-square shadow-2xl flex items-center justify-center">
+
+                        {/* Modal de Pré-Permissão */}
+                        {needsPermission && !errorMessage && (
+                            <div className="absolute inset-0 z-50 bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
+                                <div className="w-20 h-20 bg-brand-500/20 rounded-full flex items-center justify-center mb-6 border border-brand-500/30">
+                                    <Camera className="w-10 h-10 text-brand-400 animate-pulse" />
+                                </div>
+                                <h3 className="text-xl font-black text-white mb-3">Acesso à Câmera</h3>
+                                <p className="text-slate-400 text-sm font-medium mb-8 leading-relaxed">
+                                    Para ler códigos de barras e QR Codes, precisamos da sua permissão para usar a câmera traseira do dispositivo.
+                                </p>
+                                <button
+                                    onClick={startScanner}
+                                    className="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-2xl shadow-lg shadow-brand-500/20 transition-all active:scale-95 text-sm uppercase tracking-wider"
+                                >
+                                    Permitir Câmera
+                                </button>
+                                <button
+                                    onClick={onClose}
+                                    className="mt-4 text-slate-500 text-xs font-bold uppercase tracking-widest hover:text-slate-300 transition-colors"
+                                >
+                                    Agora não
+                                </button>
+                            </div>
+                        )}
 
                         {/* Overlay de Sucesso */}
                         {scanSuccess && (
@@ -136,15 +186,17 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
                     </div>
                 </div>
 
-                <div className={`p-6 transition-colors duration-300 text-center ${scanSuccess ? 'bg-emerald-50' : permissionError ? 'bg-red-50' : 'bg-white'}`}>
-                    {permissionError ? (
+                <div className={`p-6 transition-colors duration-300 text-center ${scanSuccess ? 'bg-emerald-50' : errorMessage ? 'bg-red-50' : 'bg-white'}`}>
+                    {errorMessage ? (
                         <>
                             <p className="text-[13px] text-red-600 font-bold mb-3">
-                                Permissão de câmera negada ou dispositivo não encontrado.
+                                {errorMessage}
                             </p>
-                            <p className="text-[11px] text-red-500/80 mb-4">
-                                Verifique as configurações do seu navegador ou celular e permita o acesso à câmera para usar o leitor.
-                            </p>
+                            {!isSecureContext && (
+                                <p className="text-[11px] text-amber-600 mb-4 bg-amber-50 p-2 rounded-lg border border-amber-100">
+                                    Dica: Acesse usando <strong>https://</strong> ou <strong>localhost</strong> para habilitar a câmera.
+                                </p>
+                            )}
                             <button
                                 onClick={startScanner}
                                 className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-full text-xs font-bold transition-colors"
