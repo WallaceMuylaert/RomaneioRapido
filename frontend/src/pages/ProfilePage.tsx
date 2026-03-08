@@ -516,45 +516,66 @@ export default function ProfilePage() {
                                     <div className="bg-white border border-brand-100 rounded-[2.5rem] p-8 sm:p-10 shadow-xl shadow-brand-100/50 relative overflow-hidden group/plan">
                                         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-full blur-[80px] -mr-20 -mt-20 transition-transform duration-1000 group-hover/plan:scale-125" />
 
-                                        <div className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-10 items-center lg:items-start justify-between">
-                                            <div className="flex-1 text-center lg:text-left">
-                                                <div className="flex flex-col sm:flex-row items-center gap-4 mb-4 justify-center lg:justify-start">
-                                                    <h4 className="text-3xl sm:text-4xl font-extrabold text-slate-800 tracking-tight">{currentPlan.name}</h4>
-                                                    <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100/50 text-xs font-black uppercase tracking-widest rounded-full flex items-center gap-2 shadow-sm">
-                                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" /> Ativo
+                                        <div className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center lg:items-center justify-between">
+                                            <div className="flex-1 text-center lg:text-left space-y-4">
+                                                <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
+                                                    <h4 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">{currentPlan.name}</h4>
+                                                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100/50 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 shadow-sm self-center">
+                                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Ativo
                                                     </span>
                                                 </div>
                                                 <p className="text-slate-500 text-sm sm:text-base font-medium max-w-sm mx-auto lg:mx-0 leading-relaxed">{currentPlan.description}</p>
+
+                                                {/* Botão Gerenciar Assinatura (Movido para dentro do contexto do plano) */}
+                                                {user?.plan_id && !['trial'].includes(user.plan_id) && (
+                                                    <div className="pt-2 flex justify-center lg:justify-start">
+                                                        <button
+                                                            onClick={handleManageSubscription}
+                                                            className="h-11 px-5 text-sm font-bold bg-slate-900 text-white rounded-xl hover:bg-brand-600 transition-all shadow-lg shadow-slate-200 flex items-center gap-2 active:scale-95 group/btn"
+                                                        >
+                                                            <CreditCard className="w-4 h-4 text-slate-400 group-hover/btn:text-white transition-colors" />
+                                                            Gerenciar Assinatura
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            {/* Progress Meters */}
-                                            <div className="w-full lg:w-[28rem] flex-shrink-0 space-y-6 bg-slate-50/50 p-5 sm:p-8 rounded-3xl sm:rounded-[2rem] border border-slate-100 shadow-inner">
+                                            {/* Progress Meters - Refactored Grid */}
+                                            <div className="w-full lg:w-96 flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 bg-slate-50/80 p-6 sm:p-8 rounded-[2rem] border border-slate-100/50 shadow-inner">
                                                 <div className="group/progress">
-                                                    <div className="flex justify-between items-end mb-3">
-                                                        <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Produtos</span>
-                                                        <span className="text-base font-black text-brand-600"><span className="text-slate-800 text-2xl">{usage.products.used}</span> <span className="text-slate-300 mx-1">/</span> {usage.products.limit >= 999999 ? '∞' : usage.products.limit}</span>
+                                                    <div className="flex justify-between items-end mb-2.5 px-0.5">
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produtos</span>
+                                                        <span className="text-sm font-black text-slate-700">
+                                                            <span className="text-brand-600 text-xl">{usage.products.used}</span>
+                                                            <span className="text-slate-300 mx-1.5 font-light">/</span>
+                                                            {usage.products.limit >= 999999 ? '∞' : usage.products.limit}
+                                                        </span>
                                                     </div>
-                                                    <div className="h-3 w-full bg-slate-200/60 rounded-full overflow-hidden p-[3px] shadow-inner">
+                                                    <div className="h-2.5 w-full bg-slate-200/50 rounded-full overflow-hidden p-0.5 shadow-inner">
                                                         <div
-                                                            className="h-full bg-gradient-to-r from-brand-400 to-brand-600 rounded-full transition-all duration-1000 shadow-sm relative overflow-hidden"
+                                                            className="h-full bg-gradient-to-r from-brand-500 to-indigo-600 rounded-full transition-all duration-1000 shadow-sm relative"
                                                             style={{ width: `${calculateProgress(usage.products.used, usage.products.limit)}%` }}
                                                         >
-                                                            <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]" style={{ backgroundImage: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }} />
+                                                            <div className="absolute inset-0 bg-white/20 w-full animate-shimmer" style={{ backgroundImage: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)' }} />
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 <div className="group/progress">
-                                                    <div className="flex justify-between items-end mb-3">
-                                                        <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Categorias</span>
-                                                        <span className="text-base font-black text-brand-600"><span className="text-slate-800 text-2xl">{usage.categories.used}</span> <span className="text-slate-300 mx-1">/</span> {usage.categories.limit >= 999999 ? '∞' : usage.categories.limit}</span>
+                                                    <div className="flex justify-between items-end mb-2.5 px-0.5">
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Categorias</span>
+                                                        <span className="text-sm font-black text-slate-700">
+                                                            <span className="text-brand-600 text-xl">{usage.categories.used}</span>
+                                                            <span className="text-slate-300 mx-1.5 font-light">/</span>
+                                                            {usage.categories.limit >= 999999 ? '∞' : usage.categories.limit}
+                                                        </span>
                                                     </div>
-                                                    <div className="h-3 w-full bg-slate-200/60 rounded-full overflow-hidden p-[3px] shadow-inner">
+                                                    <div className="h-2.5 w-full bg-slate-200/50 rounded-full overflow-hidden p-0.5 shadow-inner">
                                                         <div
-                                                            className="h-full bg-gradient-to-r from-brand-400 to-brand-600 rounded-full transition-all duration-1000 shadow-sm relative overflow-hidden"
+                                                            className="h-full bg-gradient-to-r from-brand-500 to-indigo-600 rounded-full transition-all duration-1000 shadow-sm relative"
                                                             style={{ width: `${calculateProgress(usage.categories.used, usage.categories.limit)}%` }}
                                                         >
-                                                            <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]" style={{ backgroundImage: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }} />
+                                                            <div className="absolute inset-0 bg-white/20 w-full animate-shimmer" style={{ backgroundImage: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)' }} />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -583,62 +604,68 @@ export default function ProfilePage() {
                                         <p className="text-slate-500 font-medium mt-1 text-sm">Escolha a melhor opção para o tamanho do seu negócio.</p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 auto-rows-fr">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 auto-rows-fr">
                                         {PLANS.filter(p => !p.hidden).map((p) => {
                                             const isSelected = p.id === effectivePlanId
                                             const isPopular = p.highlight
 
-                                            // Flex column layout inside the card ensures the button is always at the bottom
                                             return (
                                                 <div
                                                     key={p.id}
-                                                    className={`group p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] border transition-all duration-300 flex flex-col h-full relative overflow-hidden ${isSelected
-                                                        ? 'border-brand-300 bg-brand-50 shadow-xl shadow-brand-200/50 ring-2 ring-brand-100'
-                                                        : 'border-slate-200/80 bg-white hover:border-brand-300 hover:shadow-2xl hover:shadow-slate-200/50 hover:sm:-translate-y-2'
+                                                    className={`group p-8 rounded-[2.5rem] border transition-all duration-500 flex flex-col h-full relative overflow-hidden ${isSelected
+                                                        ? 'border-brand-500 bg-brand-50/30 shadow-2xl shadow-brand-200/50 ring-1 ring-brand-200'
+                                                        : 'border-slate-200/80 bg-white hover:border-brand-300 hover:shadow-2xl hover:shadow-slate-200/50 hover:-translate-y-2'
                                                         }`}
                                                 >
+                                                    {/* Popular Badge */}
                                                     {isPopular && !isSelected && (
-                                                        <div className="absolute -top-4 -right-4 w-24 h-24 bg-brand-100 rounded-full blur-2xl opacity-50 transition-transform duration-500 group-hover:scale-150" />
+                                                        <div className="absolute top-0 right-0 p-4">
+                                                            <div className="bg-brand-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-lg shadow-brand-500/30 animate-pulse">
+                                                                Destaque
+                                                            </div>
+                                                        </div>
                                                     )}
 
-                                                    <div className="flex flex-col items-center sm:items-start lg:items-center xl:items-start gap-4 sm:gap-5 mb-6 sm:mb-8 text-center sm:text-left lg:text-center xl:text-left">
-                                                        <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[1.5rem] flex items-center justify-center shrink-0 transition-all ${isSelected ? 'bg-brand-600 text-white shadow-xl shadow-brand-500/30' : 'bg-slate-100 text-slate-500 group-hover:bg-brand-100 group-hover:text-brand-600 group-hover:shadow-lg'
+                                                    <div className="flex flex-col items-start gap-5 mb-8">
+                                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 ${isSelected ? 'bg-brand-600 text-white shadow-xl shadow-brand-600/30' : 'bg-slate-50 text-slate-400 group-hover:bg-brand-100 group-hover:text-brand-600'
                                                             }`}>
-                                                            <CreditCard className="w-6 h-6 sm:w-7 sm:h-7" />
+                                                            <Zap className={`w-7 h-7 ${isSelected ? 'animate-pulse' : ''}`} />
                                                         </div>
-                                                        <div className="mt-1 sm:mt-0">
-                                                            <h4 className="font-extrabold text-slate-800 text-xl sm:text-2xl tracking-tight leading-none mb-2 sm:mb-3">{p.name}</h4>
-                                                            {isPopular && <span className="inline-block text-[9px] sm:text-[10px] font-black bg-brand-600 text-white px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg uppercase tracking-widest shadow-sm ring-4 ring-brand-100/50">Mais Popular</span>}
+                                                        <div>
+                                                            <h4 className="font-extrabold text-slate-900 text-2xl tracking-tight leading-none mb-2">{p.name}</h4>
+                                                            <p className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest">{p.id === 'trial' ? 'Acesso inicial' : 'Assinatura mensal'}</p>
                                                         </div>
                                                     </div>
 
-                                                    <div className="mb-8 sm:mb-10 flex-grow">
-                                                        <ul className="space-y-3 sm:space-y-4">
-                                                            {p.features.slice(0, 3).map((feat, i) => (
-                                                                <li key={i} className="flex items-start gap-2.5 sm:gap-3 text-xs sm:text-[14px] font-semibold text-slate-600 justify-center sm:justify-start lg:justify-center xl:justify-start">
-                                                                    <Check className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 mt-0.5 sm:mt-0 ${isSelected ? 'text-brand-600' : 'text-slate-300 group-hover:text-brand-500'}`} />
-                                                                    <span className="leading-relaxed text-left">{feat}</span>
+                                                    <div className="mb-10 flex-grow">
+                                                        <ul className="space-y-4">
+                                                            {p.features.slice(0, 4).map((feat, i) => (
+                                                                <li key={i} className="flex items-start gap-3.5 text-sm font-semibold text-slate-600 transition-colors group-hover:text-slate-900">
+                                                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isSelected ? 'bg-brand-100 text-brand-600' : 'bg-slate-50 text-slate-300 group-hover:bg-brand-50 group-hover:text-brand-500'}`}>
+                                                                        <Check className="w-3.5 h-3.5" />
+                                                                    </div>
+                                                                    <span className="leading-tight">{feat}</span>
                                                                 </li>
                                                             ))}
                                                         </ul>
                                                     </div>
 
-                                                    <div className="border-t border-slate-100/80 pt-6 sm:pt-8 mt-auto">
-                                                        <div className="flex items-baseline justify-center sm:justify-start lg:justify-center xl:justify-start gap-1.5 sm:gap-2 mb-4 sm:mb-6">
-                                                            <p className="font-black text-slate-800 text-3xl sm:text-4xl tracking-tighter">{p.price}</p>
-                                                            <p className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest">/ mês</p>
+                                                    <div className="border-t border-slate-100/80 pt-8 mt-auto flex flex-col items-center">
+                                                        <div className="flex items-baseline gap-1 mb-8">
+                                                            <p className="font-black text-slate-900 text-4xl tracking-tighter">{p.price}</p>
+                                                            {p.period && <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{p.period}</p>}
                                                         </div>
                                                         <button
                                                             onClick={() => !isSelected && handleSubscribe(p.id)}
                                                             disabled={isSelected || isSubscribing === p.id}
-                                                            className={`w-full h-12 sm:h-14 rounded-xl sm:rounded-[1.25rem] text-sm sm:text-[15px] font-black transition-all flex items-center justify-center gap-2 ${isSelected
-                                                                ? 'bg-brand-600 text-white shadow-xl shadow-brand-500/30 cursor-default ring-4 ring-brand-100'
-                                                                : 'bg-slate-100 text-slate-700 hover:bg-brand-600 hover:text-white shadow-sm hover:shadow-brand-500/20 hover:scale-[1.02]'
+                                                            className={`w-full h-14 rounded-2xl text-[15px] font-black transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 ${isSelected
+                                                                ? 'bg-brand-100 text-brand-700 cursor-default font-black border border-brand-200'
+                                                                : 'bg-slate-900 text-white hover:bg-brand-600 shadow-xl shadow-slate-200 hover:shadow-brand-500/30'
                                                                 }`}
                                                         >
                                                             {isSubscribing === p.id
-                                                                ? <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                                                                : isSelected ? 'Plano Atual' : 'Assinar Plano'}
+                                                                ? <Loader2 className="w-5 h-5 animate-spin" />
+                                                                : isSelected ? 'Plano atual' : 'Próximo Passo'}
                                                         </button>
                                                     </div>
                                                 </div>

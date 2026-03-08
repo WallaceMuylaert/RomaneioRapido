@@ -5,6 +5,7 @@ import LoadingOverlay from '../components/LoadingOverlay'
 import { Package, Eye, EyeOff, Loader2, ArrowLeft, Zap, BarChart3, ScanBarcode, User, Mail, Lock } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import api from '../services/api'
+import AlertModal from '../components/AlertModal'
 
 export default function LoginPage() {
     const { login } = useAuth()
@@ -23,19 +24,61 @@ export default function LoginPage() {
     const [fullName, setFullName] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
 
+    // Estado de Erros por Campo
+    const [errors, setErrors] = useState<{
+        fullName?: string,
+        email?: string,
+        password?: string,
+        confirmPassword?: string,
+        general?: string
+    }>({})
+
+    // Estado do Modal de Alerta
+    const [alertConfig, setAlertConfig] = useState<{
+        isOpen: boolean,
+        title: string,
+        message: string,
+        type: 'error' | 'warning' | 'success' | 'info'
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'info'
+    })
+
+    const validateForm = () => {
+        const newErrors: typeof errors = {}
+
+        if (isRegistering) {
+            if (!fullName.trim()) newErrors.fullName = 'Nome é obrigatório.'
+            if (password !== confirmPassword) newErrors.confirmPassword = 'As senhas não coincidem.'
+        }
+
+        if (!email.trim()) {
+            newErrors.email = 'Email é obrigatório.'
+        } else if (!/\S+@\S+\.\S+/.test(email)) {
+            newErrors.email = 'Email inválido.'
+        }
+
+        if (!password) {
+            newErrors.password = 'Senha é obrigatória.'
+        }
+
+        setErrors(newErrors)
+        return Object.keys(newErrors).length === 0
+    }
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
+        setErrors({})
+
+        if (!validateForm()) return
+
         setIsLoading(true)
 
         try {
             if (isRegistering) {
                 // Fluxo de Cadastro
-                if (password !== confirmPassword) {
-                    toast.error('As senhas não coincidem.')
-                    setIsLoading(false)
-                    return
-                }
-
                 await api.post('/users/', {
                     full_name: fullName,
                     email: email,
@@ -53,11 +96,45 @@ export default function LoginPage() {
                 navigate('/dashboard')
             }
         } catch (err: any) {
+            const status = err.response?.status
             const detail = err.response?.data?.detail
-            const errorMessage = Array.isArray(detail)
-                ? detail.map((e: any) => e.msg).join('; ')
-                : (typeof detail === 'string' ? detail : (isRegistering ? 'Erro ao criar conta.' : 'Email ou senha incorretos.'))
-            toast.error(errorMessage)
+
+            if (status === 429) {
+                setAlertConfig({
+                    isOpen: true,
+                    title: 'Muitas Tentativas',
+                    message: 'Detectamos muitas solicitações em um curto período. Por favor, aguarde alguns minutos antes de tentar novamente para sua segurança.',
+                    type: 'warning'
+                })
+                return
+            }
+
+            if (status === 401) {
+                // Por segurança, destacamos ambos os campos quando as credenciais falham
+                setErrors({
+                    email: !isRegistering ? 'Email ou senha incorretos' : undefined,
+                    password: !isRegistering ? ' ' : undefined // Espaço para manter o layout/cor
+                })
+                toast.error('Credenciais inválidas.')
+                return
+            }
+
+            if (detail === "O email já está em uso.") {
+                setErrors({ email: detail })
+                toast.error(detail)
+            } else if (Array.isArray(detail)) {
+                const serverErrors: any = {}
+                detail.forEach((e: any) => {
+                    const field = e.loc[e.loc.length - 1]
+                    serverErrors[field] = e.msg
+                })
+                setErrors(serverErrors)
+                toast.error('Verifique os campos destacados.')
+            } else {
+                const errorMessage = typeof detail === 'string' ? detail : (isRegistering ? 'Erro ao criar conta.' : 'Email ou senha incorretos.')
+                setErrors({ general: errorMessage })
+                toast.error(errorMessage)
+            }
         } finally {
             setIsLoading(false)
         }
@@ -67,6 +144,7 @@ export default function LoginPage() {
         setIsRegistering(!isRegistering)
         setFullName('')
         setConfirmPassword('')
+        setErrors({})
     }
 
     return (
@@ -159,17 +237,23 @@ export default function LoginPage() {
                                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                            <User className="h-4 w-4 text-slate-400" />
+                                            <User className={`h-4 w-4 ${errors.fullName ? 'text-red-400' : 'text-slate-400'}`} />
                                         </div>
                                         <input
                                             type="text"
                                             value={fullName}
-                                            onChange={(e) => setFullName(e.target.value)}
+                                            onChange={(e) => {
+                                                setFullName(e.target.value)
+                                                if (errors.fullName) setErrors(prev => ({ ...prev, fullName: undefined }))
+                                            }}
                                             placeholder="João da Silva"
                                             required
-                                            className="w-full h-14 pl-12 pr-6 bg-white border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all font-bold text-sm shadow-sm"
+                                            className={`w-full h-14 pl-12 pr-6 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.fullName
+                                                ? 'border-red-500 focus:ring-red-500/5 focus:border-red-500'
+                                                : 'border-slate-100 focus:ring-brand-500/5 focus:border-brand-500'}`}
                                         />
                                     </div>
+                                    {errors.fullName && <p className="text-[10px] font-black text-red-500 ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.fullName}</p>}
                                 </div>
                             )}
 
@@ -177,17 +261,23 @@ export default function LoginPage() {
                                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Endereço de Email</label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                        <Mail className="h-4 w-4 text-slate-400" />
+                                        <Mail className={`h-4 w-4 ${errors.email ? 'text-red-400' : 'text-slate-400'}`} />
                                     </div>
                                     <input
                                         type="email"
                                         value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
+                                        onChange={(e) => {
+                                            setEmail(e.target.value)
+                                            if (errors.email) setErrors(prev => ({ ...prev, email: undefined }))
+                                        }}
                                         placeholder="exemplo@email.com"
                                         required
-                                        className="w-full h-14 pl-12 pr-6 bg-white border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all font-bold text-sm shadow-sm"
+                                        className={`w-full h-14 pl-12 pr-6 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.email
+                                            ? 'border-red-500 focus:ring-red-500/5 focus:border-red-500'
+                                            : 'border-slate-100 focus:ring-brand-500/5 focus:border-brand-500'}`}
                                     />
                                 </div>
+                                {errors.email && <p className="text-[10px] font-black text-red-500 ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.email}</p>}
                             </div>
 
                             <div className="space-y-2">
@@ -205,15 +295,20 @@ export default function LoginPage() {
                                 </div>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                        <Lock className="h-4 w-4 text-slate-400" />
+                                        <Lock className={`h-4 w-4 ${errors.password ? 'text-red-400' : 'text-slate-400'}`} />
                                     </div>
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
+                                        onChange={(e) => {
+                                            setPassword(e.target.value)
+                                            if (errors.password) setErrors(prev => ({ ...prev, password: undefined }))
+                                        }}
                                         placeholder="••••••••••••"
                                         required
-                                        className="w-full h-14 pl-12 pr-14 bg-white border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all font-bold text-sm shadow-sm"
+                                        className={`w-full h-14 pl-12 pr-14 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.password
+                                            ? 'border-red-500 focus:ring-red-500/5 focus:border-red-500'
+                                            : 'border-slate-100 focus:ring-brand-500/5 focus:border-brand-500'}`}
                                     />
                                     <button
                                         type="button"
@@ -223,6 +318,7 @@ export default function LoginPage() {
                                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
                                 </div>
+                                {errors.password && <p className="text-[10px] font-black text-red-500 ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.password}</p>}
                             </div>
 
                             {isRegistering && (
@@ -230,17 +326,23 @@ export default function LoginPage() {
                                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirme a Senha</label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                            <Lock className="h-4 w-4 text-slate-400" />
+                                            <Lock className={`h-4 w-4 ${errors.confirmPassword ? 'text-red-400' : 'text-slate-400'}`} />
                                         </div>
                                         <input
                                             type="password"
                                             value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            onChange={(e) => {
+                                                setConfirmPassword(e.target.value)
+                                                if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: undefined }))
+                                            }}
                                             placeholder="••••••••••••"
                                             required
-                                            className="w-full h-14 pl-12 pr-6 bg-white border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all font-bold text-sm shadow-sm"
+                                            className={`w-full h-14 pl-12 pr-6 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.confirmPassword
+                                                ? 'border-red-500 focus:ring-red-500/5 focus:border-red-500'
+                                                : 'border-slate-100 focus:ring-brand-500/5 focus:border-brand-500'}`}
                                         />
                                     </div>
+                                    {errors.confirmPassword && <p className="text-[10px] font-black text-red-500 ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.confirmPassword}</p>}
                                 </div>
                             )}
 
@@ -274,6 +376,15 @@ export default function LoginPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Modal de Alerta Customizado */}
+            <AlertModal
+                isOpen={alertConfig.isOpen}
+                onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+            />
         </div>
     )
 }
