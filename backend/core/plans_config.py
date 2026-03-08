@@ -1,4 +1,4 @@
-import os
+from backend.core.config import settings
 
 # Configuração de Planos - Replicado para validação backend
 PLANS_CONFIG = {
@@ -11,11 +11,11 @@ PLANS_CONFIG = {
 
 PLANS_WITH_API_ACCESS = {"plus", "pro", "enterprise"}
 
-# Mapeamento plan_id -> Stripe Price ID (carregado do .env)
+# Mapeamento plan_id -> Stripe Price ID (carregado via pydantic settings)
 STRIPE_PRICE_MAP = {
-    "basic": os.getenv("STRIPE_PRICE_BASIC"),
-    "plus": os.getenv("STRIPE_PRICE_PLUS"),
-    "pro": os.getenv("STRIPE_PRICE_PRO"),
+    "basic": settings.STRIPE_PRICE_BASIC,
+    "plus": settings.STRIPE_PRICE_PLUS,
+    "pro": settings.STRIPE_PRICE_PRO,
 }
 
 # Mapeamento inverso: price_id -> plan_id
