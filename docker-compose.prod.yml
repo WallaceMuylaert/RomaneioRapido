@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,7 +27,7 @@ services:
       - CHOWN
       - SETUID
       - SETGID
-      - DAC_READ_SEARCH      # necessário para pg_isready / leitura de dados
+      - DAC_READ_SEARCH # necessário para pg_isready / leitura de dados
     deploy:
       resources:
         limits:
@@ -48,12 +48,15 @@ services:
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       - PYTHONUNBUFFERED=1
-      - ENVIRONMENT=production          # desativa /docs /redoc /openapi.json
+      - ENVIRONMENT=production # desativa /docs /redoc /openapi.json
       - CORS_ORIGINS=https://romaneiorapido.com.br,https://www.romaneiorapido.com.br
     command: uvicorn backend.server:app --host 0.0.0.0 --port 8002 --workers 4
     # Sem "ports" — acessível apenas pelo Nginx via rede interna
     networks:
       - internal
+    volumes:
+      - ./.log:/app/.log
+      - ./uploads:/app/uploads
     # ── Hardening ────────────────────────────────────────────────────────────
     security_opt:
       - no-new-privileges:true
@@ -92,7 +95,7 @@ services:
       - CHOWN
       - SETUID
       - SETGID
-      - NET_BIND_SERVICE     # permite bind na porta 80
+      - NET_BIND_SERVICE # permite bind na porta 80
     read_only: true
     tmpfs:
       - /tmp:size=32m,mode=1777
@@ -107,7 +110,8 @@ services:
 volumes:
   postgres_data:
 
+
 networks:
   internal:
     driver: bridge
-    internal: false   # false = frontend pode receber tráfego externo via "ports"
+    internal: false # false = frontend pode receber tráfego externo via "ports"
