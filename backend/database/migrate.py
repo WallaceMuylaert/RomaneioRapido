@@ -31,6 +31,7 @@ TYPE_MAP = {
     'BIGINT': 'BIGINT',
     'SMALLINT': 'SMALLINT',
     'VARCHAR': 'VARCHAR',
+    'STRING': 'VARCHAR',
     'TEXT': 'TEXT',
     'BOOLEAN': 'BOOLEAN',
     'DATE': 'DATE',
@@ -40,6 +41,7 @@ TYPE_MAP = {
     'NUMERIC': 'NUMERIC',
     'JSON': 'JSON',
     'JSONB': 'JSONB',
+    'ENUM': 'VARCHAR',  # Fallback para VARCHAR no sistema dinâmico
 }
 
 def get_pg_type(sa_type):
@@ -48,27 +50,61 @@ def get_pg_type(sa_type):
     return TYPE_MAP.get(type_name, 'VARCHAR')
 
 def get_existing_columns(table_name):
-    """Get list of existing columns in a table"""
+    """Get list of existing columns in a table from public schema"""
     with engine.connect() as conn:
         query = text("""
             SELECT column_name 
             FROM information_schema.columns 
-            WHERE table_name = :table_name;
+            WHERE table_name = :table_name AND table_schema = 'public';
         """)
         result = conn.execute(query, {"table_name": table_name})
         return {row[0] for row in result}
 
+def get_first_admin_id():
+    """Get the ID of the first admin user to use as default for multi-tenancy columns"""
+    with engine.connect() as conn:
+        try:
+            query = text("SELECT id FROM users WHERE is_admin = True ORDER BY id ASC LIMIT 1;")
+            result = conn.execute(query).fetchone()
+            return result[0] if result else None
+        except Exception:
+            return None
+
 def add_column_if_not_exists(table_name, column_name, column_type, nullable=True):
-    """Add a column to a table if it doesn't exist"""
+    """Add a column to a table if it doesn't exist, handling NOT NULL constraints safely"""
     with engine.connect() as conn:
         existing = get_existing_columns(table_name)
         
         if column_name not in existing:
-            null_clause = "" if nullable else " NOT NULL"
+            # Se for NOT NULL, adicionamos como NULLABLE primeiro para evitar erro no Postgres com tabelas existentes
+            actual_nullable = True if nullable else True
+            null_clause = "" # Default para nullable
+            
             print(f"  [+] Adding column '{column_name}' ({column_type}) to '{table_name}'...")
-            alter_query = text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}{null_clause};")
+            alter_query = text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type};")
             conn.execute(alter_query)
             conn.commit()
+
+            # Se a coluna era pra ser NOT NULL, precisamos preencher dados antes de aplicar a constraint
+            if not nullable:
+                default_val = None
+                if column_name in ['user_id', 'created_by']:
+                    default_val = get_first_admin_id()
+                
+                if default_val is not None:
+                    print(f"  [⚡] Filling existing rows for '{column_name}' with admin ID {default_val}...")
+                    update_query = text(f"UPDATE {table_name} SET {column_name} = :val WHERE {column_name} IS NULL;")
+                    conn.execute(update_query, {"val": default_val})
+                    conn.commit()
+                
+                print(f"  [🔒] Applying NOT NULL constraint to '{column_name}'...")
+                # Tenta aplicar NOT NULL, mas só se tivermos certeza que não há nulos
+                try:
+                    conn.execute(text(f"ALTER TABLE {table_name} ALTER COLUMN {column_name} SET NOT NULL;"))
+                    conn.commit()
+                except Exception as e:
+                    print(f"  ⚠️ Could not set NOT NULL for {column_name}: {e}")
+            
             return True
         return False
 
@@ -81,7 +117,7 @@ def sync_model_to_db(model_class):
         query = text("""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables 
-                WHERE table_name = :table_name
+                WHERE table_name = :table_name AND table_schema = 'public'
             );
         """)
         result = conn.execute(query, {"table_name": table_name}).fetchone()
@@ -124,6 +160,11 @@ def run_migrations():
     from backend.models.api_keys import ApiKey
     from sqlalchemy import Enum as _SAEnum
 
+    # Cria todas as tabelas (DDL principal) - Base para novas instalações
+    print("\n📦 Ensuring all tables exist (Metadata.create_all)...")
+    database.Base.metadata.create_all(bind=database.engine, checkfirst=True)
+    print("  ✅ Tables checked/created")
+
     # Cria enums manualmente se necessário
     try:
         print("\n🔧 Checking/Creating Enums...")
@@ -131,12 +172,7 @@ def run_migrations():
         _mt_enum.create(bind=database.engine, checkfirst=True)
         print("  ✅ Enums checked/created")
     except Exception as e:
-        print(f"  ⚠️ Warning creating enum: {e}")
-
-    # Cria todas as tabelas (DDL principal)
-    print("\n📦 Ensuring all tables exist (Metadata.create_all)...")
-    database.Base.metadata.create_all(bind=database.engine, checkfirst=True)
-    print("  ✅ Tables checked/created")
+        print(f"  ⚠️ Warning creating enum (may already exist): {e}")
 
     models = [
         User,
@@ -152,6 +188,7 @@ def run_migrations():
             sync_model_to_db(model)
         except Exception as e:
             print(f"  ❌ Error syncing {model.__tablename__}: {e}")
+            raise  # Halt migration if a critical error occurs
 
     # Inicializa o Admin se necessário
     try:
@@ -161,6 +198,7 @@ def run_migrations():
         print("  ✅ Admin initialization finished")
     except Exception as e:
         print(f"  ❌ Error initializing admin: {e}")
+        # Not raising here as admin init often depends on fully migrated DB
 
     print("\n" + "=" * 50)
     print("✅ Migration completed!")
@@ -170,5 +208,5 @@ if __name__ == "__main__":
     try:
         run_migrations()
     except Exception as e:
-        print(f"❌ Error during migration: {e}")
+        print(f"\n❌ FATAL: Error during migration: {e}")
         sys.exit(1)
