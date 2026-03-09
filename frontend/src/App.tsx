@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import LandingPage from './pages/LandingPage'
 import DashboardPage from './pages/DashboardPage'
@@ -135,9 +135,7 @@ function App() {
   return (
     <>
       <Toaster position="top-right" />
-      <AuthProvider>
-        <RouterProvider router={router} />
-      </AuthProvider>
+      <RouterProvider router={router} />
     </>
   )
 }
