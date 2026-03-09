@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Printer, Smartphone, FileText, X, Phone, Save, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import { toast } from 'react-hot-toast'
 import { maskPhone } from '../utils/masks'
 import AlertModal from './AlertModal'
+import { getBase64FromUrl } from '../utils/imageUtils'
+import logoImg from '../assets/romaneiorapido_logo.png'
 
 export interface CartItem {
     id: number
@@ -37,8 +39,14 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
     const [isEditingPhone, setIsEditingPhone] = useState(false)
     const [tempPhone, setTempPhone] = useState('')
     const [savingPhone, setSavingPhone] = useState(false)
+    const [logoBase64, setLogoBase64] = useState<string>('')
 
-    // Estado do AlertModal
+    // Carrega o logo dinamicamente para Base64 ao abrir o modal
+    useEffect(() => {
+        if (isOpen) {
+            getBase64FromUrl(logoImg).then(setLogoBase64).catch(console.error)
+        }
+    }, [isOpen])
     const [alertConfig, setAlertConfig] = useState<{
         isOpen: boolean,
         title: string,
@@ -143,8 +151,9 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
             <head>
                 <title>Romaneio - ${customerName}</title>
                 <style>
-                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #111827; }
-                    body::before { content: 'romaneiorapido.com.br'; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 60px; color: rgba(0,0,0,0.06); font-weight: 900; pointer-events: none; z-index: 9999; white-space: nowrap; }
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #111827; position: relative; }
+                    .watermark-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: -1; }
+                    .watermark-logo { width: 500px; opacity: 0.06; transform: rotate(-35deg); }
                     .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #e5e7eb; padding-bottom: 20px; }
                     .title { font-size: 24px; font-weight: bold; margin-bottom: 8px; }
                     .info { color: #4B5563; font-size: 14px; margin-bottom: 4px; }
@@ -155,6 +164,9 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                 </style>
             </head>
             <body>
+                <div class="watermark-container">
+                    ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
+                </div>
                 <div class="header">
                     <div class="title">DOCUMENTO DE ROMANEIO</div>
                     <div class="info"><strong>Cliente/Destino:</strong> ${customerName || 'N/A'}</div>
@@ -221,8 +233,9 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                 <style>
                     /* Largura típica de bobina 80mm e fonte monoespaçada parecida com cupom fiscal */
                     @page { margin: 0; }
-                    body { font-family: 'Courier New', Courier, monospace; width: 300px; padding: 10px; color: #000; margin: 0 auto; font-size: 12px; line-height: 1.2; }
-                    body::before { content: 'romaneiorapido.com.br'; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 24px; color: rgba(0,0,0,0.06); font-weight: 900; pointer-events: none; z-index: 9999; white-space: nowrap; }
+                    body { font-family: 'Courier New', Courier, monospace; width: 280px; padding: 10px; color: #000; margin: 0 auto; font-size: 11px; line-height: 1.2; }
+                    .watermark-container { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); width: 200px; opacity: 0.05; pointer-events: none; z-index: -1; }
+                    .watermark-logo { width: 100%; }
                     .center { text-align: center; }
                     .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
                     .bold { font-weight: bold; }
@@ -232,7 +245,13 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                 </style>
             </head>
             <body>
-                <div class="center bold" style="font-size: 16px; margin-bottom: 5px;">ROMANEIO RAPIDO</div>
+                <div class="watermark-container">
+                    ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
+                </div>
+                <div class="center" style="margin-bottom: 15px;">
+                    ${logoBase64 ? `<img src="${logoBase64}" style="width: 120px; height: auto;" />` : ''}
+                </div>
+                <div class="center bold" style="font-size: 16px; margin-bottom: 5px;">ROMANEIO RÁPIDO</div>
                 <div class="center" style="margin-bottom: 10px;">Comprovante de Separacao</div>
                 
                 <div>Data: ${dateStr}</div>
