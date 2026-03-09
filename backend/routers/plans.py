@@ -40,8 +40,8 @@ def _get_or_create_customer(user: User, db: Session) -> str:
 
 @router.get("/usage")
 def get_usage(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    product_count = db.query(Product).count()
-    category_count = db.query(Category).count()
+    product_count = db.query(Product).filter(Product.user_id == current_user.id, Product.is_active == True).count()
+    category_count = db.query(Category).filter(Category.user_id == current_user.id).count()
 
     plan = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["trial"])
 
