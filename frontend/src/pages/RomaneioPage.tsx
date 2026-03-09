@@ -49,6 +49,7 @@ interface StockLevel {
     min_stock: number
     unit: string
     price: number
+    image_base64: string | null
     is_low_stock: boolean
 }
 
@@ -141,6 +142,7 @@ export default function RomaneioPage() {
                     groups[m.romaneio_id] = {
                         id: m.romaneio_id,
                         created_at: m.created_at,
+                        clientId: m.client_id || m.client?.id || null,
                         customerName: m.client?.name || cName || 'Consumidor',
                         customerPhone: m.client?.phone || null,
                         items: [],
@@ -152,9 +154,10 @@ export default function RomaneioPage() {
                 groups[m.romaneio_id].totalValue += (m.quantity * (m.unit_price_snapshot || 0))
 
                 // Atualiza com dados do cliente se disponíveis (em caso de múltiplos itens, o último sobrescreve mas são do mesmo romaneio)
-                if (m.client) {
-                    groups[m.romaneio_id].customerName = m.client.name;
-                    groups[m.romaneio_id].customerPhone = m.client.phone;
+                if (m.client || m.client_id) {
+                    groups[m.romaneio_id].customerName = m.client?.name || groups[m.romaneio_id].customerName;
+                    groups[m.romaneio_id].customerPhone = m.client?.phone || groups[m.romaneio_id].customerPhone;
+                    groups[m.romaneio_id].clientId = m.client_id || m.client?.id || groups[m.romaneio_id].clientId;
                 }
             } else {
                 singles.push({
@@ -170,6 +173,7 @@ export default function RomaneioPage() {
                 ...s,
                 isGroup: false,
                 id: s.id,
+                clientId: s.client_id || s.client?.id || null,
                 items: [s], // Treat as a single-item group for actions
                 customerName: s.notes && s.notes.includes("Romaneio: ") ? s.notes.replace("Romaneio: ", "").trim() : (s.notes || ""),
                 totalValue: s.totalValue
@@ -573,7 +577,7 @@ export default function RomaneioPage() {
                     <button
                         onClick={() => {
                             setViewMovement({
-                                clientId: g.id ? null : g.id,
+                                clientId: g.clientId,
                                 customerName: g.customerName || 'Consumidor',
                                 createdAt: g.created_at,
                                 items: exportItems
@@ -588,7 +592,7 @@ export default function RomaneioPage() {
                     <button
                         onClick={() => {
                             setHistoricExport({
-                                clientId: g.id ? null : g.id, // we might not have client_id in grouped easily, but let's pass null for safety unless available. The API gets complex grouped items. Actually g has it? Let's check: g doesn't store client metadata well. To fix we'd need more data, let's keep it simple.
+                                clientId: g.clientId,
                                 customerName: g.customerName || 'Consumidor',
                                 createdAt: g.created_at,
                                 items: exportItems
@@ -1191,6 +1195,7 @@ export default function RomaneioPage() {
                             <table className="w-full text-sm">
                                 <thead className="sticky top-0 bg-gray-50/95 backdrop-blur shadow-sm z-10">
                                     <tr>
+                                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-16 text-center">Foto</th>
                                         <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Produto</th>
                                         <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Código</th>
                                         <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Estoque Atual</th>
@@ -1207,6 +1212,15 @@ export default function RomaneioPage() {
                                     ) : (
                                         currentEstoqueItems.map((s) => (
                                             <tr key={s.product_id} className="hover:bg-gray-50/50 transition-colors group">
+                                                <td className="px-4 py-3">
+                                                    <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center overflow-hidden mx-auto shadow-sm group-hover:shadow-md transition-shadow">
+                                                        {s.image_base64 ? (
+                                                            <img src={s.image_base64} alt={s.product_name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <Camera className="w-5 h-5 text-gray-200" />
+                                                        )}
+                                                    </div>
+                                                </td>
                                                 <td className="px-4 py-3 font-medium text-gray-900">{s.product_name}</td>
                                                 <td className="px-4 py-3 text-xs font-mono text-gray-400">{s.barcode || '—'}</td>
                                                 <td className="px-4 py-3 text-right font-semibold text-gray-800">
@@ -1258,10 +1272,19 @@ export default function RomaneioPage() {
                         ) : (
                             currentEstoqueItems.map((s) => (
                                 <div key={s.product_id} className="p-4 rounded-2xl bg-white border border-gray-100 shadow-sm space-y-4">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="font-bold text-gray-900 line-clamp-2">{s.product_name}</h3>
-                                            <p className="text-xs font-mono text-gray-400 mt-0.5">{s.barcode || 'Sem código'}</p>
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div className="flex items-center gap-4 min-w-0">
+                                            <div className="w-16 h-16 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+                                                {s.image_base64 ? (
+                                                    <img src={s.image_base64} alt={s.product_name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Camera className="w-6 h-6 text-gray-200" />
+                                                )}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h3 className="font-bold text-gray-900 line-clamp-2 leading-snug">{s.product_name}</h3>
+                                                <p className="text-[10px] font-mono text-gray-400 mt-1 uppercase tracking-wider">{s.barcode || 'Sem código'}</p>
+                                            </div>
                                         </div>
                                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${s.is_low_stock ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
                                             {s.is_low_stock ? 'BAIXO' : 'OK'}
@@ -1331,6 +1354,7 @@ export default function RomaneioPage() {
                 <RomaneioExportModal
                     isOpen={showExportModal}
                     onClose={resetCart}
+                    clientId={selectedClientId}
                     customerName={customerName || 'Consumidor'}
                     customerPhone={customerPhone}
                     items={cartItems}
@@ -1343,6 +1367,7 @@ export default function RomaneioPage() {
                     onClose={() => setHistoricExport(null)}
                     customerName={historicExport.customerName}
                     customerPhone={customerPhone}
+                    clientId={historicExport.clientId}
                     items={historicExport.items}
                     createdAt={historicExport.createdAt}
                 />
@@ -1355,6 +1380,8 @@ export default function RomaneioPage() {
                 onSuccess={(newClient) => {
                     const docInfo = newClient.document ? ` - CPF/CNPJ: ${newClient.document}` : ''
                     setCustomerName(`${newClient.name}${docInfo}`)
+                    setSelectedClientId(newClient.id)
+                    setCustomerPhone(newClient.phone)
                 }}
             />
 
@@ -1369,13 +1396,14 @@ export default function RomaneioPage() {
             {/* Visualização de Detalhes do Histórico */}
             {viewMovement && (
                 <MovementDetailsModal
+                    clientId={viewMovement.clientId}
                     customerName={viewMovement.customerName}
                     items={viewMovement.items}
                     createdAt={viewMovement.createdAt}
                     onClose={() => setViewMovement(null)}
-                    onExport={() => {
+                    onExport={(cid) => {
                         setHistoricExport({
-                            clientId: viewMovement.clientId,
+                            clientId: cid,
                             customerName: viewMovement.customerName,
                             createdAt: viewMovement.createdAt,
                             items: viewMovement.items

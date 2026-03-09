@@ -102,7 +102,7 @@ export default function ClientsPage() {
 
     const handleDelete = async (id: number) => {
         try {
-            await api.delete(`/ clients / ${id} `)
+            await api.delete(`/clients/${id}`)
             setDeleteConfirm(null)
             fetchClients()
             toast.success('Cliente excluído com sucesso!')
@@ -172,7 +172,7 @@ export default function ClientsPage() {
                                 clients.map((c, index) => (
                                     <tr
                                         key={c.id}
-                                        className={`transition - colors cursor - pointer group ${focusedIndex === index ? 'bg-brand-50 border-l-4 border-brand-500 shadow-inner' : 'hover:bg-slate-50/50'} `}
+                                        className={`transition-colors cursor-pointer group ${focusedIndex === index ? 'bg-brand-50 border-l-4 border-brand-500 shadow-inner' : 'hover:bg-slate-50/50'}`}
                                         onClick={() => openEdit(c)}
                                     >
                                         <td className="px-8 py-5">
@@ -206,7 +206,7 @@ export default function ClientsPage() {
                                                         e.stopPropagation()
                                                         setOpenMenuId(openMenuId === c.id ? null : c.id)
                                                     }}
-                                                    className={`p - 2.5 rounded - xl transition - all ${openMenuId === c.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'} `}
+                                                    className={`p-2.5 rounded-xl transition-all ${openMenuId === c.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
                                                 >
                                                     <MoreVertical className="w-5 h-5" />
                                                 </button>
@@ -239,6 +239,76 @@ export default function ClientsPage() {
                     </table>
                 </div>
 
+                {/* Mobile View - Cards */}
+                <div className="md:hidden divide-y divide-slate-100">
+                    {clients.length === 0 ? (
+                        <div className="py-20 text-center text-sm font-bold text-slate-400 italic">
+                            Nenhum cliente {searchQuery ? 'encontrado' : 'cadastrado'}.
+                        </div>
+                    ) : (
+                        clients.map((c) => (
+                            <div
+                                key={c.id}
+                                onClick={() => openEdit(c)}
+                                className="p-6 space-y-4 active:bg-slate-50 transition-colors"
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div className="space-y-1 min-w-0">
+                                        <h3 className="font-bold text-slate-800 text-base truncate">{c.name}</h3>
+                                        <p className="font-mono text-[10px] font-bold text-slate-400 uppercase tracking-widest">{c.document || 'Sem Documento'}</p>
+                                    </div>
+                                    <div className="relative">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setOpenMenuId(openMenuId === c.id ? null : c.id)
+                                            }}
+                                            className="p-2 bg-slate-50 text-slate-400 rounded-xl"
+                                        >
+                                            <MoreVertical className="w-5 h-5" />
+                                        </button>
+                                        {openMenuId === c.id && (
+                                            <>
+                                                <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                                                <div className="absolute right-0 top-12 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2">
+                                                    <button
+                                                        onClick={() => { openEdit(c); setOpenMenuId(null); }}
+                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600"
+                                                    >
+                                                        <Pencil className="w-4 h-4" /> Editar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => { setDeleteConfirm(c.id); setOpenMenuId(null); }}
+                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" /> Excluir
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 pt-2">
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter">Contato</p>
+                                        <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                            <Phone className="w-3 h-3" />
+                                            {c.phone ? maskPhone(c.phone) : '—'}
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter">Email</p>
+                                        <p className="text-xs font-bold text-slate-600 truncate flex items-center gap-1.5">
+                                            <Mail className="w-3 h-3" />
+                                            {c.email || '—'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
                 {/* Paginação */}
                 {totalPages > 1 && (
                     <div className="px-8 py-6 border-t border-slate-100/50 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/30">
@@ -261,10 +331,10 @@ export default function ClientsPage() {
                                             {i > 0 && arr[i - 1] !== p - 1 && <span className="text-slate-300 px-1 font-bold">...</span>}
                                             <button
                                                 onClick={() => fetchClients(p)}
-                                                className={`w - 10 h - 10 text - xs font - bold rounded - xl transition - all shadow - sm ${p === page
-                                                        ? 'bg-brand-600 text-white'
-                                                        : 'bg-white text-slate-500 border border-slate-200 hover:border-brand-300 hover:text-brand-600'
-                                                    } `}
+                                                className={`w-10 h-10 text-xs font-bold rounded-xl transition-all shadow-sm ${p === page
+                                                    ? 'bg-brand-600 text-white'
+                                                    : 'bg-white text-slate-500 border border-slate-200 hover:border-brand-300 hover:text-brand-600'
+                                                    }`}
                                             >
                                                 {p}
                                             </button>
