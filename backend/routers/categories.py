@@ -21,7 +21,7 @@ router = APIRouter(prefix="/categories")
 @limiter.limit("200/minute")
 def list_categories(request: Request, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     try:
-        return crud.get_categories(db, skip=skip, limit=limit)
+        return crud.get_categories(db, user_id=current_user.id, skip=skip, limit=limit)
     except HTTPException:
         raise
     except Exception as e:
@@ -33,7 +33,7 @@ def list_categories(request: Request, skip: int = 0, limit: int = 100, db: Sessi
 @limiter.limit("200/minute")
 def get_category(request: Request, category_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     try:
-        category = crud.get_category(db, category_id)
+        category = crud.get_category(db, category_id, user_id=current_user.id)
         if not category:
             raise HTTPException(status_code=404, detail="Categoria não encontrada")
         return category
@@ -50,7 +50,7 @@ def create_category(request: Request, category: CategoryCreate, db: Session = De
     try:
         # Validação de Limite do Plano
         plan = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["trial"])
-        current_count = db.query(Category).count()
+        current_count = db.query(Category).filter(Category.user_id == current_user.id).count()
         if current_count >= plan["limit_categories"]:
             raise HTTPException(
                 status_code=403, 
@@ -58,7 +58,7 @@ def create_category(request: Request, category: CategoryCreate, db: Session = De
             )
 
         logger.info(f"Usuário {current_user.email} criando categoria: {category.name}")
-        return crud.create_category(db, category)
+        return crud.create_category(db, category, user_id=current_user.id)
     except HTTPException:
         raise
     except Exception as e:
@@ -71,7 +71,7 @@ def create_category(request: Request, category: CategoryCreate, db: Session = De
 def reorder_categories(request: Request, reorder_request: ReorderRequest, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
     try:
         logger.info(f"Usuário {current_user.email} reordenou {len(reorder_request.items)} categorias")
-        crud.reorder_categories(db, reorder_request.items)
+        crud.reorder_categories(db, reorder_request.items, user_id=current_user.id)
         return {"detail": "Ordem atualizada com sucesso"}
     except HTTPException:
         raise
@@ -85,7 +85,7 @@ def reorder_categories(request: Request, reorder_request: ReorderRequest, db: Se
 def update_category(request: Request, category_id: int, category: CategoryUpdate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
     try:
         logger.info(f"Usuário {current_user.email} atualizou categoria ID={category_id}")
-        updated = crud.update_category(db, category_id, category)
+        updated = crud.update_category(db, category_id, category, user_id=current_user.id)
         if not updated:
             raise HTTPException(status_code=404, detail="Categoria não encontrada")
         return updated
@@ -101,7 +101,7 @@ def update_category(request: Request, category_id: int, category: CategoryUpdate
 def delete_category(request: Request, category_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
     try:
         logger.warning(f"Usuário {current_user.email} deletou a categoria ID={category_id}")
-        deleted = crud.delete_category(db, category_id)
+        deleted = crud.delete_category(db, category_id, user_id=current_user.id)
         if not deleted:
             raise HTTPException(status_code=404, detail="Categoria não encontrada")
         return deleted
