@@ -2,14 +2,15 @@ import { X, ShoppingBag, ArrowRight } from 'lucide-react'
 import type { CartItem } from './RomaneioExportModal'
 
 interface MovementDetailsModalProps {
+    clientId: number | null
     customerName: string
     items: CartItem[]
     createdAt?: string | null
     onClose: () => void
-    onExport: () => void
+    onExport: (clientId: number | null) => void
 }
 
-export default function MovementDetailsModal({ customerName, items, createdAt, onClose, onExport }: MovementDetailsModalProps) {
+export default function MovementDetailsModal({ clientId, customerName, items, createdAt, onClose, onExport }: MovementDetailsModalProps) {
     const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
     const totalValue = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
     const dateStr = createdAt ? new Date(createdAt).toLocaleString('pt-BR') : ''
@@ -84,7 +85,7 @@ export default function MovementDetailsModal({ customerName, items, createdAt, o
                     </div>
 
                     <button
-                        onClick={onExport}
+                        onClick={() => onExport(clientId)}
                         className="w-full h-14 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-slate-900/10"
                     >
                         Exportar ou Imprimir

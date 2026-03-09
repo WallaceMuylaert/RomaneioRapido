@@ -348,6 +348,7 @@ export default function MovementsPage() {
 
             {sharingMovement && (
                 <MovementDetailsModal
+                    clientId={sharingMovement.client?.id || null}
                     customerName={sharingMovement.notes?.startsWith('Romaneio: ') ? sharingMovement.notes.replace('Romaneio: ', '').trim() : (sharingMovement.notes || 'Detalhes da Movimentação')}
                     createdAt={sharingMovement.created_at}
                     items={[{
@@ -360,9 +361,9 @@ export default function MovementsPage() {
                         image: sharingMovement.product_image
                     }]}
                     onClose={() => setSharingMovement(null)}
-                    onExport={() => {
+                    onExport={(cid) => {
                         setExportingMovement({
-                            clientId: sharingMovement.client?.id || null,
+                            clientId: cid,
                             customerName: sharingMovement.client?.name || (sharingMovement.notes?.startsWith('Romaneio: ') ? sharingMovement.notes.replace('Romaneio: ', '').trim() : (sharingMovement.notes || 'Consumidor')),
                             createdAt: sharingMovement.created_at,
                             phone: sharingMovement.client?.phone || null,

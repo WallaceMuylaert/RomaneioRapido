@@ -86,7 +86,9 @@ def get_stock_levels(db: Session, user_id: int):
             "barcode": product.barcode,
             "stock_quantity": product.stock_quantity,
             "min_stock": product.min_stock,
+            "unit": product.unit,
             "price": product.price,
+            "image_base64": product.image_base64,
             "is_low_stock": product.stock_quantity <= product.min_stock
         })
     return levels

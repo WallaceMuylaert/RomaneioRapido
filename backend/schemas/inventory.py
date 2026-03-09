@@ -59,6 +59,7 @@ class StockLevel(BaseModel):
     min_stock: float
     unit: str = "UN"
     price: float = 0.0
+    image_base64: Optional[str] = None
     is_low_stock: bool
 
     model_config = ConfigDict(from_attributes=True)
