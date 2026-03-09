@@ -23,6 +23,7 @@ export default function LoginPage() {
     // Estados Exclusivos de Cadastro
     const [fullName, setFullName] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
     // Estado de Erros por Campo
     const [errors, setErrors] = useState<{
@@ -339,7 +340,7 @@ export default function LoginPage() {
                                             <Lock className={`h-4 w-4 ${errors.confirmPassword ? 'text-red-400' : 'text-slate-400'}`} />
                                         </div>
                                         <input
-                                            type="password"
+                                            type={showConfirmPassword ? 'text' : 'password'}
                                             value={confirmPassword}
                                             onChange={(e) => {
                                                 setConfirmPassword(e.target.value)
@@ -347,10 +348,17 @@ export default function LoginPage() {
                                             }}
                                             placeholder="••••••••••••"
                                             required
-                                            className={`w-full h-14 pl-12 pr-6 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.confirmPassword
+                                            className={`w-full h-14 pl-12 pr-14 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.confirmPassword
                                                 ? 'border-red-500 focus:ring-red-500/5 focus:border-red-500'
                                                 : 'border-slate-100 focus:ring-brand-500/5 focus:border-brand-500'}`}
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-brand-600 p-2 transition-colors"
+                                        >
+                                            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                        </button>
                                     </div>
                                     {errors.confirmPassword && <p className="text-[10px] font-black text-red-500 ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.confirmPassword}</p>}
                                 </div>
