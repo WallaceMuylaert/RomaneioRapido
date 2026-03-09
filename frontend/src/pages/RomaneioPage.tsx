@@ -889,14 +889,14 @@ export default function RomaneioPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 border-gray-100 pt-3 sm:pt-0 mt-3 sm:mt-0">
-                                                <div className="text-left sm:text-right w-32 shrink-0">
+                                            <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-6 border-t sm:border-t-0 border-gray-100 pt-3 sm:pt-0 mt-3 sm:mt-0">
+                                                <div className="text-left sm:text-right w-24 sm:w-32 shrink-0">
                                                     <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest bg-gray-100/50 sm:bg-transparent px-1.5 py-0.5 sm:p-0 rounded-md inline-block sm:block mb-0.5">Subtotal</p>
-                                                    <p className="text-[15px] font-black text-slate-800 leading-none">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}</p>
+                                                    <p className="text-sm sm:text-[15px] font-black text-slate-800 leading-none">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}</p>
                                                 </div>
 
                                                 {/* Controle de Quantidade */}
-                                                <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
+                                                <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-0.5 sm:p-1 shadow-sm shrink-0">
                                                     <button
                                                         onClick={() => {
                                                             const newQty = Math.max(0, item.quantity - 1)
@@ -906,7 +906,7 @@ export default function RomaneioPage() {
                                                                 updateCartQuantity(item.id, String(newQty), item.unit)
                                                             }
                                                         }}
-                                                        className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                                        className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
                                                     >
                                                         <Minus className="w-3 h-3" />
                                                     </button>
@@ -917,20 +917,20 @@ export default function RomaneioPage() {
                                                         value={item.quantity}
                                                         onChange={(e) => updateCartQuantity(item.id, e.target.value, item.unit)}
                                                         onBlur={() => handleQuantityBlur(item.id)}
-                                                        className="w-12 h-7 text-center text-sm font-bold text-gray-900 border-none focus:ring-0 bg-transparent px-0"
+                                                        className="w-10 sm:w-12 h-6 sm:h-7 text-center text-xs sm:text-sm font-bold text-gray-900 border-none focus:ring-0 bg-transparent px-0"
                                                     />
                                                     <button
                                                         onClick={() => updateCartQuantity(item.id, String(item.quantity + 1), item.unit)}
-                                                        className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition-colors"
+                                                        className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition-colors"
                                                     >
                                                         <Plus className="w-3 h-3" />
                                                     </button>
-                                                    <span className="text-[10px] font-bold text-gray-400 pr-2 uppercase ml-1">{item.unit}</span>
+                                                    <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 pr-1 sm:pr-2 uppercase ml-0.5 sm:ml-1">{item.unit}</span>
                                                 </div>
 
                                                 <button
                                                     onClick={() => setItemToRemove(item.id)}
-                                                    className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                    className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
