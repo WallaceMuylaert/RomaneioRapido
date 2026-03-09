@@ -47,6 +47,7 @@ def list_movements(
     try:
         items, total = crud.get_movements(
             db, 
+            user_id=current_user.id,
             product_id=product_id, 
             search=search, 
             movement_type=movement_type, 
@@ -70,7 +71,7 @@ def list_movements(
 @limiter.limit("200/minute")
 def get_stock_levels(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     try:
-        return crud.get_stock_levels(db)
+        return crud.get_stock_levels(db, user_id=current_user.id)
     except HTTPException:
         raise
     except Exception as e:

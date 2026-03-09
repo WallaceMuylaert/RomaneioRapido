@@ -332,7 +332,7 @@ export default function MovementsPage() {
                                 <ChevronLeft className="w-5 h-5" />
                             </button>
                             <div className="flex items-center px-4 h-10 rounded-xl bg-slate-50 border border-slate-200 text-xs font-black text-slate-600 tracking-widest">
-                                PAGE {page} / {totalPages}
+                                PÁGINA {page} / {totalPages}
                             </div>
                             <button
                                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}

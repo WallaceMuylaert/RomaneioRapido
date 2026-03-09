@@ -126,12 +126,22 @@ export default function LoginPage() {
                 const serverErrors: any = {}
                 detail.forEach((e: any) => {
                     const field = e.loc[e.loc.length - 1]
-                    serverErrors[field] = e.msg
+                    let msg = e.msg
+                    if (msg.toLowerCase().includes('value error,')) {
+                        msg = msg.replace(/value error, /i, '')
+                    }
+                    serverErrors[field] = msg
                 })
                 setErrors(serverErrors)
                 toast.error('Verifique os campos destacados.')
             } else {
-                const errorMessage = typeof detail === 'string' ? detail : (isRegistering ? 'Erro ao criar conta.' : 'Email ou senha incorretos.')
+                let errorMessage = typeof detail === 'string' ? detail : (isRegistering ? 'Erro ao criar conta.' : 'Email ou senha incorretos.')
+
+                // Sanitização de erros do Pydantic/Backend
+                if (errorMessage.toLowerCase().includes('value error,')) {
+                    errorMessage = errorMessage.replace(/value error, /i, '')
+                }
+
                 setErrors({ general: errorMessage })
                 toast.error(errorMessage)
             }

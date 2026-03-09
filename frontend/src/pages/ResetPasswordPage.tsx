@@ -47,7 +47,7 @@ export default function ResetPasswordPage() {
             toast.success('Senha redefinida com sucesso!')
             setTimeout(() => navigate('/login'), 3000)
         } catch (err: any) {
-            const errorMsg = err.response?.data?.detail || 'Erro ao redefinir senha. O link pode ter expirado.'
+            const errorMsg = (err.response?.data?.detail || 'Erro ao redefinir senha. O link pode ter expirado.').replace('Value error, ', '')
             toast.error(errorMsg)
         } finally {
             setIsLoading(false)

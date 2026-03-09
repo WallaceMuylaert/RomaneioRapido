@@ -117,7 +117,7 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Dashboard</h1>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Painel</h1>
                     <p className="text-sm font-semibold text-slate-400">
                         Bem-vindo de volta, <span className="text-brand-600">{user?.full_name.split(' ')[0]}</span>! Aqui está um resumo do seu estoque.
                     </p>
@@ -274,7 +274,7 @@ export default function DashboardPage() {
                                                 </div>
                                             </td>
                                             <td className="px-8 py-5 font-mono text-xs font-bold text-slate-400">
-                                                {p.sku || 'N/A'}
+                                                {p.sku || 'N/D'}
                                             </td>
                                             <td className="px-8 py-5 text-right">
                                                 <div className="flex items-baseline justify-end gap-1.5">

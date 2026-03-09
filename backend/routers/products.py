@@ -33,8 +33,8 @@ def list_products(
 ):
     try:
         skip = (page - 1) * per_page
-        total = crud.count_products(db, search=search, category_id=category_id)
-        items = crud.get_products(db, skip=skip, limit=per_page, search=search, category_id=category_id, sort_by=sort_by, order=order)
+        total = crud.count_products(db, user_id=current_user.id, search=search, category_id=category_id)
+        items = crud.get_products(db, user_id=current_user.id, skip=skip, limit=per_page, search=search, category_id=category_id, sort_by=sort_by, order=order)
         pages = math.ceil(total / per_page) if total > 0 else 1
         return {
             "items": items,
@@ -54,7 +54,7 @@ def list_products(
 @limiter.limit("200/minute")
 def get_product_by_barcode(request: Request, barcode: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     try:
-        product = crud.get_product_by_barcode(db, barcode)
+        product = crud.get_product_by_barcode(db, barcode, user_id=current_user.id)
         if not product:
             raise HTTPException(status_code=404, detail="Produto não encontrado com este código de barras")
         return product
@@ -69,7 +69,7 @@ def get_product_by_barcode(request: Request, barcode: str, db: Session = Depends
 @limiter.limit("200/minute")
 def get_product(request: Request, product_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     try:
-        product = crud.get_product(db, product_id)
+        product = crud.get_product(db, product_id, user_id=current_user.id)
         if not product:
             raise HTTPException(status_code=404, detail="Produto não encontrado")
         return product
@@ -86,7 +86,7 @@ def create_product(request: Request, product: ProductCreate, db: Session = Depen
     try:
         # Validação de Limite do Plano
         plan = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["trial"])
-        current_count = crud.count_products(db)
+        current_count = crud.count_products(db, user_id=current_user.id)
         if current_count >= plan["limit_products"]:
             raise HTTPException(
                 status_code=403, 
@@ -95,14 +95,14 @@ def create_product(request: Request, product: ProductCreate, db: Session = Depen
 
         logger.info(f"Usuário {current_user.email} criando novo produto: sku={product.sku} barcode={product.barcode}")
         if product.barcode:
-            existing = crud.get_product_by_barcode(db, product.barcode)
+            existing = crud.get_product_by_barcode(db, product.barcode, user_id=current_user.id)
             if existing:
                 raise HTTPException(status_code=400, detail="Código de barras já cadastrado")
         if product.sku:
-            existing = crud.get_product_by_sku(db, product.sku)
+            existing = crud.get_product_by_sku(db, product.sku, user_id=current_user.id)
             if existing:
                 raise HTTPException(status_code=400, detail="SKU já cadastrado")
-        return crud.create_product(db, product)
+        return crud.create_product(db, product, user_id=current_user.id)
     except HTTPException:
         raise
     except Exception as e:
@@ -115,7 +115,7 @@ def create_product(request: Request, product: ProductCreate, db: Session = Depen
 def update_product(request: Request, product_id: int, product: ProductUpdate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
     try:
         logger.info(f"Usuário {current_user.email} modificou o produto ID={product_id}")
-        updated = crud.update_product(db, product_id, product)
+        updated = crud.update_product(db, product_id, product, user_id=current_user.id)
         if not updated:
             raise HTTPException(status_code=404, detail="Produto não encontrado")
         return updated
@@ -131,7 +131,7 @@ def update_product(request: Request, product_id: int, product: ProductUpdate, db
 def delete_product(request: Request, product_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
     try:
         logger.warning(f"Usuário {current_user.email} solicitou exclusão do produto ID={product_id}")
-        deleted = crud.delete_product(db, product_id)
+        deleted = crud.delete_product(db, product_id, user_id=current_user.id)
         if not deleted:
             raise HTTPException(status_code=404, detail="Produto não encontrado")
         return deleted

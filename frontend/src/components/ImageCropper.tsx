@@ -100,7 +100,7 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
                     >
                         <img
                             ref={imgRef}
-                            alt="Crop preview"
+                            alt="Prévia do corte"
                             src={imageSrc}
                             onLoad={onImageLoad}
                             className="max-w-full max-h-[50vh] object-contain rounded-lg shadow-sm"

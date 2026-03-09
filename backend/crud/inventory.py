@@ -45,13 +45,14 @@ def create_movement(db: Session, movement: InventoryMovementCreate, user_id: int
 
 def get_movements(
     db: Session, 
+    user_id: int,
     product_id: int = None, 
     search: str = None,
     movement_type: MovementType = None,
     skip: int = 0, 
     limit: int = 100
 ):
-    query = db.query(InventoryMovement).options(
+    query = db.query(InventoryMovement).filter(InventoryMovement.created_by == user_id).options(
         joinedload(InventoryMovement.product),
         joinedload(InventoryMovement.client)
     )
@@ -75,8 +76,8 @@ def get_movements(
     return items, total
 
 
-def get_stock_levels(db: Session):
-    products = db.query(Product).filter(Product.is_active == True).all()
+def get_stock_levels(db: Session, user_id: int):
+    products = db.query(Product).filter(Product.is_active == True, Product.user_id == user_id).all()
     levels = []
     for product in products:
         levels.append({

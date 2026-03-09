@@ -391,7 +391,7 @@ export default function ProductsPage() {
                         onClick={() => setCameraOpen(true)}
                         className="h-9 px-4 text-[13px] font-semibold border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
                     >
-                        <Camera className="w-4 h-4" /> Scan rápido
+                        <Camera className="w-4 h-4" /> Leitura rápida
                     </button>
                     <button
                         onClick={() => openCreate()}
@@ -445,7 +445,7 @@ export default function ProductsPage() {
                                             {sortBy === 'name' ? (sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ArrowDownUp className="w-3 h-3 opacity-30" />}
                                         </div>
                                     </th>
-                                    <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">SKU / Barcode</th>
+                                    <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">SKU / Cód. Barras</th>
                                     <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Categoria</th>
                                     <th
                                         className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell cursor-pointer hover:text-brand-600 transition-colors"
