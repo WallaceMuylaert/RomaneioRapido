@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
+import { translateError } from '../utils/errors'
 import {
     ArrowLeft,
     Plus,
@@ -238,7 +239,7 @@ export default function CategoryProductsPage() {
             fetchProducts()
             toast.success('Produto salvo com sucesso!')
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao salvar produto')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao salvar produto')
         } finally {
             setSaving(false)
         }

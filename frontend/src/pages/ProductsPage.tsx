@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, type FormEvent } from 'react'
 import api from '../services/api'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
+import { translateError } from '../utils/errors'
 import {
     Plus,
     Search,
@@ -325,7 +326,7 @@ export default function ProductsPage() {
             fetchProducts()
             toast.success('Produto salvo com sucesso!')
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao salvar produto')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao salvar produto')
         } finally {
             setSaving(false)
         }

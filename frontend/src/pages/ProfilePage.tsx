@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { toast } from 'react-hot-toast'
+import { translateError } from '../utils/errors'
 import {
     Camera,
     Loader2,
@@ -215,7 +216,7 @@ export default function ProfilePage() {
             fetchApiKeys()
             toast.success('Chave de API criada com sucesso!')
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao criar chave de API')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao criar chave de API')
         } finally {
             setIsCreatingApiKey(false)
         }
@@ -229,7 +230,7 @@ export default function ProfilePage() {
             setConfirmRevokeId(null)
             fetchApiKeys()
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao revogar chave')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao revogar chave')
         } finally {
             setRevokingKeyId(null)
         }
@@ -312,7 +313,7 @@ export default function ProfilePage() {
             }, 1000)
 
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao atualizar perfil')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao atualizar perfil')
         } finally {
             setSaving(false)
         }
@@ -335,7 +336,7 @@ export default function ProfilePage() {
                 window.location.reload()
             }, 1000)
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao atualizar assinatura')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao atualizar assinatura')
         } finally {
             setIsSubscribing(null)
         }
@@ -346,7 +347,7 @@ export default function ProfilePage() {
             const res = await api.post('/plans/portal')
             window.location.href = res.data.portal_url
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao abrir portal de assinatura')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao abrir portal de assinatura')
         }
     }
 

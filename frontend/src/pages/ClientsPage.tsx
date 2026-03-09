@@ -172,13 +172,12 @@ export default function ClientsPage() {
                                 clients.map((c, index) => (
                                     <tr
                                         key={c.id}
-                                        className={`transition-colors cursor-pointer group ${focusedIndex === index ? 'bg-brand-50 border-l-4 border-brand-500 shadow-inner' : 'hover:bg-slate-50/50'}`}
-                                        onClick={() => openEdit(c)}
+                                        className={`transition-colors border-b border-slate-100/50 ${focusedIndex === index ? 'bg-brand-50 border-l-4 border-brand-500 shadow-inner' : 'hover:bg-slate-50/50'}`}
                                     >
-                                        <td className="px-8 py-5">
+                                        <td className="px-8 py-5" onClick={() => openEdit(c)}>
                                             <p className="font-bold text-slate-800 text-sm truncate max-w-[200px]">{c.name}</p>
                                         </td>
-                                        <td className="px-8 py-5">
+                                        <td className="px-8 py-5" onClick={() => openEdit(c)}>
                                             <p className="font-mono text-xs font-bold text-slate-500">{c.document || '—'}</p>
                                         </td>
                                         <td className="px-8 py-5 space-y-1">
@@ -214,7 +213,8 @@ export default function ClientsPage() {
                                                 {openMenuId === c.id && (
                                                     <>
                                                         <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                                                        <div className="absolute right-0 top-12 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                                                        <div className={`absolute right-0 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 
+                                                            ${index === clients.length - 1 && clients.length > 2 ? 'bottom-full mb-2 origin-bottom-right' : 'top-12 origin-top-right'}`}>
                                                             <button
                                                                 onClick={() => { openEdit(c); setOpenMenuId(null); }}
                                                                 className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors"
@@ -237,6 +237,7 @@ export default function ClientsPage() {
                             )}
                         </tbody>
                     </table>
+                    {clients.length > 0 && <div className="h-32 md:h-20" />}
                 </div>
 
                 {/* Mobile View - Cards */}
@@ -249,11 +250,10 @@ export default function ClientsPage() {
                         clients.map((c) => (
                             <div
                                 key={c.id}
-                                onClick={() => openEdit(c)}
-                                className="p-6 space-y-4 active:bg-slate-50 transition-colors"
+                                className="p-6 space-y-4 active:bg-slate-50 transition-colors border-b border-slate-100/50"
                             >
                                 <div className="flex justify-between items-start">
-                                    <div className="space-y-1 min-w-0">
+                                    <div className="space-y-1 min-w-0" onClick={() => openEdit(c)}>
                                         <h3 className="font-bold text-slate-800 text-base truncate">{c.name}</h3>
                                         <p className="font-mono text-[10px] font-bold text-slate-400 uppercase tracking-widest">{c.document || 'Sem Documento'}</p>
                                     </div>
