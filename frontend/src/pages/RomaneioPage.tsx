@@ -840,7 +840,7 @@ export default function RomaneioPage() {
                                         title="Usar câmera"
                                     >
                                         <Camera className="w-5 h-5" />
-                                        <span className="hidden sm:inline uppercase tracking-widest">Scanner</span>
+                                        <span className="hidden sm:inline uppercase tracking-widest">Leitor</span>
                                     </button>
                                 </div>
                             </div>
@@ -891,7 +891,7 @@ export default function RomaneioPage() {
 
                                             <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-6 border-t sm:border-t-0 border-gray-100 pt-3 sm:pt-0 mt-3 sm:mt-0">
                                                 <div className="text-left sm:text-right w-24 sm:w-32 shrink-0">
-                                                    <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest bg-gray-100/50 sm:bg-transparent px-1.5 py-0.5 sm:p-0 rounded-md inline-block sm:block mb-0.5">Subtotal</p>
+                                                    <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest bg-gray-100/50 sm:bg-transparent px-1.5 py-0.5 sm:p-0 rounded-md inline-block sm:block mb-0.5">Total Item</p>
                                                     <p className="text-sm sm:text-[15px] font-black text-slate-800 leading-none">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}</p>
                                                 </div>
 

@@ -22,7 +22,7 @@ export interface Plan {
 export const PLANS: Plan[] = [
     {
         id: 'trial',
-        name: 'Start',
+        name: 'Inicial',
         price: 'Grátis',
         period: '7 dias',
         description: 'Dê o primeiro passo e experimente nossa plataforma sem compromisso.',
@@ -36,7 +36,7 @@ export const PLANS: Plan[] = [
         limit_products: 10,
         limit_categories: 3,
         limit_api_keys: 0,
-        api_rate_limit: '0/minute',
+        api_rate_limit: '0/minuto',
         color: 'slate'
     },
     {
@@ -75,7 +75,7 @@ export const PLANS: Plan[] = [
         limit_products: 200,
         limit_categories: 20,
         limit_api_keys: 2,
-        api_rate_limit: '60/minute',
+        api_rate_limit: '60/minuto',
         color: 'blue'
     },
     {
@@ -95,12 +95,12 @@ export const PLANS: Plan[] = [
         limit_products: 999999,
         limit_categories: 999999,
         limit_api_keys: 5,
-        api_rate_limit: '120/minute',
+        api_rate_limit: '120/minuto',
         color: 'purple'
     },
     {
         id: 'enterprise',
-        name: 'Enterprise',
+        name: 'Corporativo',
         price: 'Sob Consulta',
         description: 'Solução sob medida e exclusiva para grandes corporações.',
         features: [
@@ -114,7 +114,7 @@ export const PLANS: Plan[] = [
         limit_products: 999999,
         limit_categories: 999999,
         limit_api_keys: 20,
-        api_rate_limit: '300/minute',
+        api_rate_limit: '300/minuto',
         color: 'slate',
         hidden: true
     }

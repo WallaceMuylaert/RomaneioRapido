@@ -19,7 +19,7 @@ import { useState } from 'react'
 import TrialExpiredBanner from './TrialExpiredBanner'
 
 const navItems = [
-    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/dashboard', label: 'Painel', icon: LayoutDashboard },
     { to: '/romaneio', label: 'Romaneio', icon: ClipboardList },
     { to: '/movimentacoes', label: 'Movimentações', icon: ArrowRightLeft },
     { to: '/produtos', label: 'Produtos', icon: Boxes },
@@ -104,7 +104,7 @@ export default function AppLayout() {
                             <Clock className="w-4 h-4 shrink-0" />
                             {!isCollapsed && (
                                 <span className="text-xs font-bold whitespace-nowrap">
-                                    Trial: {user.trial_days_remaining ?? 0} {(user.trial_days_remaining ?? 0) === 1 ? 'dia' : 'dias'}
+                                    Teste: {user.trial_days_remaining ?? 0} {(user.trial_days_remaining ?? 0) === 1 ? 'dia' : 'dias'}
                                 </span>
                             )}
                         </div>
