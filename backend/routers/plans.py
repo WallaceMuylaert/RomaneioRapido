@@ -2,7 +2,7 @@ import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
-from backend.core.security import get_current_user
+from backend.routers.auth import get_current_user
 from backend.models.users import User
 from backend.models.products import Product
 from backend.models.categories import Category
@@ -17,15 +17,10 @@ router = APIRouter(prefix="/plans")
 
 
 def _get_stripe():
-    """Inicializa Stripe com a chave secreta e valida se está configurada."""
-    key = settings.STRIPE_SECRET_KEY
-    if not key or "COLOQUE" in key or "AQUI" in key:
-        logger.warning("Stripe tentado sem configuração válida (chave vazia ou placeholder)")
-        raise HTTPException(
-            status_code=500, 
-            detail="Configuração do Stripe incompleta no servidor (STRIPE_SECRET_KEY ausente no .env)"
-        )
-    stripe.api_key = key
+    """Inicializa Stripe com a chave secreta."""
+    if not settings.STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=500, detail="Stripe não configurado")
+    stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 def _get_or_create_customer(user: User, db: Session) -> str:
@@ -124,11 +119,8 @@ def create_portal(
 @router.post("/webhook")
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     """Webhook da Stripe para processar eventos de assinatura."""
-    # Validação rápida de configuração
-    if not settings.STRIPE_SECRET_KEY or not settings.STRIPE_WEBHOOK_SECRET or \
-       "COLOQUE" in settings.STRIPE_SECRET_KEY or "AQUI" in settings.STRIPE_WEBHOOK_SECRET:
-        logger.error("Stripe Webhook tentado sem configuração válida no .env")
-        raise HTTPException(status_code=500, detail="Stripe não configurado no servidor")
+    if not settings.STRIPE_SECRET_KEY or not settings.STRIPE_WEBHOOK_SECRET:
+        raise HTTPException(status_code=500, detail="Stripe não configurado")
 
     stripe.api_key = settings.STRIPE_SECRET_KEY
     payload = await request.body()
