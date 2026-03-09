@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
+import { translateError } from '../utils/errors'
 import { Plus, Pencil, Trash2, X, Loader2, Tags, GripVertical, Check, MoreVertical, ArrowDownAZ } from 'lucide-react'
 import ConfirmModal from '../components/ConfirmModal'
 
@@ -78,7 +79,7 @@ export default function CategoriesPage() {
             fetchCategories()
             toast.success('Categoria salva com sucesso!')
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao salvar categoria')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao salvar categoria')
         } finally {
             setSaving(false)
         }

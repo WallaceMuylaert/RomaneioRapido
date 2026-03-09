@@ -4,6 +4,7 @@ import api from '../services/api'
 import { toast } from 'react-hot-toast'
 import { X } from 'lucide-react'
 import { maskDocument, maskPhone } from '../utils/masks'
+import { translateError } from '../utils/errors'
 
 interface Client {
     id: number
@@ -50,11 +51,11 @@ export default function ClientModal({ isOpen, onClose, onSuccess, editingClient 
         setSaving(true)
         try {
             const payload = {
-                name: form.name,
-                phone: form.phone || null,
-                document: form.document || null,
-                email: form.email || null,
-                notes: form.notes || null,
+                name: form.name.trim(),
+                phone: form.phone.trim() || null,
+                document: form.document.trim() || null,
+                email: form.email.trim() || null,
+                notes: form.notes.trim() || null,
             }
 
             let res
@@ -68,7 +69,8 @@ export default function ClientModal({ isOpen, onClose, onSuccess, editingClient 
             onSuccess(res.data)
             onClose()
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao salvar cliente')
+            const detail = err.response?.data?.detail
+            toast.error(translateError(detail) || 'Erro ao salvar cliente')
         } finally {
             setSaving(false)
         }

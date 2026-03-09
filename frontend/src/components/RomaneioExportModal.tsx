@@ -3,6 +3,7 @@ import { Printer, Smartphone, FileText, X, Phone, Save, Loader2 } from 'lucide-r
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import { toast } from 'react-hot-toast'
+import { translateError } from '../utils/errors'
 import { maskPhone } from '../utils/masks'
 import AlertModal from './AlertModal'
 import { getBase64FromUrl } from '../utils/imageUtils'
@@ -136,7 +137,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
             if (onPhoneUpdated) onPhoneUpdated(tempPhone)
 
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao salvar o contato.')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao salvar o contato.')
         } finally {
             setSavingPhone(false)
         }

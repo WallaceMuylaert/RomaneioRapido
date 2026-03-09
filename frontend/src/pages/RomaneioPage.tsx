@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useBlocker } from 'react-router-dom'
 import api from '../services/api'
 import { toast } from 'react-hot-toast'
+import { translateError } from '../utils/errors'
 import {
     ScanBarcode,
     Plus,
@@ -543,7 +544,7 @@ export default function RomaneioPage() {
             fetchStockLevels() // Atualiza estoque local
 
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao registrar movimentações do romaneio!')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao registrar movimentações do romaneio!')
         } finally {
             setSubmitting(false)
         }
@@ -1092,7 +1093,97 @@ export default function RomaneioPage() {
                                                             >
                                                                 <MoreVertical className="w-5 h-5" />
                                                             </button>
-                                                            {renderHistoryMenu(g)}
+                                                            <div className={`${openHistoryMenuId === (g.id || g.romaneio_id) ? 'relative' : 'hidden'}`}>
+                                                                <div className={`absolute right-0 w-52 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 text-left
+                                                                    ${groupedMovements.indexOf(g) >= groupedMovements.length - 3 && groupedMovements.length > 3 ? 'bottom-full mb-2 origin-bottom-right' : 'top-12 origin-top-right'}`}>
+                                                                    {/* Conteúdo do menu movido para cá para permitir controle de posição dinâmico */}
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const exportItems = g.items.map((m: any) => ({
+                                                                                id: m.product_id,
+                                                                                name: m.product_name || 'Produto Excluído',
+                                                                                barcode: m.product_barcode_snapshot || m.product?.barcode || null,
+                                                                                quantity: m.quantity,
+                                                                                unit: m.unit_snapshot || m.product?.unit || 'un',
+                                                                                price: m.unit_price_snapshot || m.product?.price || 0
+                                                                            }))
+                                                                            setViewMovement({
+                                                                                clientId: g.clientId,
+                                                                                customerName: g.customerName || 'Consumidor',
+                                                                                createdAt: g.created_at,
+                                                                                items: exportItems
+                                                                            })
+                                                                            setCustomerPhone(g.customerPhone)
+                                                                            setOpenHistoryMenuId(null)
+                                                                        }}
+                                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-colors"
+                                                                    >
+                                                                        <ShoppingCart className="w-4 h-4" /> Ver Itens / Detalhes
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const exportItems = g.items.map((m: any) => ({
+                                                                                id: m.product_id,
+                                                                                name: m.product_name || 'Produto Excluído',
+                                                                                barcode: m.product_barcode_snapshot || m.product?.barcode || null,
+                                                                                quantity: m.quantity,
+                                                                                unit: m.unit_snapshot || m.product?.unit || 'un',
+                                                                                price: m.unit_price_snapshot || m.product?.price || 0
+                                                                            }))
+                                                                            setHistoricExport({
+                                                                                clientId: g.clientId,
+                                                                                customerName: g.customerName || 'Consumidor',
+                                                                                createdAt: g.created_at,
+                                                                                items: exportItems
+                                                                            })
+                                                                            setCustomerPhone(g.customerPhone)
+                                                                            setOpenHistoryMenuId(null)
+                                                                        }}
+                                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                                                    >
+                                                                        <Smartphone className="w-4 h-4" /> Imprimir / Zap
+                                                                    </button >
+                                                                    <button
+                                                                        onClick={async () => {
+                                                                            setOpenHistoryMenuId(null)
+                                                                            try {
+                                                                                setLoading(true)
+                                                                                const newCart: CartItem[] = []
+                                                                                for (const historicItem of g.items) {
+                                                                                    try {
+                                                                                        const res = await api.get(`/products/${historicItem.product_id}`)
+                                                                                        if (res.data) {
+                                                                                            newCart.push({
+                                                                                                id: res.data.id,
+                                                                                                name: res.data.name,
+                                                                                                barcode: res.data.barcode,
+                                                                                                quantity: historicItem.quantity,
+                                                                                                unit: res.data.unit,
+                                                                                                price: res.data.price
+                                                                                            })
+                                                                                        }
+                                                                                    } catch {
+                                                                                        toast.error(`Produto "${historicItem.product_name || 'Desconhecido'}" não encontrado.`)
+                                                                                    }
+                                                                                }
+                                                                                setCartItems(newCart)
+                                                                                setCustomerName(g.customerName || '')
+                                                                                setCustomerPhone(null)
+                                                                                setActiveTab('romaneio')
+                                                                                toast.success('Pedido copiado! Revise o romaneio.')
+                                                                            } catch (err) {
+                                                                                toast.error('Erro ao copiar pedido.')
+                                                                            } finally {
+                                                                                setLoading(false)
+                                                                            }
+                                                                        }}
+                                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                                                    >
+                                                                        <Plus className="w-4 h-4" /> Copiar Pedido
+                                                                    </button>
+                                                                </div>
+                                                                <div className="fixed inset-0 z-40" onClick={() => setOpenHistoryMenuId(null)} />
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </td>
