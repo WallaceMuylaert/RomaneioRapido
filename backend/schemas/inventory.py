@@ -61,5 +61,7 @@ class StockLevel(BaseModel):
     price: float = 0.0
     image_base64: Optional[str] = None
     is_low_stock: bool
+    color: Optional[str] = None
+    size: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -33,6 +33,8 @@ interface Product {
     min_stock: number
     unit: string
     price: number
+    color?: string | null
+    size?: string | null
 }
 
 interface ClientResult {
@@ -52,6 +54,8 @@ interface StockLevel {
     price: number
     image_base64: string | null
     is_low_stock: boolean
+    color?: string | null
+    size?: string | null
 }
 
 export default function RomaneioPage() {
@@ -60,6 +64,7 @@ export default function RomaneioPage() {
 
     // Novo Formato "Carrinho"
     const [cartItems, setCartItems] = useState<CartItem[]>([])
+    const [stockQuantities, setStockQuantities] = useState<Record<number, string>>({})
     const [customerName, setCustomerName] = useState('')
     const [customerPhone, setCustomerPhone] = useState<string | null>(null)
     const [selectedClientId, setSelectedClientId] = useState<number | null>(null)
@@ -417,13 +422,16 @@ export default function RomaneioPage() {
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [])
 
-    const addToCart = (product: Product) => {
+    const addToCart = (product: Product, quantityOverride?: number) => {
+        const qtyToAdd = quantityOverride !== undefined ? quantityOverride : 1;
+        if (qtyToAdd <= 0) return;
+
         setCartItems(prev => {
             const existing = prev.find(item => item.id === product.id)
             if (existing) {
-                return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item)
+                return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + qtyToAdd } : item)
             }
-            return [{ id: product.id, name: product.name, barcode: product.barcode, quantity: 1, unit: product.unit, price: product.price || 0 }, ...prev]
+            return [{ id: product.id, name: product.name, barcode: product.barcode, quantity: qtyToAdd, unit: product.unit, price: product.price || 0, color: product.color, size: product.size }, ...prev]
         })
     }
 
@@ -721,10 +729,10 @@ export default function RomaneioPage() {
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={() => setClientModalOpen(true)}
-                                                className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md hover:bg-emerald-100 transition-colors uppercase tracking-wider"
+                                                className="text-[11px] font-black text-white bg-emerald-500 hover:bg-emerald-600 px-3 py-1.5 rounded-lg transition-all shadow-sm flex items-center gap-1 uppercase tracking-wider"
                                                 title="Cadastrar novo cliente agora"
                                             >
-                                                + Novo Cliente
+                                                <Plus className="w-3 h-3" /> Cadastre / Novo Cliente
                                             </button>
                                         </div>
                                     </div>
@@ -827,7 +835,14 @@ export default function RomaneioPage() {
                                                         className={`w-full px-5 py-3 text-left hover:bg-slate-50 flex items-center gap-4 transition-colors ${activeProductIndex === index ? 'bg-slate-50 border-l-4 border-brand-500' : ''}`}
                                                     >
                                                         <div className="min-w-0 pr-4">
-                                                            <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
+                                                            <p className="text-sm font-semibold text-gray-900 truncate">
+                                                                {product.name}
+                                                                {(product.color || product.size) && (
+                                                                    <span className="ml-2 text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md font-semibold">
+                                                                        {[product.color, product.size].filter(Boolean).join(' • ')}
+                                                                    </span>
+                                                                )}
+                                                            </p>
                                                             <p className="text-[10px] text-gray-400 font-mono truncate">{product.barcode || product.sku || 'Sem Cód.'}</p>
                                                         </div>
                                                         <div className="text-right shrink-0">
@@ -872,76 +887,85 @@ export default function RomaneioPage() {
                                     <p className="text-xs text-gray-300 mt-1 max-w-[200px]">Bipe os produtos para adicioná-Layout listalos ao romaneio de saída.</p>
                                 </div>
                             ) : (
-                                <div className="space-y-2">
-                                    {cartItems.map((item, idx) => (
-                                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-200 rounded-xl transition-all group animate-in slide-in-from-left-2">
-                                            <div className="flex-1 min-w-0 pr-4">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-bold text-gray-400 w-5 shrink-0">{idx + 1}.</span>
-                                                    <p className="text-sm font-bold text-gray-900 truncate" title={item.name}>{item.name}</p>
-                                                </div>
-                                                <div className="flex flex-wrap items-center gap-y-1 gap-x-3 ml-7 mt-1">
-                                                    <p className="text-[10px] text-gray-400 font-mono shrink-0">{item.barcode || 'Sem código'}</p>
-                                                    <span className="hidden sm:inline text-[10px] text-gray-300">|</span>
-                                                    <p className="text-xs font-bold text-emerald-600 shrink-0">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>
-                                                    <span className="hidden sm:inline text-[10px] text-gray-300">|</span>
-                                                    <div className="flex items-center gap-1 shrink-0">
-                                                        <span className="text-[10px] font-bold text-gray-400 uppercase">Estoque:</span>
-                                                        <span className={`text-[10px] font-black ${(stockLevels.find(s => s.product_id === item.id)?.stock_quantity || 0) <= 0 ? 'text-red-500' : 'text-blue-600'}`}>
-                                                            {stockLevels.find(s => s.product_id === item.id)?.stock_quantity || 0} {item.unit}
-                                                        </span>
+                                <div className="space-y-2 overflow-x-auto pb-2">
+                                    <div className="min-w-[600px]">
+                                        {cartItems.map((item, idx) => (
+                                            <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-200 rounded-xl transition-all group animate-in slide-in-from-left-2">
+                                                <div className="flex-1 min-w-0 pr-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-bold text-gray-400 w-5 shrink-0">{idx + 1}.</span>
+                                                        <p className="text-sm font-bold text-gray-900 truncate" title={item.name}>{item.name}</p>
+                                                    </div>
+                                                    {(item.color || item.size) && (
+                                                        <div className="flex flex-wrap items-center gap-1.5 ml-7 mt-1">
+                                                            {item.color && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-200 text-gray-700 uppercase tracking-wider">{item.color}</span>}
+                                                            {item.size && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-200 text-gray-700 uppercase tracking-wider">{item.size}</span>}
+                                                        </div>
+                                                    )}
+                                                    <div className="flex flex-wrap items-center gap-y-1 gap-x-3 ml-7 mt-1">
+                                                        <p className="text-[10px] text-gray-400 font-mono shrink-0">{item.barcode || 'Sem código'}</p>
+                                                        <span className="hidden sm:inline text-[10px] text-gray-300">|</span>
+                                                        <p className="text-xs font-bold text-emerald-600 shrink-0">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>
+                                                        <span className="hidden sm:inline text-[10px] text-gray-300">|</span>
+                                                        <div className="flex items-center gap-1 shrink-0">
+                                                            <span className="text-[10px] font-bold text-gray-400 uppercase">Estoque:</span>
+                                                            <span className={`text-[10px] font-black ${(stockLevels.find(s => s.product_id === item.id)?.stock_quantity || 0) <= 0 ? 'text-red-500' : 'text-blue-600'}`}>
+                                                                {stockLevels.find(s => s.product_id === item.id)?.stock_quantity || 0} {item.unit}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-6 border-t sm:border-t-0 border-gray-100 pt-3 sm:pt-0 mt-3 sm:mt-0">
-                                                <div className="text-left sm:text-right w-24 sm:w-32 shrink-0">
-                                                    <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest bg-gray-100/50 sm:bg-transparent px-1.5 py-0.5 sm:p-0 rounded-md inline-block sm:block mb-0.5">Total Item</p>
-                                                    <p className="text-sm sm:text-[15px] font-black text-slate-800 leading-none">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}</p>
-                                                </div>
+                                                <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-6 border-t sm:border-t-0 border-gray-100 pt-3 sm:pt-0 mt-3 sm:mt-0">
+                                                    <div className="text-left sm:text-right w-24 sm:w-32 shrink-0">
+                                                        <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest bg-gray-100/50 sm:bg-transparent px-1.5 py-0.5 sm:p-0 rounded-md inline-block sm:block mb-0.5">Total Item</p>
+                                                        <p className="text-sm sm:text-[15px] font-black text-slate-800 leading-none">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}</p>
+                                                    </div>
 
-                                                {/* Controle de Quantidade */}
-                                                <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-0.5 sm:p-1 shadow-sm shrink-0">
+                                                    {/* Controle de Quantidade */}
+                                                    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-0.5 sm:p-1 shadow-sm shrink-0">
+                                                        <button
+                                                            onClick={() => {
+                                                                const newQty = Math.max(0, item.quantity - 1)
+                                                                if (newQty === 0) {
+                                                                    setItemToRemove(item.id)
+                                                                } else {
+                                                                    updateCartQuantity(item.id, String(newQty), item.unit)
+                                                                }
+                                                            }}
+                                                            className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                                        >
+                                                            <Minus className="w-3 h-3" />
+                                                        </button>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step={isIntegerUnit(item.unit) ? "1" : "0.01"}
+                                                            value={item.quantity}
+                                                            onChange={(e) => updateCartQuantity(item.id, e.target.value, item.unit)}
+                                                            onBlur={() => handleQuantityBlur(item.id)}
+                                                            className="w-10 sm:w-12 h-6 sm:h-7 text-center text-xs sm:text-sm font-bold text-gray-900 border-none focus:ring-0 bg-transparent px-0"
+                                                        />
+                                                        <button
+                                                            onClick={() => updateCartQuantity(item.id, String(item.quantity + 1), item.unit)}
+                                                            className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition-colors"
+                                                        >
+                                                            <Plus className="w-3 h-3" />
+                                                        </button>
+                                                        <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 pr-1 sm:pr-2 uppercase ml-0.5 sm:ml-1">{item.unit}</span>
+                                                    </div>
+
+                                                    {/* Botão Remover */}
                                                     <button
-                                                        onClick={() => {
-                                                            const newQty = Math.max(0, item.quantity - 1)
-                                                            if (newQty === 0) {
-                                                                setItemToRemove(item.id)
-                                                            } else {
-                                                                updateCartQuantity(item.id, String(newQty), item.unit)
-                                                            }
-                                                        }}
-                                                        className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                                        onClick={() => setItemToRemove(item.id)}
+                                                        className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors shrink-0"
                                                     >
-                                                        <Minus className="w-3 h-3" />
+                                                        <Trash2 className="w-4 h-4" />
                                                     </button>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        step={isIntegerUnit(item.unit) ? "1" : "0.01"}
-                                                        value={item.quantity}
-                                                        onChange={(e) => updateCartQuantity(item.id, e.target.value, item.unit)}
-                                                        onBlur={() => handleQuantityBlur(item.id)}
-                                                        className="w-10 sm:w-12 h-6 sm:h-7 text-center text-xs sm:text-sm font-bold text-gray-900 border-none focus:ring-0 bg-transparent px-0"
-                                                    />
-                                                    <button
-                                                        onClick={() => updateCartQuantity(item.id, String(item.quantity + 1), item.unit)}
-                                                        className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition-colors"
-                                                    >
-                                                        <Plus className="w-3 h-3" />
-                                                    </button>
-                                                    <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 pr-1 sm:pr-2 uppercase ml-0.5 sm:ml-1">{item.unit}</span>
                                                 </div>
-
-                                                <button
-                                                    onClick={() => setItemToRemove(item.id)}
-                                                    className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -1282,24 +1306,24 @@ export default function RomaneioPage() {
 
                     {/* Desktop Table View */}
                     <div className="hidden md:block bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                        <div className="relative">
-                            <table className="w-full text-sm">
-                                <thead className="sticky top-0 bg-gray-50/95 backdrop-blur shadow-sm z-10">
-                                    <tr>
-                                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-16 text-center">Foto</th>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm min-w-[800px]">
+                                <thead>
+                                    <tr className="border-b border-gray-100">
+                                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-20">Foto</th>
                                         <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Produto</th>
-                                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Código</th>
+                                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Cor</th>
+                                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tamanho</th>
                                         <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Estoque Atual</th>
-                                        <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Mínimo</th>
                                         <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider"></th>
+                                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-32">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
                                     {loading ? (
-                                        <tr><td colSpan={6} className="py-10 text-center text-gray-400 italic">Carregando...</td></tr>
+                                        <tr><td colSpan={9} className="py-10 text-center text-gray-400 italic">Carregando...</td></tr>
                                     ) : currentEstoqueItems.length === 0 ? (
-                                        <tr><td colSpan={6} className="py-10 text-center text-gray-400 italic">Nenhum dado de estoque encontrado</td></tr>
+                                        <tr><td colSpan={9} className="py-10 text-center text-gray-400 italic">Nenhum dado de estoque encontrado</td></tr>
                                     ) : (
                                         currentEstoqueItems.map((s) => (
                                             <tr key={s.product_id} className="hover:bg-gray-50/50 transition-colors group">
@@ -1313,38 +1337,60 @@ export default function RomaneioPage() {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 font-medium text-gray-900">{s.product_name}</td>
-                                                <td className="px-4 py-3 text-xs font-mono text-gray-400">{s.barcode || '—'}</td>
+                                                <td className="px-4 py-3">
+                                                    {s.color ? <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-600 uppercase whitespace-nowrap">{s.color}</span> : <span className="text-gray-400">-</span>}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    {s.size ? <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-600 uppercase whitespace-nowrap">{s.size}</span> : <span className="text-gray-400">-</span>}
+                                                </td>
                                                 <td className="px-4 py-3 text-right font-semibold text-gray-800">
                                                     {s.stock_quantity} <span className="text-[10px] text-gray-400 uppercase">{s.unit}</span>
                                                     {s.is_low_stock && <AlertTriangle className="w-3 h-3 text-amber-500 inline ml-1" />}
                                                 </td>
-                                                <td className="px-4 py-3 text-right text-gray-400">{s.min_stock}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${s.is_low_stock ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
                                                         {s.is_low_stock ? 'BAIXO' : 'OK'}
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
-                                                    <button
-                                                        onClick={() => {
-                                                            addToCart({
-                                                                id: s.product_id,
-                                                                name: s.product_name,
-                                                                barcode: s.barcode,
-                                                                stock_quantity: s.stock_quantity,
-                                                                min_stock: s.min_stock,
-                                                                unit: s.unit,
-                                                                price: s.price,
-                                                                sku: null
-                                                            })
-                                                            toast.success(`Produtos adicionado!`, { icon: '🛒', duration: 1500 })
-                                                        }}
-                                                        className="opacity-0 group-hover:opacity-100 transition-opacity bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 mx-auto"
-                                                        title="Adicionar ao Romaneio"
-                                                    >
-                                                        <Plus className="w-3 h-3" />
-                                                        Romaneio
-                                                    </button>
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            value={stockQuantities[s.product_id] || ''}
+                                                            onChange={(e) => setStockQuantities(prev => ({ ...prev, [s.product_id]: e.target.value }))}
+                                                            placeholder="1"
+                                                            className="w-16 h-8 text-center text-sm border font-bold text-gray-700 bg-white border-gray-200 rounded-lg focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        />
+                                                        <button
+                                                            onClick={() => {
+                                                                const qtyStr = stockQuantities[s.product_id] || '1';
+                                                                let qty = parseFloat(qtyStr);
+                                                                if (isNaN(qty) || qty <= 0) qty = 1;
+                                                                if (isIntegerUnit(s.unit)) qty = Math.floor(qty);
+
+                                                                addToCart({
+                                                                    id: s.product_id,
+                                                                    name: s.product_name,
+                                                                    barcode: s.barcode,
+                                                                    stock_quantity: s.stock_quantity,
+                                                                    min_stock: s.min_stock,
+                                                                    unit: s.unit,
+                                                                    price: s.price,
+                                                                    color: s.color,
+                                                                    size: s.size,
+                                                                    sku: null
+                                                                }, qty)
+                                                                toast.success(`${qty}x Produto adicionado!`, { icon: '🛒', duration: 1500 })
+                                                                setStockQuantities(prev => ({ ...prev, [s.product_id]: '' }))
+                                                            }}
+                                                            className="opacity-0 group-hover:opacity-100 transition-opacity bg-brand-50 text-brand-600 hover:bg-brand-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 mx-auto"
+                                                            title="Adicionar ao Romaneio"
+                                                        >
+                                                            <Plus className="w-3 h-3 shrink-0" />
+                                                            Romaneio
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
@@ -1374,6 +1420,12 @@ export default function RomaneioPage() {
                                             </div>
                                             <div className="min-w-0">
                                                 <h3 className="font-bold text-gray-900 line-clamp-2 leading-snug">{s.product_name}</h3>
+                                                {(s.color || s.size) && (
+                                                    <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                                        {s.color && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-100 text-gray-600 uppercase tracking-wider">{s.color}</span>}
+                                                        {s.size && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-100 text-gray-600 uppercase tracking-wider">{s.size}</span>}
+                                                    </div>
+                                                )}
                                                 <p className="text-[10px] font-mono text-gray-400 mt-1 uppercase tracking-wider">{s.barcode || 'Sem código'}</p>
                                             </div>
                                         </div>
@@ -1387,27 +1439,42 @@ export default function RomaneioPage() {
                                             <p className="text-lg font-black text-slate-800">
                                                 {s.stock_quantity} <span className="text-xs font-bold text-gray-400 uppercase">{s.unit}</span>
                                             </p>
-                                            <p className="text-[10px] text-gray-400">Mínimo: {s.min_stock} {s.unit}</p>
                                         </div>
-                                        <button
-                                            onClick={() => {
-                                                addToCart({
-                                                    id: s.product_id,
-                                                    name: s.product_name,
-                                                    barcode: s.barcode,
-                                                    stock_quantity: s.stock_quantity,
-                                                    min_stock: s.min_stock,
-                                                    unit: s.unit,
-                                                    price: s.price,
-                                                    sku: null
-                                                })
-                                                toast.success(`Produtos adicionado!`, { icon: '🛒', duration: 1500 })
-                                            }}
-                                            className="h-10 px-4 bg-brand-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-brand-500/20"
-                                        >
-                                            <Plus className="w-4 h-4" />
-                                            Romaneio
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={stockQuantities[s.product_id] || ''}
+                                                onChange={(e) => setStockQuantities(prev => ({ ...prev, [s.product_id]: e.target.value }))}
+                                                placeholder="1"
+                                                className="w-16 h-10 text-center text-sm border font-bold text-gray-700 bg-gray-50 border-gray-200 rounded-xl focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
+                                            />
+                                            <button
+                                                onClick={() => {
+                                                    const qtyStr = stockQuantities[s.product_id] || '1';
+                                                    let qty = parseFloat(qtyStr);
+                                                    if (isNaN(qty) || qty <= 0) qty = 1;
+                                                    if (isIntegerUnit(s.unit)) qty = Math.floor(qty);
+
+                                                    addToCart({
+                                                        id: s.product_id,
+                                                        name: s.product_name,
+                                                        barcode: s.barcode,
+                                                        stock_quantity: s.stock_quantity,
+                                                        min_stock: s.min_stock,
+                                                        unit: s.unit,
+                                                        price: s.price,
+                                                        sku: null
+                                                    }, qty)
+                                                    toast.success(`${qty}x Produto adicionado!`, { icon: '🛒', duration: 1500 })
+                                                    setStockQuantities(prev => ({ ...prev, [s.product_id]: '' }))
+                                                }}
+                                                className="flex-1 h-10 px-4 bg-brand-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-brand-500/20"
+                                            >
+                                                <Plus className="w-4 h-4 shrink-0" />
+                                                Romaneio
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ))
@@ -1438,6 +1505,29 @@ export default function RomaneioPage() {
                             </div>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* FLOATING CART SUMMARY (ESTOQUE) */}
+            {activeTab === 'estoque' && cartItems.length > 0 && (
+                <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300">
+                    <button
+                        onClick={() => setActiveTab('romaneio')}
+                        className="bg-brand-600 hover:bg-brand-500 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-4 transition-transform active:scale-95"
+                    >
+                        <div className="relative">
+                            <ShoppingCart className="w-7 h-7" />
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-brand-600">
+                                {cartItems.length}
+                            </span>
+                        </div>
+                        <div className="text-left hidden sm:block">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-brand-200 leading-tight">Ver Carrinho</p>
+                            <p className="font-bold text-sm leading-tight mt-0.5">
+                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0))}
+                            </p>
+                        </div>
+                    </button>
                 </div>
             )}
 

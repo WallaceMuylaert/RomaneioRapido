@@ -24,6 +24,20 @@ import BarcodeScanner from '../components/BarcodeScanner'
 import ImageCropper from '../components/ImageCropper'
 import ConfirmModal from '../components/ConfirmModal'
 
+const applyCurrencyMask = (value: string) => {
+    const cleaned = value.replace(/\D/g, "");
+    if (!cleaned) return "";
+    const numberValue = Number(cleaned) / 100;
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numberValue);
+}
+
+const parseCurrency = (value: string | number) => {
+    if (!value) return 0;
+    if (typeof value === 'number') return value;
+    const cleaned = value.replace(/\D/g, '');
+    return Number(cleaned) / 100;
+}
+
 interface Category {
     id: number
     name: string
@@ -43,6 +57,8 @@ interface Product {
     unit: string
     image_base64: string | null
     is_active: boolean
+    color: string | null
+    size: string | null
 }
 
 export default function ProductsPage() {
@@ -88,7 +104,9 @@ export default function ProductsPage() {
         min_stock: '',
         unit: 'UN',
         category_id: '',
-        image_base64: ''
+        image_base64: '',
+        color: '',
+        size: ''
     })
 
 
@@ -225,10 +243,13 @@ export default function ProductsPage() {
             min_stock: '0',
             unit: 'UN',
             category_id: '',
-            image_base64: ''
+            image_base64: '',
+            color: '',
+            size: ''
         })
         setImagePreview(null)
         setCropImageSrc(null)
+        if (fileInputRef.current) fileInputRef.current.value = ''
         setIsCreatingCategory(false)
         setNewCategoryName('')
         setModalOpen(true)
@@ -241,16 +262,19 @@ export default function ProductsPage() {
             sku: p.sku || '',
             barcode: p.barcode || '',
             description: p.description || '',
-            price: String(p.price),
-            cost_price: String(p.cost_price || ''),
+            price: p.price != null ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.price) : '',
+            cost_price: p.cost_price != null ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.cost_price) : '',
             stock_quantity: String(p.stock_quantity),
             min_stock: String(p.min_stock),
             unit: p.unit || 'UN',
             category_id: p.category_id ? String(p.category_id) : '',
-            image_base64: p.image_base64 || ''
+            image_base64: p.image_base64 || '',
+            color: p.color || '',
+            size: p.size || ''
         })
         setImagePreview(p.image_base64 || null)
         setCropImageSrc(null)
+        if (fileInputRef.current) fileInputRef.current.value = ''
         setIsCreatingCategory(false)
         setNewCategoryName('')
         setModalOpen(true)
@@ -307,13 +331,15 @@ export default function ProductsPage() {
                 sku: form.sku || null,
                 barcode: form.barcode || null,
                 description: form.description || null,
-                price: parseFloat(form.price) || 0,
-                cost_price: form.cost_price ? parseFloat(form.cost_price) : 0,
+                price: typeof form.price === 'string' ? parseCurrency(form.price) : (parseFloat(form.price) || 0),
+                cost_price: typeof form.cost_price === 'string' ? parseCurrency(form.cost_price) : (parseFloat(form.cost_price) || 0),
                 stock_quantity: parseFloat(form.stock_quantity) || 0,
                 min_stock: parseFloat(form.min_stock) || 0,
                 unit: form.unit,
                 category_id: form.category_id ? parseInt(form.category_id) : null,
-                image_base64: form.image_base64 || null
+                image_base64: form.image_base64 || null,
+                color: form.color || null,
+                size: form.size || null
             }
 
             if (editingProduct) {
@@ -351,7 +377,7 @@ export default function ProductsPage() {
 
     const getStockStatus = (p: Product) => {
         if (p.stock_quantity <= 0) return { label: 'Zerado', class: 'bg-red-50 text-red-600' }
-        if (p.stock_quantity <= p.min_stock) return { label: 'Baixo', class: 'bg-amber-50 text-amber-600' }
+        if (p.stock_quantity < p.min_stock) return { label: 'Baixo', class: 'bg-amber-50 text-amber-600' }
         return { label: 'OK', class: 'bg-emerald-50 text-emerald-600' }
     }
 
@@ -495,8 +521,15 @@ export default function ProductsPage() {
                                                         )}
                                                     </div>
                                                     <div>
-                                                        <p className="font-medium text-gray-900 leading-tight">{p.name}</p>
-                                                        {p.description && <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-48 leading-tight">{p.description}</p>}
+                                                        <p className="font-medium text-gray-900 leading-tight flex items-center gap-2">
+                                                            {p.name}
+                                                            {(p.color || p.size) && (
+                                                                <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md font-semibold">
+                                                                    {[p.color, p.size].filter(Boolean).join(' • ')}
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                        {p.description && <p className="text-[11px] text-gray-500 mt-1 line-clamp-2 max-w-sm leading-snug">{p.description}</p>}
                                                     </div>
                                                 </div>
                                             </td>
@@ -517,7 +550,7 @@ export default function ProductsPage() {
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 <span className="font-semibold text-gray-800">{p.stock_quantity} <span className="text-[10px] text-gray-400 font-medium uppercase">{p.unit}</span></span>
-                                                {p.stock_quantity <= p.min_stock && p.min_stock > 0 && (
+                                                {p.stock_quantity < p.min_stock && p.min_stock > 0 && (
                                                     <AlertTriangle className="w-3 h-3 text-amber-500 inline ml-1" />
                                                 )}
                                             </td>
@@ -685,28 +718,48 @@ export default function ProductsPage() {
                                 />
                             </div>
 
+                            {/* Cor + Tamanho */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Cor / Variante</label>
+                                    <input
+                                        value={form.color}
+                                        onChange={(e) => setForm({ ...form, color: e.target.value })}
+                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-semibold"
+                                        placeholder="Ex: Vermelho, Ouro"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tamanho</label>
+                                    <input
+                                        value={form.size}
+                                        onChange={(e) => setForm({ ...form, size: e.target.value })}
+                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-semibold uppercase"
+                                        placeholder="Ex: M, 42, Único"
+                                    />
+                                </div>
+                            </div>
+
                             {/* Preço + Custo */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Preço Venda</label>
                                     <input
-                                        type="number"
-                                        step="0.01"
+                                        type="text"
                                         value={form.price}
-                                        onChange={(e) => setForm({ ...form, price: e.target.value })}
-                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-                                        placeholder="0.00"
+                                        onChange={(e) => setForm({ ...form, price: applyCurrencyMask(e.target.value) })}
+                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-semibold"
+                                        placeholder="R$ 0,00"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Preço Custo</label>
                                     <input
-                                        type="number"
-                                        step="0.01"
+                                        type="text"
                                         value={form.cost_price}
-                                        onChange={(e) => setForm({ ...form, cost_price: e.target.value })}
-                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-                                        placeholder="0.00"
+                                        onChange={(e) => setForm({ ...form, cost_price: applyCurrencyMask(e.target.value) })}
+                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-semibold"
+                                        placeholder="R$ 0,00"
                                     />
                                 </div>
                             </div>
