@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Printer, Smartphone, FileText, X, Phone, Save, Loader2 } from 'lucide-react'
+import { Printer, FileText, X, Phone, Save, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import { toast } from 'react-hot-toast'
@@ -8,6 +8,7 @@ import { maskPhone } from '../utils/masks'
 import AlertModal from './AlertModal'
 import { getBase64FromUrl } from '../utils/imageUtils'
 import logoImg from '../assets/romaneiorapido_logo.png'
+import { WhatsAppIcon } from '../assets/WhatsAppIcon'
 
 export interface CartItem {
     id: number
@@ -17,6 +18,8 @@ export interface CartItem {
     unit: string
     price: number
     image?: string | null
+    color?: string | null
+    size?: string | null
 }
 
 interface RomaneioExportModalProps {
@@ -68,7 +71,21 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
     }
 
-    const generateWhatsAppText = () => {
+    const handleExportWhatsAppText = (target: 'store' | 'customer') => {
+        const phone = target === 'store' ? (user?.phone || '') : (currentPhone || '')
+
+        if (!phone && target === 'customer') {
+            setAlertConfig({
+                isOpen: true,
+                title: 'Atenção',
+                message: 'Este cliente não possui um telefone cadastrado para envio via WhatsApp.',
+                type: 'warning'
+            })
+            return
+        }
+
+        const phoneOnlyDigits = phone.replace(/\D/g, '')
+
         let text = `\u{1F4E6} *ROMANEIO RÁPIDO*\n`
         text += `\u{1F464} *Cliente:* ${customerName || 'Não informado'}\n`
         text += `\u{1F4C5} *Data:* ${dateStr}\n\n`
@@ -76,44 +93,33 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
 
         items.forEach((item, index) => {
             text += `${index + 1}. ${item.name}\n`
-            text += `   \u{1F539} Qtd: ${item.quantity} ${item.unit} | \u{1F4B8} Unit: ${formatCurrency(item.price)} | \u{1F4B0} Sub: ${formatCurrency(item.price * item.quantity)}\n`
-            if (item.barcode) text += `   \u{1F3F7} Cód: ${item.barcode}\n`
-            text += `\n`
+            if (item.color || item.size) {
+                text += `   ↳ _Variante: ${[item.color, item.size].filter(Boolean).join(' • ')}_\n`
+            }
+            if (item.barcode) {
+                text += `   \u{1F3F7} Cód: ${item.barcode}\n`
+            }
+            text += `   \u{1F539} Qtd: ${item.quantity} ${item.unit} | \u{1F4B8} Unit: ${formatCurrency(item.price)} | \u{1F4B0} Sub: ${formatCurrency(item.price * item.quantity)}\n\n`
         })
 
         text += `\u{1F4CA} *Total de Itens:* ${totalItems}\n`
-        text += `\u{1F4B5} *Valor Total:* ${formatCurrency(totalValue)}\n`
-        text += `\n_Gerado por RomaneioRapido.com.br_`
+        text += `\u{1F4B5} *VALOR TOTAL:* ${formatCurrency(totalValue)}\n\n`
+        text += `_Gerado por RomaneioRapido_`
 
         // Limpeza de caracteres invisíveis e espaços especiais (comum em Intl.NumberFormat)
         const cleanText = text.replace(/\xA0/g, ' ')
+        const encodedText = encodeURIComponent(cleanText).replace(/%20/g, '+')
 
-        return encodeURIComponent(cleanText).replace(/%20/g, '+')
-    }
-
-    const handleWhatsAppClick = (target: 'store' | 'customer') => {
-        const phone = target === 'store' ? (user?.phone || '') : (currentPhone || '')
-        const cleanPhone = phone.replace(/\D/g, '')
-
-        let finalPhone = cleanPhone
-        if (cleanPhone && cleanPhone.length <= 11) {
-            finalPhone = `55${cleanPhone}`
+        let link = ''
+        if (phoneOnlyDigits) {
+            let finalPhone = phoneOnlyDigits.length <= 11 ? `55${phoneOnlyDigits}` : phoneOnlyDigits
+            link = `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodedText}`
+        } else {
+            // Se enviar pra loja sem celular, abre whatsapp web geral para escolher contato
+            link = `https://api.whatsapp.com/send?text=${encodedText}`
         }
 
-        if (!finalPhone) {
-            setAlertConfig({
-                isOpen: true,
-                title: 'Atenção',
-                message: target === 'store'
-                    ? 'O telefone da loja não está configurado no seu perfil! Vá até a tela de perfil para configurar.'
-                    : 'Este cliente não possui um telefone cadastrado para o envio.',
-                type: 'warning'
-            })
-            return
-        }
-
-        const url = `https://api.whatsapp.com/send?phone=${finalPhone}&text=${generateWhatsAppText()}`
-        window.open(url, '_blank', 'noopener,noreferrer')
+        window.open(link, '_blank', 'noopener,noreferrer')
     }
 
     const handleSavePhone = async () => {
@@ -351,15 +357,15 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* Botão WhatsApp Loja (Sempre ativo) */}
                         <button
-                            onClick={() => handleWhatsAppClick('store')}
+                            onClick={() => handleExportWhatsAppText('store')}
                             className="group relative overflow-hidden bg-white border-2 border-emerald-500 hover:border-emerald-600 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
                         >
                             <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                                <Smartphone className="w-5 h-5" />
+                                <WhatsAppIcon className="w-5 h-5" />
                             </div>
                             <div>
-                                <p className="font-bold text-gray-900 text-[13px]">Via da Loja</p>
-                                <p className="text-[10px] text-gray-500 font-medium line-clamp-1">Enviar p/ meu Zap</p>
+                                <p className="font-bold text-gray-900 text-[13px]">Enviar p/ Loja</p>
+                                <p className="text-[10px] text-gray-500 font-medium line-clamp-1">Via WhatsApp (Texto)</p>
                             </div>
                         </button>
 
@@ -370,7 +376,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                                 className="group relative overflow-hidden border-2 bg-white border-dashed border-gray-300 hover:border-brand-500 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
                             >
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-gray-50 text-gray-400 group-hover:bg-brand-50 group-hover:text-brand-500 transition-colors">
-                                    <Phone className="w-5 h-5" />
+                                    <WhatsAppIcon className="w-5 h-5" />
                                 </div>
                                 <div>
                                     <p className="font-bold text-gray-900 text-[13px]">Salvar Contato</p>
@@ -400,14 +406,14 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                         ) : (
                             <div className="relative group">
                                 <button
-                                    onClick={() => handleWhatsAppClick('customer')}
+                                    onClick={() => handleExportWhatsAppText('customer')}
                                     className="w-full relative overflow-hidden border-2 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm bg-white border-blue-500 hover:border-blue-600 hover:shadow-md h-[100%]"
                                 >
                                     <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform bg-blue-50 text-blue-600">
-                                        <Smartphone className="w-5 h-5" />
+                                        <WhatsAppIcon className="w-5 h-5" />
                                     </div>
                                     <div className="pr-6">
-                                        <p className="font-bold text-gray-900 text-[13px]">Via Cliente</p>
+                                        <p className="font-bold text-gray-900 text-[13px]">Enviar p/ Cliente</p>
                                         <p className="text-[10px] text-gray-500 font-medium truncate">{currentPhone}</p>
                                     </div>
                                 </button>

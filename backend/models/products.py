@@ -19,8 +19,10 @@ class Product(Base):
     min_stock = Column(Float, nullable=False, default=0.0)
     unit = Column(String, nullable=False, default="UN")
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
-    image_base64 = Column(Text, nullable=True)
+    image_base64 = Column(Text, nullable=True) # Imagem em base64
     is_active = Column(Boolean, default=True)
+    color = Column(String, nullable=True)
+    size = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

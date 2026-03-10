@@ -19,6 +19,8 @@ class ProductBase(BaseModel):
     category_id: Optional[int] = None
     image_base64: Optional[str] = Field(None, max_length=_MAX_IMAGE_BASE64)
     is_active: bool = True
+    color: Optional[str] = None
+    size: Optional[str] = None
 
 
 class ProductCreate(ProductBase):
@@ -38,6 +40,8 @@ class ProductUpdate(BaseModel):
     category_id: Optional[int] = None
     image_base64: Optional[str] = Field(None, max_length=_MAX_IMAGE_BASE64)
     is_active: Optional[bool] = None
+    color: Optional[str] = None
+    size: Optional[str] = None
 
 
 class ProductResponse(ProductBase):
