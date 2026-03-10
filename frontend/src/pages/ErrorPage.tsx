@@ -6,10 +6,10 @@ const errorDetails: Record<number, { title: string; message: string }> = {
     401: { title: 'Não Autorizado', message: 'Você precisa estar logado para acessar esta página.' },
     403: { title: 'Acesso Negado', message: 'Você não tem permissão para acessar este recurso.' },
     404: { title: 'Página Não Encontrada', message: 'A página que você está procurando não existe ou foi removida.' },
-    500: { title: 'Erro Interno', message: 'Ocorreu um erro interno no servidor. Nossos engenheiros já foram notificados.' },
-    502: { title: 'Bad Gateway', message: 'O servidor recebeu uma resposta inválida. Tente novamente em alguns instantes.' },
-    503: { title: 'Serviço Indisponível', message: 'O sistema está em manutenção no momento. Volte em breve.' },
-    504: { title: 'Tempo Esgotado', message: 'A conexão com o servidor expirou. Tente novamente mais tarde.' },
+    500: { title: 'Instabilidade no Sistema', message: 'Identificamos uma pequena instabilidade interna. Nossa equipe já foi notificada para resolver o mais rápido possível.' },
+    502: { title: 'Falha de Comunicação', message: 'O servidor encontrou uma dificuldade temporária de comunicação. Por favor, tente novamente em instantes.' },
+    503: { title: 'Manutenção ou Indisponibilidade', message: 'O sistema está temporariamente indisponível ou em manutenção programada. Voltaremos em breve!' },
+    504: { title: 'Tempo de Resposta Excedido', message: 'A conexão demorou mais do que o esperado. Verifique sua internet ou tente novamente mais tarde.' },
 };
 
 const defaultError = { title: 'Ocorreu um erro', message: 'Algo deu errado. Por favor, tente novamente.' };

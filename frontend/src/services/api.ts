@@ -22,6 +22,16 @@ api.interceptors.response.use(
         const isLoginRequest = error.config?.url?.includes('/auth/login')
         const isLoginPage = window.location.pathname === '/login'
 
+        // Erro de rede ou servidor fora do ar
+        if (!error.response || (error.response.status >= 500 && error.response.status <= 504)) {
+            // Evita loop se já estiver na página de erro
+            if (window.location.pathname !== '/error') {
+                const code = error.response?.status || 503;
+                window.location.href = `/error?code=${code}`;
+            }
+            return Promise.reject(error);
+        }
+
         if (error.response?.status === 401 && !isLoginRequest && !isLoginPage) {
             localStorage.removeItem('token')
             window.location.href = '/login'
