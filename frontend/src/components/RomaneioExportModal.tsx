@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Printer, Smartphone, FileText, X, Phone, Save, Loader2 } from 'lucide-react'
+import { Printer, FileText, X, Phone, Save, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import { toast } from 'react-hot-toast'
@@ -8,6 +8,7 @@ import { maskPhone } from '../utils/masks'
 import AlertModal from './AlertModal'
 import { getBase64FromUrl } from '../utils/imageUtils'
 import logoImg from '../assets/romaneiorapido_logo.png'
+import { WhatsAppIcon } from '../assets/WhatsAppIcon'
 
 export interface CartItem {
     id: number
@@ -360,7 +361,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                             className="group relative overflow-hidden bg-white border-2 border-emerald-500 hover:border-emerald-600 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
                         >
                             <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                                <Smartphone className="w-5 h-5" />
+                                <WhatsAppIcon className="w-5 h-5" />
                             </div>
                             <div>
                                 <p className="font-bold text-gray-900 text-[13px]">Enviar p/ Loja</p>
@@ -375,7 +376,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                                 className="group relative overflow-hidden border-2 bg-white border-dashed border-gray-300 hover:border-brand-500 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
                             >
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-gray-50 text-gray-400 group-hover:bg-brand-50 group-hover:text-brand-500 transition-colors">
-                                    <Phone className="w-5 h-5" />
+                                    <WhatsAppIcon className="w-5 h-5" />
                                 </div>
                                 <div>
                                     <p className="font-bold text-gray-900 text-[13px]">Salvar Contato</p>
@@ -409,7 +410,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                                     className="w-full relative overflow-hidden border-2 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm bg-white border-blue-500 hover:border-blue-600 hover:shadow-md h-[100%]"
                                 >
                                     <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform bg-blue-50 text-blue-600">
-                                        <Smartphone className="w-5 h-5" />
+                                        <WhatsAppIcon className="w-5 h-5" />
                                     </div>
                                     <div className="pr-6">
                                         <p className="font-bold text-gray-900 text-[13px]">Enviar p/ Cliente</p>
