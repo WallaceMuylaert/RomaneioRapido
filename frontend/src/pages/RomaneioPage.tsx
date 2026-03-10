@@ -110,6 +110,9 @@ export default function RomaneioPage() {
     }[] | null>(null)
     const [itemToRemove, setItemToRemove] = useState<number | null>(null)
 
+    // Estado para feedback em tempo real do scanner
+    const [scanStatus, setScanStatus] = useState<'idle' | 'searching' | 'success' | 'error'>('idle')
+
     // Bloqueador de Navegação do React Router (Para rotas externas)
     const blocker = useBlocker(
         ({ currentLocation, nextLocation }) =>
@@ -476,42 +479,81 @@ export default function RomaneioPage() {
     }
 
     const handleBarcodeScan = async (code: string) => {
+        const trimmedCode = code.trim()
+        if (!trimmedCode) return
+
+        setScanStatus('searching')
+        toast.loading(`Lendo: ${trimmedCode}...`, {
+            id: 'barcode-scan',
+            icon: <ScanBarcode className="w-5 h-5 text-blue-500 animate-pulse" />
+        })
+
         try {
-            const res = await api.get(`/products/barcode/${code.trim()}`)
+            // Tenta busca direta por código de barras
+            const res = await api.get(`/products/barcode/${trimmedCode}`)
             if (res.data) {
                 const productInfo = Array.isArray(res.data) ? res.data[0] : res.data
+
+                // Pequeno delay artificial para o usuário ver o "Lendo..." se for muito rápido
+                await new Promise(resolve => setTimeout(resolve, 500))
+
                 addToCart(productInfo)
                 setCameraOpen(false)
+                setScanStatus('success')
+                toast.success(`${productInfo.name} adicionado!`, {
+                    id: 'barcode-scan',
+                    icon: '✅',
+                    duration: 2000
+                })
 
-                // Haptic feedback (vibração leve) para USB também
                 if (navigator.vibrate) navigator.vibrate(100)
                 return
             }
-        } catch {
+        } catch (err) {
             // Ignora o erro da busca por barcode e tenta pesquisa por texto
         }
 
         try {
-            const res = await api.get('/products/', { params: { search: code.trim() } })
+            // Tenta busca por texto (caso o "barcode" na verdade seja parte do nome ou código SKU)
+            const res = await api.get('/products/', { params: { search: trimmedCode } })
             const items = res.data.items || res.data
             if (items.length === 1) {
                 addToCart(items[0])
                 setCameraOpen(false)
+                setScanStatus('success')
+                toast.success(`${items[0].name} adicionado!`, {
+                    id: 'barcode-scan',
+                    icon: '✅',
+                    duration: 2000
+                })
                 if (navigator.vibrate) navigator.vibrate(100)
+                return
             } else if (items.length > 1) {
-                // Se encontrar múltiplos, vamos adicionar todos ao dropdown logic ou lidar com alert
-                // No caso do romaneio a Busca Esperta já faz esse trabalho.
-                // Então apenas avisamos
+                // Se encontrar múltiplos, ajuda o usuário abrindo a busca manual com o termo
+                setBarcodeInput(trimmedCode)
                 setCameraOpen(false)
-                toast.error(`CÓDIGO LIDO: ${code}\nEncontramos múltiplos produtos para esta busca. Por favor, digite o nome no campo para escolher a variação correta.`, { duration: 6000 })
-            } else {
-                setCameraOpen(false)
-                toast.error(`CÓDIGO LIDO: ${code}\nEste produto ainda não está cadastrado no sistema. Vá para a tela de 'Produtos' para criar o cadastro dele.`, { duration: 6000 })
+                setScanStatus('idle')
+                toast.error('Múltiplos produtos encontrados. Refine a busca.', {
+                    id: 'barcode-scan',
+                    icon: '🔍',
+                    duration: 3000
+                })
+                return
             }
-        } catch (error) {
-            setCameraOpen(false)
-            toast.error(`CÓDIGO LIDO: ${code}\nEste produto ainda não está cadastrado no sistema. Vá para a tela de 'Produtos' para criar o cadastro dele.`, { duration: 6000 })
+        } catch (err) {
+            console.error('Erro ao processar scan:', err)
         }
+
+        // Se chegou aqui, não encontrou nada
+        setScanStatus('error')
+        toast.error(`Produto "${trimmedCode}" não localizado.`, {
+            id: 'barcode-scan',
+            icon: '❌',
+            duration: 3000
+        })
+
+        // Se a câmera estiver fechada (USB) ou após um tempo na câmera, limpa o status
+        setTimeout(() => setScanStatus('idle'), 2000)
     }
 
 
@@ -1732,6 +1774,7 @@ export default function RomaneioPage() {
                 <BarcodeScanner
                     onScan={handleBarcodeScan}
                     onClose={() => setCameraOpen(false)}
+                    status={scanStatus}
                 />
             )}
 
