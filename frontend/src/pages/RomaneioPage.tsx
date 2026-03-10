@@ -15,6 +15,9 @@ import {
     Smartphone,
     MoreVertical,
     Minus,
+    ArrowUpDown,
+    ChevronUp,
+    ChevronDown,
 } from 'lucide-react'
 import BarcodeScanner from '../components/BarcodeScanner'
 import RomaneioExportModal from '../components/RomaneioExportModal'
@@ -192,6 +195,19 @@ export default function RomaneioPage() {
     // Filtros e Paginação do Estoque
     const [estoqueSearch, setEstoqueSearch] = useState('')
     const [estoquePage, setEstoquePage] = useState(1)
+    const [estoqueSortField, setEstoqueSortField] = useState<keyof StockLevel>('product_name')
+    const [estoqueSortDirection, setEstoqueSortDirection] = useState<'asc' | 'desc'>('asc')
+
+    const handleSortEstoque = (field: keyof StockLevel) => {
+        if (estoqueSortField === field) {
+            setEstoqueSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+        } else {
+            setEstoqueSortField(field)
+            setEstoqueSortDirection('asc')
+        }
+        setEstoquePage(1)
+    }
+
     const handleSearchClient = async (query: string) => {
         setCustomerName(query)
         // Fechar o outro dropdown se este for aberto
@@ -657,7 +673,7 @@ export default function RomaneioPage() {
     }
 
     const filteredAndSortedStock = useMemo(() => {
-        let result = stockLevels
+        let result = [...stockLevels]
 
         if (estoqueSearch.trim()) {
             const query = estoqueSearch.toLowerCase()
@@ -667,13 +683,34 @@ export default function RomaneioPage() {
             )
         }
 
-        // Ordenar: primeiro o que está baixo, depois alfabético
+        // Ordenação Dinâmica
         return result.sort((a, b) => {
-            if (a.is_low_stock && !b.is_low_stock) return -1
-            if (!a.is_low_stock && b.is_low_stock) return 1
+            const valA = a[estoqueSortField]
+            const valB = b[estoqueSortField]
+
+            if (valA === undefined || valB === undefined) return 0
+
+            // Helper para comparação nula
+            if (valA === null && valB !== null) return estoqueSortDirection === 'asc' ? -1 : 1
+            if (valA !== null && valB === null) return estoqueSortDirection === 'asc' ? 1 : -1
+
+            let comparison = 0
+            if (typeof valA === 'string' && typeof valB === 'string') {
+                comparison = valA.localeCompare(valB)
+            } else if (typeof valA === 'number' && typeof valB === 'number') {
+                comparison = valA - valB
+            } else if (typeof valA === 'boolean' && typeof valB === 'boolean') {
+                comparison = valA === valB ? 0 : valA ? -1 : 1
+            }
+
+            if (comparison !== 0) {
+                return estoqueSortDirection === 'asc' ? comparison : -comparison
+            }
+
+            // Fallback consistente por nome
             return a.product_name.localeCompare(b.product_name)
         })
-    }, [stockLevels, estoqueSearch])
+    }, [stockLevels, estoqueSearch, estoqueSortField, estoqueSortDirection])
 
     const totalEstoquePages = Math.ceil(filteredAndSortedStock.length / ESTOQUE_PER_PAGE)
     const currentEstoqueItems = useMemo(() => {
@@ -711,13 +748,13 @@ export default function RomaneioPage() {
             </div>
 
             {activeTab === 'romaneio' && (
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px] gap-6 pb-24 lg:pb-0">
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px] gap-3 sm:gap-6 pb-24 lg:pb-0">
                     {/* LEFTSIDE: BARCODE + CARRINHO */}
                     <div className="flex flex-col gap-6">
 
                         {/* Header do Romaneio */}
-                        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-6 shadow-sm">
+                            <h2 className="text-sm font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                                 <Plus className="w-4 h-4 text-blue-600" />
                                 Montar Romaneio
                             </h2>
@@ -867,63 +904,62 @@ export default function RomaneioPage() {
                         </div>
 
                         {/* LISTA DE ITENS DO ROMANEIO */}
-                        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex-1 min-h-[300px]">
-                            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center justify-between">
+                        <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-6 shadow-sm flex-1 min-h-[200px] sm:min-h-[300px]">
+                            <h2 className="text-sm font-bold text-gray-900 mb-3 sm:mb-4 flex items-center justify-between">
                                 <span className="flex items-center gap-2">
                                     <ShoppingCart className="w-4 h-4 text-emerald-600" />
                                     Itens do Romaneio
                                 </span>
                                 {cartItems.length > 0 && (
-                                    <span className="bg-blue-100 text-blue-700 font-bold text-xs px-2.5 py-0.5 rounded-full">
+                                    <span className="bg-blue-100 text-blue-700 font-bold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full">
                                         {cartItems.length} {cartItems.length === 1 ? 'item' : 'itens'}
                                     </span>
                                 )}
                             </h2>
 
                             {cartItems.length === 0 ? (
-                                <div className="text-center py-16 border-2 border-dashed border-gray-100 rounded-xl h-full flex flex-col items-center justify-center">
+                                <div className="text-center py-10 sm:py-16 border-2 border-dashed border-gray-100 rounded-xl h-full flex flex-col items-center justify-center">
                                     <ScanBarcode className="w-10 h-10 text-gray-200 mb-3" />
                                     <p className="text-sm font-semibold text-gray-400">Carrinho Vazio</p>
-                                    <p className="text-xs text-gray-300 mt-1 max-w-[200px]">Bipe os produtos para adicioná-Layout listalos ao romaneio de saída.</p>
+                                    <p className="text-xs text-gray-300 mt-1 max-w-[200px]">Bipe os produtos para adicioná-los ao romaneio de saída.</p>
                                 </div>
                             ) : (
                                 <div className="space-y-2 overflow-x-auto pb-2">
-                                    <div className="min-w-[600px]">
+                                    <div className="min-w-full sm:min-w-[600px]">
                                         {cartItems.map((item, idx) => (
-                                            <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-200 rounded-xl transition-all group animate-in slide-in-from-left-2">
-                                                <div className="flex-1 min-w-0 pr-4">
+                                            <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3 p-2.5 sm:p-3 bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-200 rounded-xl transition-all group animate-in slide-in-from-left-2">
+                                                <div className="flex-1 min-w-0 sm:pr-4">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-bold text-gray-400 w-5 shrink-0">{idx + 1}.</span>
-                                                        <p className="text-sm font-bold text-gray-900 truncate" title={item.name}>{item.name}</p>
+                                                        <span className="text-[10px] sm:text-xs font-bold text-gray-400 w-4 sm:w-5 shrink-0">{idx + 1}.</span>
+                                                        <p className="text-xs sm:text-sm font-bold text-gray-900 truncate" title={item.name}>{item.name}</p>
                                                     </div>
                                                     {(item.color || item.size) && (
-                                                        <div className="flex flex-wrap items-center gap-1.5 ml-7 mt-1">
-                                                            {item.color && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-200 text-gray-700 uppercase tracking-wider">{item.color}</span>}
-                                                            {item.size && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-200 text-gray-700 uppercase tracking-wider">{item.size}</span>}
+                                                        <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 ml-5 sm:ml-7 mt-0.5">
+                                                            {item.color && <span className="inline-flex items-center px-1 sm:px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-gray-200 text-gray-700 uppercase tracking-wider">{item.color}</span>}
+                                                            {item.size && <span className="inline-flex items-center px-1 sm:px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-gray-200 text-gray-700 uppercase tracking-wider">{item.size}</span>}
                                                         </div>
                                                     )}
-                                                    <div className="flex flex-wrap items-center gap-y-1 gap-x-3 ml-7 mt-1">
-                                                        <p className="text-[10px] text-gray-400 font-mono shrink-0">{item.barcode || 'Sem código'}</p>
+                                                    <div className="flex flex-wrap items-center gap-y-1 gap-x-2 sm:gap-x-3 ml-5 sm:ml-7 mt-0.5 sm:mt-1">
+                                                        <p className="text-[9px] sm:text-[10px] text-gray-400 font-mono shrink-0">{item.barcode || 'Sem código'}</p>
                                                         <span className="hidden sm:inline text-[10px] text-gray-300">|</span>
-                                                        <p className="text-xs font-bold text-emerald-600 shrink-0">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>
+                                                        <p className="text-[11px] sm:text-xs font-bold text-emerald-600 shrink-0">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>
                                                         <span className="hidden sm:inline text-[10px] text-gray-300">|</span>
                                                         <div className="flex items-center gap-1 shrink-0">
-                                                            <span className="text-[10px] font-bold text-gray-400 uppercase">Estoque:</span>
-                                                            <span className={`text-[10px] font-black ${(stockLevels.find(s => s.product_id === item.id)?.stock_quantity || 0) <= 0 ? 'text-red-500' : 'text-blue-600'}`}>
+                                                            <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase">Est:</span>
+                                                            <span className={`text-[9px] sm:text-[10px] font-black ${(stockLevels.find(s => s.product_id === item.id)?.stock_quantity || 0) <= 0 ? 'text-red-500' : 'text-blue-600'}`}>
                                                                 {stockLevels.find(s => s.product_id === item.id)?.stock_quantity || 0} {item.unit}
                                                             </span>
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-6 border-t sm:border-t-0 border-gray-100 pt-3 sm:pt-0 mt-3 sm:mt-0">
-                                                    <div className="text-left sm:text-right w-24 sm:w-32 shrink-0">
-                                                        <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest bg-gray-100/50 sm:bg-transparent px-1.5 py-0.5 sm:p-0 rounded-md inline-block sm:block mb-0.5">Total Item</p>
-                                                        <p className="text-sm sm:text-[15px] font-black text-slate-800 leading-none">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}</p>
+                                                <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-6 border-t sm:border-t-0 border-gray-100 pt-2 sm:pt-0 mt-2 sm:mt-0">
+                                                    <div className="text-left sm:text-right w-20 sm:w-32 shrink-0">
+                                                        <p className="text-[8px] sm:text-[9px] text-gray-400 uppercase font-black tracking-widest sm:block mb-0.5">Total</p>
+                                                        <p className="text-xs sm:text-[15px] font-black text-slate-800 leading-none">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}</p>
                                                     </div>
 
-                                                    {/* Controle de Quantidade */}
-                                                    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-0.5 sm:p-1 shadow-sm shrink-0">
+                                                    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm shrink-0">
                                                         <button
                                                             onClick={() => {
                                                                 const newQty = Math.max(0, item.quantity - 1)
@@ -944,7 +980,7 @@ export default function RomaneioPage() {
                                                             value={item.quantity}
                                                             onChange={(e) => updateCartQuantity(item.id, e.target.value, item.unit)}
                                                             onBlur={() => handleQuantityBlur(item.id)}
-                                                            className="w-10 sm:w-12 h-6 sm:h-7 text-center text-xs sm:text-sm font-bold text-gray-900 border-none focus:ring-0 bg-transparent px-0"
+                                                            className="w-8 sm:w-12 h-6 sm:h-7 text-center text-[10px] sm:text-sm font-bold text-gray-900 border-none focus:ring-0 bg-transparent px-0"
                                                         />
                                                         <button
                                                             onClick={() => updateCartQuantity(item.id, String(item.quantity + 1), item.unit)}
@@ -952,15 +988,14 @@ export default function RomaneioPage() {
                                                         >
                                                             <Plus className="w-3 h-3" />
                                                         </button>
-                                                        <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 pr-1 sm:pr-2 uppercase ml-0.5 sm:ml-1">{item.unit}</span>
+                                                        <span className="text-[8px] sm:text-[10px] font-bold text-gray-400 pr-1 sm:pr-2 uppercase ml-0.5 sm:ml-1">{item.unit}</span>
                                                     </div>
 
-                                                    {/* Botão Remover */}
                                                     <button
                                                         onClick={() => setItemToRemove(item.id)}
-                                                        className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors shrink-0"
+                                                        className="w-7 h-7 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg sm:rounded-xl transition-colors shrink-0"
                                                     >
-                                                        <Trash2 className="w-4 h-4" />
+                                                        <Trash2 className="w-3.5 h-3.5 sm:w-4 h-4" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -972,8 +1007,8 @@ export default function RomaneioPage() {
                     </div>
 
                     {/* RIGHTSIDE: RESUMO E FINALIZAÇÃO */}
-                    <div className="flex flex-col h-full">
-                        <div className="bg-slate-900 rounded-2xl p-6 shadow-xl sticky top-24">
+                    <div className="flex flex-col h-full order-last lg:order-none">
+                        <div className="bg-slate-900 rounded-2xl p-4 sm:p-6 shadow-xl lg:sticky lg:top-24">
                             <h2 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
                                 <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                                 Resumo do Romaneio
@@ -1299,6 +1334,32 @@ export default function RomaneioPage() {
                                 className="w-full h-11 pl-11 pr-10 text-sm bg-gray-50/50 border border-gray-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-400 transition-all placeholder-gray-400 font-medium"
                             />
                         </div>
+
+                        {/* Mobile Sorting Selector */}
+                        <div className="md:hidden w-full sm:w-auto">
+                            <div className="relative">
+                                <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <select
+                                    value={`${estoqueSortField}-${estoqueSortDirection}`}
+                                    onChange={(e) => {
+                                        const [field, direction] = e.target.value.split('-') as [keyof StockLevel, 'asc' | 'desc']
+                                        setEstoqueSortField(field)
+                                        setEstoqueSortDirection(direction)
+                                        setEstoquePage(1)
+                                    }}
+                                    className="w-full h-11 pl-10 pr-8 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-gray-700 font-bold appearance-none cursor-pointer"
+                                >
+                                    <option value="product_name-asc">Nome (A-Z)</option>
+                                    <option value="product_name-desc">Nome (Z-A)</option>
+                                    <option value="stock_quantity-asc">Estoque (Menor)</option>
+                                    <option value="stock_quantity-desc">Estoque (Maior)</option>
+                                    <option value="is_low_stock-desc">Status (Aviso Primeiro)</option>
+                                    <option value="color-asc">Cor (A-Z)</option>
+                                    <option value="size-asc">Tamanho (Menor)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <span className="whitespace-nowrap text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
                             {filteredAndSortedStock.length} {filteredAndSortedStock.length === 1 ? 'Produto' : 'Produtos'}
                         </span>
@@ -1311,11 +1372,61 @@ export default function RomaneioPage() {
                                 <thead>
                                     <tr className="border-b border-gray-100">
                                         <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-20">Foto</th>
-                                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Produto</th>
-                                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Cor</th>
-                                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tamanho</th>
-                                        <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Estoque Atual</th>
-                                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-24">Status</th>
+                                        <th
+                                            onClick={() => handleSortEstoque('product_name')}
+                                            className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-50 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-1">
+                                                Produto
+                                                {estoqueSortField === 'product_name' ? (
+                                                    estoqueSortDirection === 'asc' ? <ChevronUp className="w-3 h-3 text-blue-500" /> : <ChevronDown className="w-3 h-3 text-blue-500" />
+                                                ) : <ArrowUpDown className="w-3 h-3 opacity-30" />}
+                                            </div>
+                                        </th>
+                                        <th
+                                            onClick={() => handleSortEstoque('color')}
+                                            className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-50 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-1">
+                                                Cor
+                                                {estoqueSortField === 'color' ? (
+                                                    estoqueSortDirection === 'asc' ? <ChevronUp className="w-3 h-3 text-blue-500" /> : <ChevronDown className="w-3 h-3 text-blue-500" />
+                                                ) : <ArrowUpDown className="w-3 h-3 opacity-30" />}
+                                            </div>
+                                        </th>
+                                        <th
+                                            onClick={() => handleSortEstoque('size')}
+                                            className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-50 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-1">
+                                                Tamanho
+                                                {estoqueSortField === 'size' ? (
+                                                    estoqueSortDirection === 'asc' ? <ChevronUp className="w-3 h-3 text-blue-500" /> : <ChevronDown className="w-3 h-3 text-blue-500" />
+                                                ) : <ArrowUpDown className="w-3 h-3 opacity-30" />}
+                                            </div>
+                                        </th>
+                                        <th
+                                            onClick={() => handleSortEstoque('stock_quantity')}
+                                            className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-50 transition-colors"
+                                        >
+                                            <div className="flex items-center justify-end gap-1">
+                                                Estoque Atual
+                                                {estoqueSortField === 'stock_quantity' ? (
+                                                    estoqueSortDirection === 'asc' ? <ChevronUp className="w-3 h-3 text-blue-500" /> : <ChevronDown className="w-3 h-3 text-blue-500" />
+                                                ) : <ArrowUpDown className="w-3 h-3 opacity-30" />}
+                                            </div>
+                                        </th>
+                                        <th
+                                            onClick={() => handleSortEstoque('is_low_stock')}
+                                            className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-24 cursor-pointer hover:bg-gray-50 transition-colors"
+                                        >
+                                            <div className="flex items-center justify-center gap-1">
+                                                Status
+                                                {estoqueSortField === 'is_low_stock' ? (
+                                                    estoqueSortDirection === 'asc' ? <ChevronUp className="w-3 h-3 text-blue-500" /> : <ChevronDown className="w-3 h-3 text-blue-500" />
+                                                ) : <ArrowUpDown className="w-3 h-3 opacity-30" />}
+                                            </div>
+                                        </th>
                                         <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-36">Ação</th>
                                     </tr>
                                 </thead>
@@ -1560,10 +1671,10 @@ export default function RomaneioPage() {
 
             {/* FLOATING CART SUMMARY (ESTOQUE) */}
             {activeTab === 'estoque' && cartItems.length > 0 && (
-                <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300">
+                <div className="fixed bottom-24 sm:bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300">
                     <button
                         onClick={() => setActiveTab('romaneio')}
-                        className="bg-brand-600 hover:bg-brand-500 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-4 transition-transform active:scale-95"
+                        className="bg-brand-600 hover:bg-brand-500 text-white p-3.5 sm:p-4 rounded-2xl shadow-2xl flex items-center gap-4 transition-transform active:scale-95"
                     >
                         <div className="relative">
                             <ShoppingCart className="w-7 h-7" />
