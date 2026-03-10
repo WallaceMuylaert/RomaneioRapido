@@ -1306,8 +1306,8 @@ export default function RomaneioPage() {
 
                     {/* Desktop Table View */}
                     <div className="hidden md:block bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm min-w-[800px]">
+                        <div className="overflow-x-auto w-full pb-2">
+                            <table className="w-full text-sm min-w-[700px]">
                                 <thead>
                                     <tr className="border-b border-gray-100">
                                         <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-20">Foto</th>
@@ -1315,8 +1315,8 @@ export default function RomaneioPage() {
                                         <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Cor</th>
                                         <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tamanho</th>
                                         <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Estoque Atual</th>
-                                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-32">Ação</th>
+                                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-24">Status</th>
+                                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-36">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
@@ -1354,14 +1354,39 @@ export default function RomaneioPage() {
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
                                                     <div className="flex items-center justify-center gap-2">
-                                                        <input
-                                                            type="number"
-                                                            min="1"
-                                                            value={stockQuantities[s.product_id] || ''}
-                                                            onChange={(e) => setStockQuantities(prev => ({ ...prev, [s.product_id]: e.target.value }))}
-                                                            placeholder="1"
-                                                            className="w-16 h-8 text-center text-sm border font-bold text-gray-700 bg-white border-gray-200 rounded-lg focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        />
+                                                        <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100 shadow-sm">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const currentQty = parseFloat(stockQuantities[s.product_id] || '1');
+                                                                    const step = isIntegerUnit(s.unit) ? 1 : 0.1;
+                                                                    setStockQuantities(prev => ({ ...prev, [s.product_id]: String(Math.max(step, currentQty - step).toFixed(isIntegerUnit(s.unit) ? 0 : 2)) }));
+                                                                }}
+                                                                className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                                                            >
+                                                                <Minus className="w-3 h-3" />
+                                                            </button>
+                                                            <input
+                                                                type="number"
+                                                                min={isIntegerUnit(s.unit) ? "1" : "0.01"}
+                                                                step={isIntegerUnit(s.unit) ? "1" : "0.01"}
+                                                                value={stockQuantities[s.product_id] || ''}
+                                                                onChange={(e) => setStockQuantities(prev => ({ ...prev, [s.product_id]: e.target.value }))}
+                                                                placeholder="1"
+                                                                className="w-12 h-8 text-center text-sm font-bold text-gray-700 bg-white border-x border-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-400 focus:z-10 px-0"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const currentQty = parseFloat(stockQuantities[s.product_id] || '0');
+                                                                    const step = isIntegerUnit(s.unit) ? 1 : 0.1;
+                                                                    setStockQuantities(prev => ({ ...prev, [s.product_id]: String((currentQty + step).toFixed(isIntegerUnit(s.unit) ? 0 : 2)) }));
+                                                                }}
+                                                                className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                                                            >
+                                                                <Plus className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
                                                         <button
                                                             onClick={() => {
                                                                 const qtyStr = stockQuantities[s.product_id] || '1';
@@ -1441,14 +1466,39 @@ export default function RomaneioPage() {
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                value={stockQuantities[s.product_id] || ''}
-                                                onChange={(e) => setStockQuantities(prev => ({ ...prev, [s.product_id]: e.target.value }))}
-                                                placeholder="1"
-                                                className="w-16 h-10 text-center text-sm border font-bold text-gray-700 bg-gray-50 border-gray-200 rounded-xl focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
-                                            />
+                                            <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl overflow-hidden shadow-sm mr-2 w-auto shrink-0">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const currentQty = parseFloat(stockQuantities[s.product_id] || '1');
+                                                        const step = isIntegerUnit(s.unit) ? 1 : 0.1;
+                                                        setStockQuantities(prev => ({ ...prev, [s.product_id]: String(Math.max(step, currentQty - step).toFixed(isIntegerUnit(s.unit) ? 0 : 2)) }));
+                                                    }}
+                                                    className="w-10 h-10 flex items-center justify-center text-gray-500 bg-white hover:bg-gray-100 active:bg-gray-200 transition-colors border-r border-gray-200 z-10"
+                                                >
+                                                    <Minus className="w-4 h-4" />
+                                                </button>
+                                                <input
+                                                    type="number"
+                                                    min={isIntegerUnit(s.unit) ? "1" : "0.01"}
+                                                    step={isIntegerUnit(s.unit) ? "1" : "0.01"}
+                                                    value={stockQuantities[s.product_id] || ''}
+                                                    onChange={(e) => setStockQuantities(prev => ({ ...prev, [s.product_id]: e.target.value }))}
+                                                    placeholder="1"
+                                                    className="w-12 h-10 text-center text-[15px] font-bold text-gray-800 bg-gray-50 border-none focus:outline-none focus:ring-0 px-0"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const currentQty = parseFloat(stockQuantities[s.product_id] || '0');
+                                                        const step = isIntegerUnit(s.unit) ? 1 : 0.1;
+                                                        setStockQuantities(prev => ({ ...prev, [s.product_id]: String((currentQty + step).toFixed(isIntegerUnit(s.unit) ? 0 : 2)) }));
+                                                    }}
+                                                    className="w-10 h-10 flex items-center justify-center text-gray-500 bg-white hover:bg-gray-100 active:bg-gray-200 transition-colors border-l border-gray-200 z-10"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                             <button
                                                 onClick={() => {
                                                     const qtyStr = stockQuantities[s.product_id] || '1';
