@@ -18,3 +18,9 @@ class SubscriptionStatus(BaseModel):
     plan_id: str
     stripe_subscription_id: Optional[str] = None
     status: Optional[str] = None
+
+
+class SessionStatusResponse(BaseModel):
+    status: Optional[str] = None
+    payment_status: Optional[str] = None
+    plan_updated: bool = False
