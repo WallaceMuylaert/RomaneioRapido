@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
-import { X, Camera, RefreshCcw, CheckCircle2 } from 'lucide-react'
+import { X, Camera, RefreshCcw, CheckCircle2, ScanBarcode } from 'lucide-react'
 
 interface BarcodeScannerProps {
     onScan: (decodedText: string) => void
     onClose: () => void
+    status?: 'idle' | 'searching' | 'success' | 'error'
 }
 
-export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
+export default function BarcodeScanner({ onScan, onClose, status = 'idle' }: BarcodeScannerProps) {
     const scannerRef = useRef<Html5Qrcode | null>(null)
     const containerId = "reader"
     const [scanSuccess, setScanSuccess] = useState(false)
@@ -15,6 +16,15 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
     const [isSecureContext, setIsSecureContext] = useState(true)
     const [needsPermission, setNeedsPermission] = useState(true)
     const isScanningRef = useRef(false)
+    const isStartingRef = useRef(false)
+
+    // Sincroniza sucesso local com status do pai
+    useEffect(() => {
+        if (status === 'success') {
+            setScanSuccess(true)
+        } else if (status === 'searching') {
+        }
+    }, [status])
 
     const stopScanner = async () => {
         if (scannerRef.current && scannerRef.current.isScanning) {
@@ -27,19 +37,25 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
     }
 
     const startScanner = async () => {
-        if (!scannerRef.current) return
+        if (!scannerRef.current || isStartingRef.current) return
+        isStartingRef.current = true
         setErrorMessage(null)
         setNeedsPermission(false)
+        setIsSecureContext(window.isSecureContext)
 
         // Verifica se o contexto é seguro (HTTPS ou localhost)
         if (!window.isSecureContext) {
-            setIsSecureContext(false)
             setErrorMessage("A câmera só pode ser acessada em conexões seguras (HTTPS).")
+            isStartingRef.current = false
             return
         }
 
         try {
+            // Garante que tentativas anteriores foram limpas
             await stopScanner()
+
+            // Pequeno delay para dar tempo ao hardware de ser liberado se acabou de fechar
+            await new Promise(resolve => setTimeout(resolve, 300))
 
             const config = {
                 fps: 10,
@@ -86,11 +102,16 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
             }
         } catch (err: any) {
             console.error("FALHA AO INICIAR:", err)
-            if (err?.includes?.("NotAllowedError") || err?.name === "NotAllowedError") {
+            const errStr = String(err)
+            if (errStr.includes("NotAllowedError") || err?.name === "NotAllowedError") {
                 setErrorMessage("Permissão de câmera negada. Por favor, permita o acesso nas configurações do seu navegador.")
+            } else if (errStr.includes("NotReadableError") || err?.name === "NotReadableError") {
+                setErrorMessage("A câmera está sendo usada por outro aplicativo ou aba. Feche outros apps de vídeo e tente novamente.")
             } else {
-                setErrorMessage("Não foi possível acessar a câmera. Verifique se ela não está sendo usada por outro app.")
+                setErrorMessage("Não foi possível acessar a câmera. Verifique se ela está conectada ou tente atualizar a página.")
             }
+        } finally {
+            isStartingRef.current = false
         }
     }
 
@@ -119,11 +140,25 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
             <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
                 <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white relative z-10">
                     <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${scanSuccess ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
-                            {scanSuccess ? <CheckCircle2 className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${status === 'success' ? 'bg-emerald-100 text-emerald-600 scale-110' :
+                            status === 'searching' ? 'bg-blue-100 text-blue-600 animate-bounce' :
+                                status === 'error' ? 'bg-red-100 text-red-600' :
+                                    'bg-blue-50 text-blue-600'
+                            }`}>
+                            {status === 'success' ? <CheckCircle2 className="w-4 h-4" /> :
+                                status === 'searching' ? <RefreshCcw className="w-4 h-4 animate-spin" /> :
+                                    status === 'error' ? <X className="w-4 h-4" /> :
+                                        <Camera className="w-4 h-4" />}
                         </div>
-                        <h2 className={`text-sm font-bold transition-colors ${scanSuccess ? 'text-emerald-600' : 'text-gray-900'} text-nowrap`}>
-                            {scanSuccess ? 'Lido com sucesso!' : 'Centralize o Código'}
+                        <h2 className={`text-sm font-bold transition-colors duration-300 ${status === 'success' ? 'text-emerald-600' :
+                            status === 'searching' ? 'text-blue-600' :
+                                status === 'error' ? 'text-red-600' :
+                                    'text-gray-900'
+                            } text-nowrap`}>
+                            {status === 'success' ? 'Lido com sucesso!' :
+                                status === 'searching' ? 'Processando leitura...' :
+                                    status === 'error' ? 'Falha na identificação' :
+                                        'Centralize o Código'}
                         </h2>
                     </div>
                     <button onClick={onClose} className="p-2 text-gray-400 hover:bg-gray-50 rounded-full">
@@ -172,7 +207,7 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
                         <div id={containerId} className="w-full h-full" />
 
                         {/* Overlay visual fixo para guiar o usuário */}
-                        {!scanSuccess && (
+                        {status === 'idle' && !scanSuccess && (
                             <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
                                 <div className="w-[200px] h-[200px] border-2 border-blue-500/50 rounded-2xl relative shadow-[0_0_0_999px_rgba(0,0,0,0.3)] transition-all">
                                     <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-blue-500 rounded-tl-lg" />
@@ -181,6 +216,17 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
                                     <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-blue-500 rounded-br-lg" />
                                     <div className="absolute top-1/2 left-4 right-4 h-px bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)] animate-pulse" />
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Indicador de "Lendo..." no centro */}
+                        {status === 'searching' && (
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+                                <div className="relative">
+                                    <div className="w-20 h-20 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                                    <ScanBarcode className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-white animate-pulse" />
+                                </div>
+                                <span className="mt-4 text-white font-black text-xs uppercase tracking-[0.2em] animate-pulse">Lendo código...</span>
                             </div>
                         )}
                     </div>
@@ -204,6 +250,10 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
                                 <RefreshCcw className="w-3.5 h-3.5" /> Tentar Novamente
                             </button>
                         </>
+                    ) : status === 'searching' ? (
+                        <p className="text-[13px] text-blue-700 leading-relaxed font-bold animate-pulse">
+                            Buscando no banco de dados...
+                        </p>
                     ) : !scanSuccess ? (
                         <>
                             <button
@@ -219,7 +269,7 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
                         </>
                     ) : (
                         <p className="text-[13px] text-emerald-700 leading-relaxed font-bold animate-pulse">
-                            Buscando no banco de dados...
+                            Produto Localizado!
                         </p>
                     )}
                 </div>
