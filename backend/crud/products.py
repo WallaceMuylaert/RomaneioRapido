@@ -115,7 +115,7 @@ def update_product(db: Session, product_id: int, product: ProductUpdate, user_id
             product_id=db_product.id,
             quantity=abs(diff),
             movement_type=mov_type,
-            notes='Ajuste de Estoque (Edição)',
+            notes='Não identificado pelo operador',
             product_name_snapshot=db_product.name,
             product_barcode_snapshot=db_product.barcode,
             unit_price_snapshot=db_product.price,

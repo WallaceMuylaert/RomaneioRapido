@@ -27,7 +27,10 @@ def set_user_plan(
     if plan_id not in PLANS_CONFIG:
         raise HTTPException(status_code=400, detail=f"Plano '{plan_id}' inválido.")
         
-    current_user.plan_id = plan_id
-    db.commit()
-    
-    return {"message": f"Plano alterado para {plan_id} com sucesso!", "plan_id": plan_id}
+    try:
+        current_user.plan_id = plan_id
+        db.commit()
+        return {"message": f"Plano alterado para {plan_id} com sucesso!", "plan_id": plan_id}
+    except Exception as e:
+        db.rollback()
+        return {"error": str(e)}

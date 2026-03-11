@@ -28,7 +28,8 @@ def create_movement(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao criar movimentação de estoque: {e}")
+        db.rollback()
+        logger.exception("Erro crítico ao criar movimentação de estoque")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -63,7 +64,7 @@ def list_movements(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao listar movimentações: {e}")
+        logger.exception("Erro crítico ao listar movimentações")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -75,5 +76,5 @@ def get_stock_levels(request: Request, db: Session = Depends(get_db), current_us
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao buscar níveis de estoque: {e}")
+        logger.exception("Erro crítico ao buscar níveis de estoque")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")

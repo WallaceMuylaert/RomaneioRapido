@@ -22,10 +22,11 @@ api.interceptors.response.use(
         const isLoginRequest = error.config?.url?.includes('/auth/login')
         const isLoginPage = window.location.pathname === '/login'
         const isPollingRequest = error.config?.url?.includes('/plans/session-status')
+        const isGetRequest = error.config?.method?.toLowerCase() === 'get'
 
-        // Erro de rede ou servidor fora do ar (não redirecionar durante polling de pagamento)
+        // Erro de rede ou servidor fora do ar (não redirecionar durante polling de pagamento e apenas em GET configs para não explodir os Forms)
         if (!error.response || (error.response.status >= 500 && error.response.status <= 504)) {
-            if (!isPollingRequest && window.location.pathname !== '/error') {
+            if (!isPollingRequest && isGetRequest && window.location.pathname !== '/error') {
                 const code = error.response?.status || 503;
                 window.location.href = `/error?code=${code}`;
             }

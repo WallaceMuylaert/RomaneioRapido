@@ -594,7 +594,7 @@ export default function RomaneioPage() {
                     product_id: item.id,
                     quantity: item.quantity,
                     movement_type: 'OUT',
-                    notes: customerName ? `Romaneio: ${customerName} ` : 'Romaneio Rápido',
+                    notes: customerName ? `Romaneio: ${customerName} ` : 'Não identificado pelo operador',
                     romaneio_id: romaneioBatchId,
                     client_id: selectedClientId,
                     product_name_snapshot: item.name,
@@ -1066,9 +1066,13 @@ export default function RomaneioPage() {
                                     <span className="text-sm font-bold text-white">{cartItems.length}</span>
                                 </div>
                                 <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
-                                    <span className="text-sm text-slate-400">Total de Peças (Qtd)</span>
+                                    <span className="text-sm text-slate-400">
+                                        {cartItems.every(i => i.unit.toUpperCase() === 'KG') ? 'Peso Total (Kg)' :
+                                         cartItems.every(i => ['UN', 'PC', 'PÇ'].includes(i.unit.toUpperCase())) ? 'Total de Peças' :
+                                         'Quantidade Total'}
+                                    </span>
                                     <span className="text-lg font-bold text-slate-300">
-                                        {cartItems.reduce((acc, i) => acc + i.quantity, 0)}
+                                        {cartItems.reduce((acc, i) => acc + i.quantity, 0).toLocaleString('pt-BR', { minimumFractionDigits: cartItems.some(i => i.unit.toUpperCase() === 'KG') ? 2 : 0 })}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">

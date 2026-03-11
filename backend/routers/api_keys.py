@@ -66,7 +66,8 @@ def create_key(
             full_key=raw_key,
         )
     except Exception as e:
-        logger.error(f"Erro ao criar API Key para {current_user.email}: {e}")
+        db.rollback()
+        logger.exception(f"Erro crítico ao criar API Key para {current_user.email}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -84,7 +85,7 @@ def list_keys(
         keys = list_api_keys(db, current_user.id)
         return keys
     except Exception as e:
-        logger.error(f"Erro ao listar API Keys para {current_user.email}: {e}")
+        logger.exception(f"Erro crítico ao listar API Keys para {current_user.email}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -112,5 +113,6 @@ def revoke_key(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao revogar API Key {key_id} para {current_user.email}: {e}")
+        db.rollback()
+        logger.exception(f"Erro crítico ao revogar API Key {key_id} para {current_user.email}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
