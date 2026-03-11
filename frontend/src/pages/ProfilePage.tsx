@@ -103,9 +103,7 @@ export default function ProfilePage() {
     // Estados para verificação de pagamento
     const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('processing')
     const [showPaymentModal, setShowPaymentModal] = useState(false)
-    const [paymentError, setPaymentError] = useState<string | undefined>()
-    const [verificationAttempts, setVerificationAttempts] = useState(0)
-    const [purchasedPlanName, setPurchasedPlanName] = useState<string | undefined>()
+    const [paymentError, setPaymentError] = useState<string | undefined>(undefined)
 
     useEffect(() => {
         if (user) {

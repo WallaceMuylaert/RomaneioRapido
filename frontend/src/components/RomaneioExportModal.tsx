@@ -86,10 +86,10 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
 
         const phoneOnlyDigits = phone.replace(/\D/g, '')
 
-        let text = `\u{1F4E6} *ROMANEIO RÁPIDO*\n`
-        text += `\u{1F464} *Cliente:* ${customerName || 'Não informado'}\n`
-        text += `\u{1F4C5} *Data:* ${dateStr}\n\n`
-        text += `\u{2705} *ITENS DO PEDIDO:*\n`
+        let text = `*ROMANEIO RÁPIDO*\n`
+        text += `*Cliente:* ${customerName || 'Não informado'}\n`
+        text += `*Data:* ${dateStr}\n\n`
+        text += `*ITENS DO PEDIDO:*\n`
 
         items.forEach((item, index) => {
             text += `${index + 1}. ${item.name}\n`
@@ -97,13 +97,13 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                 text += `   ↳ _Variante: ${[item.color, item.size].filter(Boolean).join(' • ')}_\n`
             }
             if (item.barcode) {
-                text += `   \u{1F3F7} Cód: ${item.barcode}\n`
+                text += `   Cód: ${item.barcode}\n`
             }
-            text += `   \u{1F539} Qtd: ${item.quantity} ${item.unit} | \u{1F4B8} Unit: ${formatCurrency(item.price)} | \u{1F4B0} Sub: ${formatCurrency(item.price * item.quantity)}\n\n`
+            text += `   Qtd: ${item.quantity} ${item.unit} | Unit: ${formatCurrency(item.price)} | Sub: ${formatCurrency(item.price * item.quantity)}\n\n`
         })
 
-        text += `\u{1F4CA} *Total de Itens:* ${totalItems}\n`
-        text += `\u{1F4B5} *VALOR TOTAL:* ${formatCurrency(totalValue)}\n\n`
+        text += `*Total de Itens:* ${totalItems}\n`
+        text += `*VALOR TOTAL:* ${formatCurrency(totalValue)}\n\n`
         text += `_Gerado por RomaneioRapido_`
 
         // Limpeza de caracteres invisíveis e espaços especiais (comum em Intl.NumberFormat)

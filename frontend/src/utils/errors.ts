@@ -49,7 +49,29 @@ export const translateError = (error: any): string => {
         }
     }
 
-    if (typeof error === 'string') return error
+    if (typeof error === 'string') {
+        const lowerError = error.toLowerCase()
+        if (lowerError.includes('network error') || lowerError.includes('failed to fetch')) {
+            return 'Erro de conexão com a intenet. Tente novamente mais tarde.'
+        }
+        if (lowerError.includes('request failed with status code 500')) {
+            return 'Ocorreu um erro interno no servidor. Tente novamente mais tarde.'
+        }
+        if (lowerError.includes('request failed with status code 404') || lowerError.includes('not found')) {
+            return 'O recurso solicitado não foi encontrado.'
+        }
+        if (lowerError.includes('request failed with status code 403') || lowerError.includes('forbidden')) {
+            return 'Você não tem permissão para realizar esta ação.'
+        }
+        if (lowerError.includes('request failed with status code 401') || lowerError.includes('unauthorized')) {
+            return 'Sua sessão expirou ou você não está autorizado.'
+        }
+        if (lowerError.includes('timeout')) {
+            return 'O tempo de requisição esgotou. Tente novamente.'
+        }
+        
+        return error
+    }
 
     return 'Erro ao processar solicitação'
 }
