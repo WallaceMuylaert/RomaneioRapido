@@ -26,7 +26,8 @@ def create_client(
         logger.info(f"Usuário {current_user.email} está criando o cliente {client.name}")
         return crud.create_client(db, client, user_id=current_user.id)
     except Exception as e:
-        logger.error(f"Erro ao criar cliente: {e}")
+        db.rollback()
+        logger.exception("Erro crítico ao criar cliente")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -54,7 +55,7 @@ def list_clients(
             "pages": pages,
         }
     except Exception as e:
-        logger.error(f"Erro ao listar clientes: {e}")
+        logger.exception("Erro crítico ao listar clientes")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -76,7 +77,8 @@ def update_client(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao atualizar cliente: {e}")
+        db.rollback()
+        logger.exception("Erro crítico ao atualizar cliente")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -97,5 +99,6 @@ def delete_client(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao excluir cliente: {e}")
+        db.rollback()
+        logger.exception("Erro crítico ao excluir cliente")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")

@@ -42,7 +42,7 @@ def login(request: Request, login_data: LoginRequest, db: Session = Depends(get_
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro inesperado no login para {login_data.email}: {e}")
+        logger.exception(f"Erro inesperado no login para {login_data.email}: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -57,7 +57,7 @@ def get_me(request: Request, current_user: User = Depends(get_current_user)):
         user_data.trial_days_remaining = get_trial_days_remaining(current_user)
         return user_data
     except Exception as e:
-        logger.error(f"Erro ao buscar dados do usuário: {e}")
+        logger.exception("Erro ao buscar dados do usuário")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -83,8 +83,8 @@ def update_me(request: Request, update_data: UserUpdate, db: Session = Depends(g
         logger.info(f"Usuário {current_user.email} atualizou o perfil.")
         return current_user
     except Exception as e:
-        logger.error(f"Erro ao atualizar usuário: {e}")
         db.rollback()
+        logger.exception("Erro ao atualizar perfil do usuário")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -113,7 +113,8 @@ def forgot_password(request: Request, data: ForgotPasswordRequest, background_ta
         # Mesmo que o usuário não exista, retornamos sucesso por segurança (impedir enumeração)
         return {"message": "Se o e-mail existir em nossa base, um link de recuperação será enviado."}
     except Exception as e:
-        logger.error(f"Erro no forgot-password para {data.email}: {e}")
+        db.rollback()
+        logger.exception(f"Erro no forgot-password para {data.email}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -140,5 +141,6 @@ def reset_password(request: Request, data: ResetPasswordRequest, db: Session = D
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro no reset-password: {e}")
+        db.rollback()
+        logger.exception("Erro crítico no reset-password")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")

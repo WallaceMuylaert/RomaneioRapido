@@ -25,7 +25,7 @@ def list_categories(request: Request, skip: int = 0, limit: int = 100, db: Sessi
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao listar categorias: {e}")
+        logger.exception("Erro crítico ao listar categorias")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -40,7 +40,7 @@ def get_category(request: Request, category_id: int, db: Session = Depends(get_d
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao buscar categoria ID={category_id}: {e}")
+        logger.exception(f"Erro crítico ao buscar categoria ID={category_id}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -62,7 +62,8 @@ def create_category(request: Request, category: CategoryCreate, db: Session = De
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao criar categoria: {e}")
+        db.rollback()
+        logger.exception("Erro crítico ao criar categoria")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -76,7 +77,8 @@ def reorder_categories(request: Request, reorder_request: ReorderRequest, db: Se
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao reordenar categorias: {e}")
+        db.rollback()
+        logger.exception("Erro crítico ao reordenar categorias")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -92,7 +94,8 @@ def update_category(request: Request, category_id: int, category: CategoryUpdate
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao atualizar categoria ID={category_id}: {e}")
+        db.rollback()
+        logger.exception(f"Erro crítico ao atualizar categoria ID={category_id}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -108,5 +111,6 @@ def delete_category(request: Request, category_id: int, db: Session = Depends(ge
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao deletar categoria ID={category_id}: {e}")
+        db.rollback()
+        logger.exception(f"Erro crítico ao deletar categoria ID={category_id}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")

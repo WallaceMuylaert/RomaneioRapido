@@ -46,7 +46,7 @@ def list_products(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao listar produtos: {e}")
+        logger.exception("Erro crítico ao listar produtos")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -61,7 +61,7 @@ def get_product_by_barcode(request: Request, barcode: str, db: Session = Depends
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao buscar produto por barcode {barcode}: {e}")
+        logger.exception(f"Erro crítico ao buscar produto por barcode {barcode}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -76,7 +76,7 @@ def get_product(request: Request, product_id: int, db: Session = Depends(get_db)
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao buscar produto ID={product_id}: {e}")
+        logger.exception(f"Erro crítico ao buscar produto ID={product_id}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -106,7 +106,8 @@ def create_product(request: Request, product: ProductCreate, db: Session = Depen
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao criar produto: {e}")
+        db.rollback()
+        logger.exception("Erro crítico ao criar produto")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -122,7 +123,8 @@ def update_product(request: Request, product_id: int, product: ProductUpdate, db
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao atualizar produto ID={product_id}: {e}")
+        db.rollback()
+        logger.exception(f"Erro crítico ao atualizar produto ID={product_id}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -138,5 +140,6 @@ def delete_product(request: Request, product_id: int, db: Session = Depends(get_
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao deletar produto ID={product_id}: {e}")
+        db.rollback()
+        logger.exception(f"Erro crítico ao deletar produto ID={product_id}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")

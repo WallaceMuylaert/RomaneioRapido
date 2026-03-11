@@ -32,5 +32,6 @@ def register_user(request: Request, user_in: UserCreate, db: Session = Depends(g
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao registrar usuário: {e}")
+        db.rollback()
+        logger.exception("Erro crítico ao registrar usuário")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")

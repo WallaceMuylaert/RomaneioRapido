@@ -28,14 +28,19 @@ def _get_or_create_customer(user: User, db: Session) -> str:
     if user.stripe_customer_id:
         return user.stripe_customer_id
 
-    customer = stripe.Customer.create(
-        email=user.email,
-        name=user.full_name,
-        metadata={"user_id": str(user.id)},
-    )
-    user.stripe_customer_id = customer.id
-    db.commit()
-    return customer.id
+    try:
+        customer = stripe.Customer.create(
+            email=user.email,
+            name=user.full_name,
+            metadata={"user_id": str(user.id)},
+        )
+        user.stripe_customer_id = customer.id
+        db.commit()
+        return customer.id
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"Erro ao criar customer no Stripe para o usuário {user.id}")
+        raise HTTPException(status_code=500, detail="Erro ao processar dados de pagamento")
 
 
 @router.get("/usage")
@@ -144,7 +149,8 @@ def get_session_status(
             else:
                 logger.warning(f"Price ID {price_id} não mapeado para nenhum plano (polling fallback)")
         except Exception as e:
-            logger.error(f"Erro no fallback de atualização de plano: {e}")
+            db.rollback()
+            logger.exception("Erro crítico no fallback de atualização de plano")
 
     return SessionStatusResponse(
         status=session_status,
@@ -224,10 +230,14 @@ def _handle_checkout_completed(session: dict, db: Session):
     plan_id = PRICE_TO_PLAN_MAP.get(price_id)
 
     if plan_id:
-        user.plan_id = plan_id
-        user.stripe_subscription_id = subscription_id
-        db.commit()
-        logger.info(f"Usuário {user.id} atualizado para plano {plan_id}")
+        try:
+            user.plan_id = plan_id
+            user.stripe_subscription_id = subscription_id
+            db.commit()
+            logger.info(f"Usuário {user.id} atualizado para plano {plan_id}")
+        except Exception as e:
+            db.rollback()
+            logger.exception(f"Erro ao processar checkout.session.completed para o usuário {user.id}")
     else:
         logger.warning(f"Price ID {price_id} não mapeado para nenhum plano")
 
@@ -246,10 +256,14 @@ def _handle_subscription_updated(subscription: dict, db: Session):
     status = subscription.get("status")
 
     if plan_id and status == "active":
-        user.plan_id = plan_id
-        user.stripe_subscription_id = subscription["id"]
-        db.commit()
-        logger.info(f"Assinatura de {user.id} atualizada para {plan_id}")
+        try:
+            user.plan_id = plan_id
+            user.stripe_subscription_id = subscription["id"]
+            db.commit()
+            logger.info(f"Assinatura de {user.id} atualizada para {plan_id}")
+        except Exception as e:
+            db.rollback()
+            logger.exception(f"Erro ao atualizar assinatura para o usuário {user.id}")
     elif status in ("past_due", "unpaid"):
         logger.warning(f"Assinatura de {user.id} com status {status}")
 
@@ -262,10 +276,14 @@ def _handle_subscription_deleted(subscription: dict, db: Session):
     if not user:
         return
 
-    user.plan_id = "trial"
-    user.stripe_subscription_id = None
-    db.commit()
-    logger.info(f"Assinatura de {user.id} cancelada, revertido para trial")
+    try:
+        user.plan_id = "trial"
+        user.stripe_subscription_id = None
+        db.commit()
+        logger.info(f"Assinatura de {user.id} cancelada, revertido para trial")
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"Erro ao processar cancelamento de assinatura para o usuário {user.id}")
 
 
 def _handle_payment_failed(invoice: dict, db: Session):
@@ -295,7 +313,12 @@ def subscribe_legacy(
             detail="Use POST /plans/checkout para assinar planos pagos",
         )
 
-    # Fallback sem Stripe (ambiente dev sem configuração)
-    current_user.plan_id = request.plan_id
-    db.commit()
-    return {"message": f"Assinatura atualizada para {request.plan_id}", "plan_id": request.plan_id}
+    try:
+        # Fallback sem Stripe (ambiente dev sem configuração)
+        current_user.plan_id = request.plan_id
+        db.commit()
+        return {"message": f"Assinatura atualizada para {request.plan_id}", "plan_id": request.plan_id}
+    except Exception as e:
+        db.rollback()
+        logger.exception("Erro crítico no fallback de assinatura legado")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
