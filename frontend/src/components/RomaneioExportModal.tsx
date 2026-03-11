@@ -197,7 +197,8 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                                 <td><strong>${item.quantity}</strong></td>
                                 <td>${item.unit}</td>
                                 <td>
-                                    ${item.name}
+                                    <strong>${item.name}</strong>
+                                    ${(item.color || item.size) ? `<div style="color: #4B5563; font-weight: bold; font-size: 11px; margin-top: 2px;">Variante: ${[item.color, item.size].filter(Boolean).join(' • ')}</div>` : ''}
                                     <div style="color: #6B7280; font-family: monospace; font-size: 11px;">${item.barcode || '-'}</div>
                                 </td>
                                 <td style="text-align: right;">${formatCurrency(item.price)}</td>
@@ -271,6 +272,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                 ${items.map(item => `
                     <div class="item">
                         <div class="item-name">${item.name}</div>
+                        ${(item.color || item.size) ? `<div style="font-size: 10px; font-weight: bold; margin-bottom: 2px;">Variante: ${[item.color, item.size].filter(Boolean).join(' • ')}</div>` : ''}
                         <div class="item-details" style="margin-bottom: 2px;">
                             <span>${item.quantity} ${item.unit} x ${formatCurrency(item.price)}</span>
                             <span>${formatCurrency(item.quantity * item.price)}</span>

@@ -594,7 +594,7 @@ export default function RomaneioPage() {
                     product_id: item.id,
                     quantity: item.quantity,
                     movement_type: 'OUT',
-                    notes: customerName ? `Romaneio: ${customerName} ` : 'Romaneio Rápido',
+                    notes: customerName ? `Romaneio: ${customerName} ` : 'Não identificado pelo operador',
                     romaneio_id: romaneioBatchId,
                     client_id: selectedClientId,
                     product_name_snapshot: item.name,
