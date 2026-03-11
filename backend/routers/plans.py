@@ -8,7 +8,7 @@ from backend.models.products import Product
 from backend.models.categories import Category
 from backend.core.config import settings
 from backend.core.plans_config import PLANS_CONFIG, STRIPE_PRICE_MAP, PRICE_TO_PLAN_MAP
-from backend.schemas.plans import SubscribeRequest, CheckoutResponse, PortalResponse
+from backend.schemas.plans import SubscribeRequest, CheckoutResponse, PortalResponse, SessionStatusResponse
 from backend.config.logger import get_dynamic_logger
 
 logger = get_dynamic_logger("plans")
@@ -86,7 +86,7 @@ def create_checkout(
         payment_method_types=["card"],
         line_items=[{"price": price_id, "quantity": 1}],
         mode="subscription",
-        success_url=f"{settings.FRONTEND_URL}/perfil?checkout=success",
+        success_url=f"{settings.FRONTEND_URL}/perfil?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=f"{settings.FRONTEND_URL}/perfil?checkout=cancel",
         metadata={"user_id": str(current_user.id), "plan_id": request.plan_id},
         subscription_data={
@@ -95,6 +95,62 @@ def create_checkout(
     )
 
     return CheckoutResponse(checkout_url=checkout_session.url)
+
+
+@router.get("/session-status/{session_id}", response_model=SessionStatusResponse)
+def get_session_status(
+    session_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Verifica o status de uma sessão de checkout Stripe (polling pós-checkout)."""
+    _get_stripe()
+
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Garantir que a sessão pertence ao customer do usuário atual
+    customer_id = session.get("customer")
+    if customer_id and current_user.stripe_customer_id and customer_id != current_user.stripe_customer_id:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+
+    session_status = session.get("status")
+    payment_status = session.get("payment_status")
+    subscription_id = session.get("subscription")
+
+    # Verificar se o webhook já atualizou o plano no banco
+    db.refresh(current_user)
+    plan_updated = bool(
+        subscription_id and current_user.stripe_subscription_id == subscription_id
+    )
+
+    # Fallback: se o pagamento foi confirmado mas o webhook ainda não atualizou,
+    # atualizar o plano diretamente (essencial para dev local e webhooks atrasados)
+    if session_status == "complete" and payment_status == "paid" and not plan_updated and subscription_id:
+        try:
+            subscription = stripe.Subscription.retrieve(subscription_id)
+            price_id = subscription["items"]["data"][0]["price"]["id"]
+            plan_id = PRICE_TO_PLAN_MAP.get(price_id)
+            if plan_id:
+                current_user.plan_id = plan_id
+                current_user.stripe_subscription_id = subscription_id
+                if not current_user.stripe_customer_id:
+                    current_user.stripe_customer_id = customer_id
+                db.commit()
+                plan_updated = True
+                logger.info(f"Plano de {current_user.id} atualizado via polling (fallback): {plan_id}")
+            else:
+                logger.warning(f"Price ID {price_id} não mapeado para nenhum plano (polling fallback)")
+        except Exception as e:
+            logger.error(f"Erro no fallback de atualização de plano: {e}")
+
+    return SessionStatusResponse(
+        status=session_status,
+        payment_status=payment_status,
+        plan_updated=plan_updated,
+    )
 
 
 @router.post("/portal", response_model=PortalResponse)

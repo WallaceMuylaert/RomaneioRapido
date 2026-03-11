@@ -1,6 +1,7 @@
 import os
 import time
 import warnings
+from contextlib import asynccontextmanager
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, message="'crypt' is deprecated")
 
@@ -31,6 +32,21 @@ _docs_url     = None if _is_production else "/docs"
 _redoc_url    = None if _is_production else "/redoc"
 _openapi_url  = None if _is_production else "/openapi.json"
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Executa migrações e init do banco antes de aceitar requisições."""
+    try:
+        logger.info("Running startup migrations...")
+        from backend.database.migrate import run_migrations
+        run_migrations()
+        logger.info("Migrations completed successfully.")
+    except Exception as e:
+        logger.error(f"Migration failed on startup: {e}")
+        raise
+    yield
+
+
 app = FastAPI(
     title="RomaneioRapido API",
     description="API para gestão de estoque e inventário",
@@ -38,6 +54,7 @@ app = FastAPI(
     docs_url=_docs_url,
     redoc_url=_redoc_url,
     openapi_url=_openapi_url,
+    lifespan=lifespan,
 )
 
 _MAX_BODY_SIZE = int(os.getenv("MAX_BODY_SIZE_BYTES", 10 * 1024 * 1024))  # 10 MB

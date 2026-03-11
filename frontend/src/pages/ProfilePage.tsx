@@ -61,7 +61,7 @@ const calculatePasswordStrength = (password: string): { score: number, color: st
 }
 
 export default function ProfilePage() {
-    const { user } = useAuth()
+    const { user, refreshUser } = useAuth()
     const [activeTab, setActiveTab] = useState<'general' | 'subscription' | 'security'>('general')
 
     const [saving, setSaving] = useState(false)
@@ -105,6 +105,7 @@ export default function ProfilePage() {
     const [showPaymentModal, setShowPaymentModal] = useState(false)
     const [paymentError, setPaymentError] = useState<string | undefined>()
     const [verificationAttempts, setVerificationAttempts] = useState(0)
+    const [purchasedPlanName, setPurchasedPlanName] = useState<string | undefined>()
 
     useEffect(() => {
         if (user) {
@@ -134,32 +135,41 @@ export default function ProfilePage() {
             let isMounted = true
             const maxAttempts = 15 // ~30 segundos de polling
             let pollTimer: any
+            let attempts = 0
 
             const checkStatus = async () => {
                 if (!isMounted) return
+                attempts++
                 try {
                     const response = await api.get(`/plans/session-status/${sessionId}`)
                     const { status, payment_status, plan_updated } = response.data
 
                     if (status === 'complete' && payment_status === 'paid' && plan_updated) {
                         setPaymentStatus('success')
+                        // Atualizar contexto do usuário e dados de uso
+                        await refreshUser()
+                        await fetchUsageData()
                         // Limpar parâmetros da URL após sucesso
                         window.history.replaceState({}, '', window.location.pathname)
                     } else if (status === 'expired' || payment_status === 'failed') {
                         setPaymentStatus('failed')
                         setPaymentError('O pagamento expirou ou foi recusado pela sua instituição financeira.')
-                    } else if (verificationAttempts > maxAttempts) {
+                    } else if (attempts >= maxAttempts) {
                         setPaymentStatus('pending')
                     } else {
                         // Continuar tentando se ainda estiver processando ou o webhook não bateu
-                        setVerificationAttempts(prev => prev + 1)
                         pollTimer = setTimeout(checkStatus, 2000)
                     }
                 } catch (err) {
                     if (!isMounted) return
                     console.error("Erro ao verificar status do pagamento:", err)
-                    setPaymentStatus('failed')
-                    setPaymentError('Não conseguimos verificar o status do seu pagamento. Verifique seu e-mail ou entre em contato.')
+                    if (attempts >= maxAttempts) {
+                        setPaymentStatus('failed')
+                        setPaymentError('Não conseguimos verificar o status do seu pagamento. Verifique seu e-mail ou entre em contato.')
+                    } else {
+                        // Tentar novamente mesmo em caso de erro
+                        pollTimer = setTimeout(checkStatus, 2000)
+                    }
                 }
             }
 
@@ -173,7 +183,7 @@ export default function ProfilePage() {
             setActiveTab('subscription')
             window.history.replaceState({}, '', window.location.pathname)
         }
-    }, [verificationAttempts]) // Adicionamos verificationAttempts para re-rodar o loop se necessário (embora o setTimeout já cuide)
+    }, []) // Rodar apenas uma vez na montagem, o polling é controlado internamente por setTimeout
 
     const fetchUsageData = async () => {
         setIsLoadingUsage(true)
@@ -1000,10 +1010,10 @@ export default function ProfilePage() {
                 onClose={() => {
                     setShowPaymentModal(false)
                     if (paymentStatus === 'success') {
-                        window.location.reload()
+                        fetchUsageData()
                     }
                 }}
-                planName={PLANS.find(p => p.id === usage.plan_id)?.name}
+                planName={PLANS.find(p => p.id === (user?.plan_id || usage.plan_id))?.name}
             />
         </div>
     )
