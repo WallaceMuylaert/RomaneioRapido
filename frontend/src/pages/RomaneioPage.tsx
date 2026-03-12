@@ -423,6 +423,103 @@ export default function RomaneioPage() {
         }
     }
 
+    const handleExportReportPDF = () => {
+        if (!reportData) return;
+
+        const printWindow = window.open('', '', 'width=900,height=800');
+        if (!printWindow) return;
+
+        const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+        const dateRangeStr = reportPeriod.start === reportPeriod.end 
+            ? new Date(reportPeriod.start + 'T00:00:00').toLocaleDateString('pt-BR')
+            : `${new Date(reportPeriod.start + 'T00:00:00').toLocaleDateString('pt-BR')} até ${new Date(reportPeriod.end + 'T00:00:00').toLocaleDateString('pt-BR')}`;
+
+        const html = `
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head>
+                <meta charset="UTF-8">
+                <title>Relatório de Balanço - Romaneio Rápido</title>
+                <style>
+                    body { font-family: 'Inter', sans-serif; padding: 40px; color: #111827; line-height: 1.5; }
+                    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 2px solid #F3F4F6; padding-bottom: 20px; }
+                    .title { font-size: 24px; font-weight: 900; color: #1e40af; }
+                    .period { font-size: 14px; color: #6B7280; font-weight: bold; margin-top: 4px; }
+                    .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
+                    .card { padding: 24px; border-radius: 20px; border: 1px solid #E5E7EB; background: #FFF; }
+                    .card-label { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #6B7280; margin-bottom: 8px; }
+                    .card-value { font-size: 32px; font-weight: 900; color: #111827; }
+                    .table-title { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #6B7280; margin-bottom: 16px; border-bottom: 1px solid #E5E7EB; padding-bottom: 8px; }
+                    table { width: 100%; border-collapse: collapse; }
+                    th { text-align: left; font-size: 11px; text-transform: uppercase; color: #9CA3AF; padding: 12px 16px; border-bottom: 2px solid #F3F4F6; }
+                    td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid #F3F4F6; }
+                    .text-right { text-align: right; }
+                    .font-bold { font-weight: bold; }
+                    .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #9CA3AF; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div>
+                        <div class="title">RELATÓRIO DE BALANÇO</div>
+                        <div class="period">Período: ${dateRangeStr}</div>
+                    </div>
+                </div>
+
+                <div class="dashboard">
+                    <div class="card" style="border-left: 6px solid #2563eb;">
+                        <div class="card-label">Total de Romaneios</div>
+                        <div class="card-value">${reportData.total_romaneios}</div>
+                    </div>
+                    <div class="card" style="border-left: 6px solid #10b981;">
+                        <div class="card-label">Valor Total Vendido</div>
+                        <div class="card-value" style="color: #059669;">${formatCurrency(reportData.total_value)}</div>
+                    </div>
+                </div>
+
+                <div class="table-title">Histórico Detalhado do Período</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Cliente / Descrição</th>
+                            <th class="text-right">Itens/Qtd</th>
+                            <th class="text-right">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${groupedMovements.map(g => `
+                            <tr>
+                                <td style="color: #6B7280; font-size: 11px;">${new Date(g.created_at).toLocaleString('pt-BR')}</td>
+                                <td>
+                                    <div class="font-bold">${g.isGroup ? (g.customerName || 'Consumidor') : (g.product_name || 'Produto')}</div>
+                                    <div style="font-size: 10px; color: #9CA3AF;">${g.isGroup ? 'ROMANEIO #' + g.id : 'MOVIMENTAÇÃO'}</div>
+                                </td>
+                                <td class="text-right">
+                                    <span class="font-bold">${g.isGroup ? g.items.length + ' itens' : g.quantity + ' ' + (g.unit || 'UN')}</span>
+                                </td>
+                                <td class="text-right">
+                                    <span class="font-bold" style="color: #111827;">${formatCurrency(g.totalValue)}</span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+
+                <div class="footer">
+                    Gerado em ${new Date().toLocaleString('pt-BR')} pelo sistema Romaneio Rápido
+                </div>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+        setTimeout(() => {
+            printWindow.print();
+        }, 300);
+    }
+
     // Busca Esperta: Autocomplete em tempo real ao digitar
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -1161,14 +1258,23 @@ export default function RomaneioPage() {
             {activeTab === 'movimentacoes' && (
                 <div className="space-y-6">
                     {/* Dashboard de Relatórios Integrado */}
-                    <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div>
                         <div className="bg-white rounded-[2rem] border border-gray-100 p-6 shadow-sm mb-6 flex flex-col lg:flex-row items-center justify-between gap-6">
                             <div>
                                 <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-3">
                                     <BarChart3 className="w-6 h-6 text-blue-600" />
                                     Balanço do Período
                                 </h2>
-                                <p className="text-sm font-bold text-gray-400 mt-1">Resumo do faturamento e vendas</p>
+                                <div className="flex items-center gap-3 mt-1.5">
+                                    <p className="text-sm font-bold text-gray-400">Resumo do faturamento e vendas</p>
+                                    <button
+                                        onClick={handleExportReportPDF}
+                                        disabled={reportLoading || !reportData}
+                                        className="h-7 px-3 bg-white border border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-200 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                                    >
+                                        Baixar PDF
+                                    </button>
+                                </div>
                             </div>
                             
                             <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl border border-gray-100 w-full lg:w-auto">
