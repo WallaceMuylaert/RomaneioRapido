@@ -50,6 +50,7 @@ services:
       - PYTHONUNBUFFERED=1
       - ENVIRONMENT=production # desativa /docs /redoc /openapi.json
       - CORS_ORIGINS=https://romaneiorapido.com.br,https://www.romaneiorapido.com.br
+      - FRONTEND_URL=https://romaneiorapido.com.br
 
     command: >
       sh -c " python backend/database/migrate.py && uvicorn backend.server:app --host 0.0.0.0 --port 8002 --workers 4 "

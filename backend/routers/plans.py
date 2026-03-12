@@ -86,18 +86,22 @@ def create_checkout(
             detail="Você já possui uma assinatura ativa. Use o portal para alterar seu plano.",
         )
 
-    checkout_session = stripe.checkout.Session.create(
-        customer=customer_id,
-        payment_method_types=["card"],
-        line_items=[{"price": price_id, "quantity": 1}],
-        mode="subscription",
-        success_url=f"{settings.FRONTEND_URL}/perfil?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{settings.FRONTEND_URL}/perfil?checkout=cancel",
-        metadata={"user_id": str(current_user.id), "plan_id": request.plan_id},
-        subscription_data={
-            "metadata": {"user_id": str(current_user.id), "plan_id": request.plan_id},
-        },
-    )
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            customer=customer_id,
+            payment_method_types=["card"],
+            line_items=[{"price": price_id, "quantity": 1}],
+            mode="subscription",
+            success_url=f"{settings.FRONTEND_URL}/perfil?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{settings.FRONTEND_URL}/perfil?checkout=cancel",
+            metadata={"user_id": str(current_user.id), "plan_id": request.plan_id},
+            subscription_data={
+                "metadata": {"user_id": str(current_user.id), "plan_id": request.plan_id},
+            },
+        )
+    except stripe.error.StripeError as e:
+        logger.exception(f"Erro ao criar sessão de checkout Stripe para o usuário {current_user.id}")
+        raise HTTPException(status_code=502, detail=f"Erro ao iniciar checkout: {e.user_message or str(e)}")
 
     return CheckoutResponse(checkout_url=checkout_session.url)
 
