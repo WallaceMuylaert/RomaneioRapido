@@ -19,7 +19,8 @@ router = APIRouter(prefix="/plans")
 def _get_stripe():
     """Inicializa Stripe com a chave secreta."""
     if not settings.STRIPE_SECRET_KEY:
-        raise HTTPException(status_code=500, detail="Stripe não configurado")
+        logger.error("STRIPE_SECRET_KEY não definida — verifique o .env no servidor de produção")
+        raise HTTPException(status_code=503, detail="Pagamentos temporariamente indisponíveis. Contate o suporte.")
     stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
