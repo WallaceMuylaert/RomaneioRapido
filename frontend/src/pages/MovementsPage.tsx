@@ -24,6 +24,8 @@ import type { CartItem } from '../components/RomaneioExportModal'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
+import { Copy } from 'lucide-react'
 
 interface Movement {
     id: number
@@ -58,6 +60,7 @@ export default function MovementsPage() {
     const [page, setPage] = useState(1)
     const [perPage] = useState(15)
     const [search, setSearch] = useState('')
+    const navigate = useNavigate()
     const [typeFilter, setTypeFilter] = useState<string>('')
     const [viewMode, setViewMode] = useState<'movements' | 'romaneios'>('romaneios')
     const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -396,6 +399,31 @@ export default function MovementsPage() {
         setTimeout(() => {
             printWindow.print();
         }, 300);
+    }
+
+    const handleCopyToRomaneio = (group: any) => {
+        const cartItems: CartItem[] = group.items.map((m: Movement) => ({
+            id: m.product_id,
+            name: m.product_name,
+            barcode: m.product_barcode_snapshot,
+            quantity: m.quantity,
+            unit: m.unit_snapshot,
+            price: getEffectivePrice(m),
+            color: m.product_color_snapshot,
+            size: m.product_size_snapshot,
+            image: m.product_image
+        }))
+
+        const copyData = {
+            items: cartItems,
+            customerName: group.customerName,
+            clientId: group.clientId,
+            customerPhone: group.customerPhone
+        }
+
+        sessionStorage.setItem('copy_romaneio_data', JSON.stringify(copyData))
+        toast.success('Pedido copiado! Redirecionando...')
+        navigate('/romaneio')
     }
 
     const fetchMovements = async () => {
@@ -772,6 +800,21 @@ export default function MovementsPage() {
                                                                         </div>
                                                                         <span>Ver Detalhes</span>
                                                                     </button>
+
+                                                                    {isGroup && (
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                handleCopyToRomaneio(m as any)
+                                                                                setOpenMenuId(null)
+                                                                            }}
+                                                                            className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-all group"
+                                                                        >
+                                                                            <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-500 group-hover:bg-amber-600 group-hover:text-white transition-all shadow-sm">
+                                                                                <Copy className="w-4 h-4" />
+                                                                            </div>
+                                                                            <span>Copiar para Novo Romaneio</span>
+                                                                        </button>
+                                                                    )}
 
                                                                     <button
                                                                         onClick={() => {
