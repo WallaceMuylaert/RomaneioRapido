@@ -40,6 +40,8 @@ def list_movements(
     product_id: Optional[int] = Query(None),
     search: Optional[str] = Query(None),
     movement_type: Optional[MovementType] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -52,6 +54,8 @@ def list_movements(
             product_id=product_id, 
             search=search, 
             movement_type=movement_type, 
+            start_date=start_date,
+            end_date=end_date,
             skip=skip, 
             limit=limit
         )

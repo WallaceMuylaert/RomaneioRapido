@@ -15,7 +15,8 @@ import {
     Smartphone,
     Download,
     BarChart3,
-    ArrowRight
+    ArrowRight,
+    ClipboardList
 } from 'lucide-react'
 import MovementDetailsModal from '../components/MovementDetailsModal'
 import RomaneioExportModal from '../components/RomaneioExportModal'
@@ -33,11 +34,16 @@ interface Movement {
     created_at: string
     product_name: string
     product_barcode_snapshot: string | null
-    unit_snapshot: string | null
+    unit_snapshot: string;
     unit_price_snapshot?: number | null
+    product_color_snapshot?: string;
+    product_size_snapshot?: string;
     romaneio_id?: string | number | null
     client_id?: number | null
     product_image: string | null
+    product_color?: string | null
+    product_size?: string | null
+    product_price?: number | null
     client?: {
         id: number
         name: string
@@ -53,10 +59,14 @@ export default function MovementsPage() {
     const [perPage] = useState(15)
     const [search, setSearch] = useState('')
     const [typeFilter, setTypeFilter] = useState<string>('')
+    const [viewMode, setViewMode] = useState<'movements' | 'romaneios'>('romaneios')
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [sharingMovement, setSharingMovement] = useState<Movement | null>(null)
     const [exportingMovement, setExportingMovement] = useState<{ clientId: number | null, customerName: string, createdAt: string, phone: string | null, image: string | null, items: CartItem[] } | null>(null)
     const [openMenuId, setOpenMenuId] = useState<number | null>(null)
+    
+    // Helper para obter o preço efetivo (snapshot ou preço atual do produto)
+    const getEffectivePrice = (item: any) => item.unit_price_snapshot ?? item.product_price ?? 0
 
     // Relatórios
     const [reportData, setReportData] = useState<{
@@ -67,8 +77,8 @@ export default function MovementsPage() {
     } | null>(null)
     const [reportLoading, setReportLoading] = useState(false)
     const [reportPeriod, setReportPeriod] = useState({
-        start: new Date().toISOString().split('T')[0],
-        end: new Date().toISOString().split('T')[0]
+        start: format(new Date(), 'yyyy-MM-dd'),
+        end: format(new Date(), 'yyyy-MM-dd')
     })
 
     // Debounce search
@@ -88,6 +98,7 @@ export default function MovementsPage() {
         if (!Array.isArray(movements)) return []
 
         movements.forEach(m => {
+            const effectivePrice = getEffectivePrice(m)
             if (m.romaneio_id) {
                 if (!groups[m.romaneio_id]) {
                     let cName = ""
@@ -107,7 +118,7 @@ export default function MovementsPage() {
                     }
                 }
                 groups[m.romaneio_id].items.push(m)
-                groups[m.romaneio_id].totalValue += (m.quantity * (m.unit_price_snapshot || 0))
+                groups[m.romaneio_id].totalValue += (m.quantity * effectivePrice)
 
                 if (m.client || m.client_id) {
                     groups[m.romaneio_id].customerName = m.client?.name || groups[m.romaneio_id].customerName;
@@ -117,14 +128,18 @@ export default function MovementsPage() {
             } else {
                 singles.push({
                     ...m,
-                    totalValue: (m.quantity * (m.unit_price_snapshot || 0))
+                    totalValue: (m.quantity * effectivePrice)
                 })
             }
         })
 
         const result = [
-            ...Object.values(groups).map(g => ({ ...g, isGroup: true })),
-            ...singles.map(s => ({
+            ...Object.values(groups)
+                .filter(g => g.movement_type === 'OUT')
+                .map(g => ({ ...g, isGroup: true })),
+            ...singles
+                .filter(s => s.movement_type === 'OUT')
+                .map(s => ({
                 ...s,
                 isGroup: false,
                 id: s.id,
@@ -172,10 +187,10 @@ export default function MovementsPage() {
         const filename = `Relatorio_Balanco_${timestamp}`;
 
         const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-        const dateRangeStr = reportPeriod.start === reportPeriod.end 
+        const dateRangeStr = reportPeriod.start === reportPeriod.end
             ? new Date(reportPeriod.start + 'T00:00:00').toLocaleDateString('pt-BR')
             : `${new Date(reportPeriod.start + 'T00:00:00').toLocaleDateString('pt-BR')} até ${new Date(reportPeriod.end + 'T00:00:00').toLocaleDateString('pt-BR')}`;
-        
+
         const getReportLabel = () => {
             if (typeFilter === 'IN') return 'Relatório de Entradas';
             if (typeFilter === 'OUT') return 'Relatório de Saídas';
@@ -338,6 +353,8 @@ export default function MovementsPage() {
                             <th>Data</th>
                             <th>Cliente / Descrição</th>
                             <th style="text-align: right;">Quantidade</th>
+                            <th style="text-align: right;">Preço Unit.</th>
+                            <th style="text-align: center;">Cor/Tam</th>
                             <th style="text-align: right;">Valor Total</th>
                         </tr>
                     </thead>
@@ -351,6 +368,12 @@ export default function MovementsPage() {
                                 </td>
                                 <td class="row-qty">
                                     ${g.isGroup ? g.items.length + ' itens' : g.quantity + ' ' + (g.unit_snapshot || 'UN')}
+                                </td>
+                                <td class="row-val">
+                                    ${g.isGroup ? '-' : formatCurrency(g.unit_price_snapshot ?? g.product_price ?? 0)}
+                                </td>
+                                <td style="text-align: center;">
+                                    ${g.isGroup ? '-' : ((g.product_color_snapshot || g.product_size_snapshot) ? `${g.product_color_snapshot || ''} ${g.product_size_snapshot || ''}`.trim() : '-')}
                                 </td>
                                 <td class="row-val">
                                     ${formatCurrency(g.totalValue)}
@@ -380,7 +403,9 @@ export default function MovementsPage() {
         try {
             const params: any = {
                 skip: (page - 1) * perPage,
-                limit: perPage
+                limit: perPage,
+                start_date: reportPeriod.start,
+                end_date: reportPeriod.end
             }
             if (debouncedSearch) params.search = debouncedSearch
             if (typeFilter) params.movement_type = typeFilter
@@ -397,7 +422,7 @@ export default function MovementsPage() {
 
     useEffect(() => {
         fetchMovements()
-    }, [page, debouncedSearch, typeFilter])
+    }, [page, debouncedSearch, typeFilter, reportPeriod])
 
     const getTypeStyles = (type: string) => {
         switch (type) {
@@ -431,7 +456,7 @@ export default function MovementsPage() {
     const totalPages = Math.ceil(total / perPage)
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8">
+        <div className="max-w-7xl mx-auto space-y-8 pb-12">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight">Movimentações</h1>
@@ -439,7 +464,7 @@ export default function MovementsPage() {
                         Histórico detalhado de todas as entradas e saídas de estoque.
                     </p>
                 </div>
-                
+
                 {reportData && (
                     <button
                         onClick={handleExportReportPDF}
@@ -496,190 +521,300 @@ export default function MovementsPage() {
 
             {/* Filters Header */}
             <div className="glass-card rounded-[2rem] p-6 md:p-8 space-y-6">
-                <div className="flex flex-col lg:flex-row gap-4">
-                    <div className="flex-1 relative group">
-                        <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-brand-500 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Buscar por produto ou código de barras..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full h-12 pl-12 pr-6 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-semibold"
-                        />
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
+                    <div className="lg:col-span-5 space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Buscar Produto</label>
+                        <div className="relative group">
+                            <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-brand-500 transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="Nome ou código de barras..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full h-12 pl-12 pr-6 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-semibold"
+                            />
+                        </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1 relative group">
-                            <Calendar className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="date"
-                                value={reportPeriod.start}
-                                onChange={(e) => setReportPeriod(prev => ({ ...prev, start: e.target.value }))}
-                                className="w-full h-12 pl-12 pr-6 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-bold"
-                            />
+                    <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="flex-1 space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Data Início</label>
+                            <div className="relative group">
+                                <Calendar className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                                <input
+                                    type="date"
+                                    value={reportPeriod.start}
+                                    onChange={(e) => {
+                                        setReportPeriod(prev => ({ ...prev, start: e.target.value }));
+                                        setPage(1);
+                                    }}
+                                    className="w-full h-12 pl-12 pr-6 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-bold"
+                                />
+                            </div>
                         </div>
-                        <div className="flex-1 relative group">
-                            <Calendar className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="date"
-                                value={reportPeriod.end}
-                                onChange={(e) => setReportPeriod(prev => ({ ...prev, end: e.target.value }))}
-                                className="w-full h-12 pl-12 pr-6 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-bold"
-                            />
+                        <div className="flex-1 space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Data Fim</label>
+                            <div className="relative group">
+                                <Calendar className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                                <input
+                                    type="date"
+                                    value={reportPeriod.end}
+                                    onChange={(e) => {
+                                        setReportPeriod(prev => ({ ...prev, end: e.target.value }));
+                                        setPage(1);
+                                    }}
+                                    className="w-full h-12 pl-12 pr-6 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-bold"
+                                />
+                            </div>
                         </div>
-                        <div className="relative min-w-[180px]">
-                            <Filter className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                            <select
-                                value={typeFilter}
-                                onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-                                className="w-full h-12 pl-11 pr-10 appearance-none bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-bold text-sm text-slate-700"
-                            >
-                                <option value="">Todos os Tipos</option>
-                                <option value="IN">Entradas</option>
-                                <option value="OUT">Saídas</option>
-                                <option value="ADJUSTMENT">Ajustes</option>
-                            </select>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                        <div className="relative min-w-[180px] space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Movimento</label>
+                            <div className="relative">
+                                <Filter className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                                <select
+                                    value={typeFilter}
+                                    onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
+                                    className="w-full h-12 pl-11 pr-10 appearance-none bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-bold text-sm text-slate-700"
+                                >
+                                    <option value="">Todos os Tipos</option>
+                                    {viewMode === 'movements' && (
+                                        <>
+                                            <option value="IN">Entradas</option>
+                                            <option value="ADJUSTMENT">Ajustes</option>
+                                        </>
+                                    )}
+                                    <option value="OUT">Saídas</option>
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Table */}
-                <div className="overflow-x-auto -mx-6 md:-mx-8">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="bg-slate-50/50">
-                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Data/Hora</th>
-                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Produto</th>
-                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-center">Tipo</th>
-                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right">Qtd.</th>
-                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Notas</th>
-                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100/50 relative">
-                            {loading && (
-                                <tr className="absolute inset-0 bg-white/50 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-b-[2rem]">
-                                    <td colSpan={6} className="flex items-center justify-center w-full h-full">
-                                        <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
-                                    </td>
+                <div className="flex justify-center pt-8 border-t border-slate-100">
+                    <div className="bg-slate-100/50 p-1.5 rounded-2xl flex items-center gap-1">
+                        <button
+                            onClick={() => {
+                                setViewMode('movements');
+                                setTypeFilter('');
+                                setPage(1);
+                            }}
+                            className={`px-8 h-10 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${viewMode === 'movements'
+                                ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                                : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`}
+                        >
+                            <Settings2 className="w-3.5 h-3.5" />
+                            Lista
+                        </button>
+                        <button
+                            onClick={() => {
+                                setViewMode('romaneios');
+                                setTypeFilter('OUT');
+                                setPage(1);
+                            }}
+                            className={`px-8 h-10 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${viewMode === 'romaneios'
+                                ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                                : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`}
+                        >
+                            <Share2 className="w-3.5 h-3.5" />
+                            Romaneios
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Table Area */}
+            <div className="glass-card rounded-[2rem] overflow-hidden">
+                <div className="overflow-x-auto -mx-6 md:mx-0 pb-4 custom-scrollbar">
+                    <div className="min-w-[1000px] md:min-w-full inline-block align-middle px-6 md:px-0">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="bg-slate-50/50">
+                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] sticky left-0 z-10">Data/Hora</th>
+                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] shrink-0">{viewMode === 'romaneios' ? 'Cliente / Romaneio' : 'Produto'}</th>
+                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-center">Tipo</th>
+                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right">Qtd.</th>
+                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Notas/Variantes</th>
+                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right sticky right-0 z-10">Ações</th>
                                 </tr>
-                            )}
-                            {movements.length === 0 && !loading ? (
-                                <tr>
-                                    <td colSpan={6} className="py-20 text-center text-sm font-bold text-slate-400 italic">
-                                        Nenhuma movimentação encontrada.
-                                    </td>
-                                </tr>
-                            ) : (
-                                movements.map((m) => {
-                                    const styles = getTypeStyles(m.movement_type)
-                                    return (
-                                        <tr key={m.id} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="px-8 py-5">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
-                                                        <Calendar className="w-4 h-4" />
+                            </thead>
+                            <tbody className="divide-y divide-slate-100/50 relative">
+                                {loading && (
+                                    <tr className="bg-white/50 backdrop-blur-[1px]">
+                                        <td colSpan={6} className="py-20 flex items-center justify-center w-full">
+                                            <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                                        </td>
+                                    </tr>
+                                )}
+                                {(viewMode === 'romaneios' ? groupedMovementsForReport : movements).length === 0 && !loading ? (
+                                    <tr>
+                                        <td colSpan={6} className="py-20 text-center text-sm font-bold text-slate-400 italic">
+                                            Nenhuma movimentação encontrada.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    (viewMode === 'romaneios' ? groupedMovementsForReport : movements).map((m) => {
+                                        const styles = getTypeStyles(m.movement_type)
+                                        const isGroup = 'isGroup' in m && m.isGroup;
+
+                                        return (
+                                            <tr key={isGroup ? `group-${m.id}` : m.id} className="hover:bg-slate-50/50 transition-colors group">
+                                                <td className="px-8 py-5">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
+                                                            <Calendar className="w-4 h-4" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold text-slate-700">
+                                                                {format(new Date(m.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                                                            </p>
+                                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                                {format(new Date(m.created_at), 'HH:mm')}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="text-sm font-bold text-slate-700">
-                                                            {format(new Date(m.created_at), 'dd/MM/yyyy', { locale: ptBR })}
-                                                        </p>
-                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                                            {format(new Date(m.created_at), 'HH:mm')}
-                                                        </p>
+                                                </td>
+                                                <td className="px-8 py-5">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-xl bg-slate-50 overflow-hidden border border-slate-100 flex items-center justify-center shrink-0 group-hover:border-brand-200 transition-colors shadow-sm">
+                                                            {isGroup ? (
+                                                                <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-600 font-black text-xs relative">
+                                                                    <ClipboardList className="w-5 h-5 opacity-20 absolute" />
+                                                                    <span className="relative z-10">
+                                                                        {(m as any).customerName ? (m as any).customerName.split(' ').map((n: any) => n[0]).join('').slice(0, 2).toUpperCase() : 'RT'}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (m.product_image ? (
+                                                                <img src={m.product_image} alt={m.product_name} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <Package className="w-5 h-5 text-slate-300" />
+                                                            ))}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold text-slate-800 line-clamp-1">
+                                                                {isGroup ? ((m as any).customerName || 'Romaneio Agrupado') : m.product_name}
+                                                            </p>
+                                                            <p className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-tighter">
+                                                                {isGroup ? `ID: ${String(m.id).slice(-8).toUpperCase()}` : (m.product_barcode_snapshot || 'SEM SKU')}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-5">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-xl bg-slate-50 overflow-hidden border border-slate-100 flex items-center justify-center shrink-0 group-hover:border-brand-200 transition-colors shadow-sm">
-                                                        {m.product_image ? (
-                                                            <img src={m.product_image} alt={m.product_name} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <Package className="w-5 h-5 text-slate-300" />
+                                                </td>
+                                                <td className="px-8 py-5 text-center">
+                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black border uppercase tracking-widest ${styles.bg} ${styles.text} ${styles.border}`}>
+                                                        {styles.icon}
+                                                        {styles.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-8 py-5 text-right">
+                                                    <div className="flex flex-col items-end">
+                                                        <div className="flex items-baseline justify-end gap-1">
+                                                            <span className={`font-black text-sm ${m.movement_type === 'OUT' ? 'text-rose-600' : m.movement_type === 'IN' ? 'text-emerald-600' : 'text-slate-900'}`}>
+                                                                {m.movement_type === 'OUT' ? '-' : m.movement_type === 'IN' ? '+' : ''}
+                                                                {isGroup ? (m as any).items.length : (m.quantity % 1 === 0 ? m.quantity : m.quantity.toFixed(2))}
+                                                            </span>
+                                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                                                                {isGroup ? 'ITENS' : (m.unit_snapshot || 'UN')}
+                                                            </span>
+                                                        </div>
+                                                        {isGroup && (
+                                                            <span className="text-[10px] font-bold text-emerald-600">
+                                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((m as any).totalValue)}
+                                                            </span>
                                                         )}
                                                     </div>
-                                                    <div>
-                                                        <p className="text-sm font-bold text-slate-800">{m.product_name}</p>
-                                                        <p className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-tighter">
-                                                            {m.product_barcode_snapshot || 'SEM SKU'}
+                                                </td>
+                                                <td className="px-8 py-5">
+                                                    <div className="flex flex-col gap-1">
+                                                        {!isGroup && (m.product_color_snapshot || m.product_size_snapshot) && (
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold">
+                                                                    {m.product_color_snapshot || '-'} / {m.product_size_snapshot || '-'}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        <p className="text-xs font-medium text-slate-500 max-w-[200px] truncate" title={isGroup ? 'Itens do Romaneio' : (m.notes || '')}>
+                                                            {isGroup ? (m as any).items.map((i: any) => i.product_name).join(', ') : (m.notes || '-')}
                                                         </p>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-5 text-center">
-                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black border uppercase tracking-widest ${styles.bg} ${styles.text} ${styles.border}`}>
-                                                    {styles.icon}
-                                                    {styles.label}
-                                                </span>
-                                            </td>
-                                            <td className="px-8 py-5 text-right">
-                                                <div className="flex items-baseline justify-end gap-1">
-                                                    <span className={`font-black text-sm ${m.movement_type === 'OUT' ? 'text-rose-600' : m.movement_type === 'IN' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                                                        {m.movement_type === 'OUT' ? '-' : m.movement_type === 'IN' ? '+' : ''}
-                                                        {m.quantity % 1 === 0 ? m.quantity : m.quantity.toFixed(2)}
-                                                    </span>
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
-                                                        {m.unit_snapshot || 'UN'}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-5">
-                                                <p className="text-xs font-medium text-slate-500 max-w-[200px] truncate" title={m.notes || ''}>
-                                                    {m.notes || '-'}
-                                                </p>
-                                            </td>
-                                            <td className="px-8 py-5 text-right relative">
-                                                <div className="flex justify-end">
-                                                    <button
-                                                        onClick={() => setOpenMenuId(openMenuId === m.id ? null : m.id)}
-                                                        className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${openMenuId === m.id ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-100'}`}
-                                                    >
-                                                        <MoreVertical className="w-4 h-4" />
-                                                    </button>
+                                                </td>
+                                                <td className="px-8 py-5 text-right relative">
+                                                    <div className="flex justify-end">
+                                                        <button
+                                                            onClick={() => setOpenMenuId(openMenuId === m.id ? null : m.id)}
+                                                            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${openMenuId === m.id ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-100'}`}
+                                                        >
+                                                            <MoreVertical className="w-4 h-4" />
+                                                        </button>
 
-                                                    {openMenuId === m.id && (
-                                                        <>
-                                                            <div
-                                                                className="fixed inset-0 z-20"
-                                                                onClick={() => setOpenMenuId(null)}
-                                                            />
-                                                            <div className="absolute right-0 top-11 w-56 bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-slate-100 py-2 z-30 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setSharingMovement(m)
-                                                                        setOpenMenuId(null)
-                                                                    }}
-                                                                    className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all group"
-                                                                >
-                                                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                                                                        <Share2 className="w-4 h-4" />
-                                                                    </div>
-                                                                    <span>Ver Detalhes</span>
-                                                                </button>
-
-                                                                {m.movement_type === 'OUT' && (
+                                                        {openMenuId === m.id && (
+                                                            <>
+                                                                <div
+                                                                    className="fixed inset-0 z-20"
+                                                                    onClick={() => setOpenMenuId(null)}
+                                                                />
+                                                                <div className="absolute right-0 top-11 w-56 bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-slate-100 py-2 z-30 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
                                                                     <button
                                                                         onClick={() => {
-                                                                            setExportingMovement({
-                                                                                clientId: m.client?.id || null,
-                                                                                customerName: m.client?.name || (m.notes?.startsWith('Romaneio: ') ? m.notes.replace('Romaneio: ', '').trim() : (m.notes || 'Consumidor')),
-                                                                                createdAt: m.created_at,
-                                                                                phone: m.client?.phone || null,
-                                                                                image: m.product_image,
-                                                                                items: [{
-                                                                                    id: m.product_id,
-                                                                                    name: m.product_name,
-                                                                                    barcode: m.product_barcode_snapshot,
-                                                                                    quantity: m.quantity,
-                                                                                    unit: m.unit_snapshot || 'UN',
-                                                                                    price: 0,
-                                                                                    image: m.product_image
-                                                                                }]
-                                                                            })
+                                                                            if (isGroup) {
+                                                                                setSharingMovement((m as any).items[0])
+                                                                            } else {
+                                                                                setSharingMovement(m)
+                                                                            }
+                                                                            setOpenMenuId(null)
+                                                                        }}
+                                                                        className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all group"
+                                                                    >
+                                                                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                                                                            <Share2 className="w-4 h-4" />
+                                                                        </div>
+                                                                        <span>Ver Detalhes</span>
+                                                                    </button>
+
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            if (isGroup) {
+                                                                                const gm = m as any;
+                                                                                setExportingMovement({
+                                                                                    clientId: gm.clientId,
+                                                                                    customerName: gm.customerName,
+                                                                                    createdAt: gm.created_at,
+                                                                                    phone: gm.customerPhone,
+                                                                                    image: null,
+                                                                                    items: gm.items.map((i: any) => ({
+                                                                                        id: i.product_id,
+                                                                                        name: i.product_name || i.product_name_snapshot,
+                                                                                        barcode: i.product_barcode_snapshot,
+                                                                                        quantity: i.quantity,
+                                                                                        unit: i.unit_snapshot || 'UN',
+                                                                                        price: getEffectivePrice(i),
+                                                                                        image: i.product_image,
+                                                                                        color: i.product_color_snapshot || null,
+                                                                                        size: i.product_size_snapshot || null
+                                                                                    }))
+                                                                                })
+                                                                            } else {
+                                                                                setExportingMovement({
+                                                                                    clientId: m.client_id || (m as any).client?.id || null,
+                                                                                    customerName: (m as any).client?.name || (m.notes?.startsWith('Romaneio: ') ? m.notes.replace('Romaneio: ', '').trim() : (m.notes || 'Consumidor')),
+                                                                                    createdAt: m.created_at,
+                                                                                    phone: (m as any).client?.phone || null,
+                                                                                    image: m.product_image,
+                                                                                    items: [{
+                                                                                        id: m.product_id,
+                                                                                        name: m.product_name,
+                                                                                        barcode: m.product_barcode_snapshot,
+                                                                                        quantity: m.quantity,
+                                                                                        unit: m.unit_snapshot || 'UN',
+                                                                                        price: m.unit_price_snapshot ?? m.product_price ?? 0,
+                                                                                        image: m.product_image,
+                                                                                        color: m.product_color_snapshot || null,
+                                                                                        size: m.product_size_snapshot || null
+                                                                                    }]
+                                                                                })
+                                                                            }
                                                                             setOpenMenuId(null)
                                                                         }}
                                                                         className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-all group"
@@ -689,23 +824,23 @@ export default function MovementsPage() {
                                                                         </div>
                                                                         <span>Imprimir / WhatsApp</span>
                                                                     </button>
-                                                                )}
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )
-                                })
-                            )}
-                        </tbody>
-                    </table>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="pt-6 border-t border-slate-100/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Pagination with responsiveness - only show for movements view */}
+                {viewMode === 'movements' && totalPages > 1 && (
+                    <div className="px-8 py-6 border-t border-slate-100/50 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                             Mostrando <span className="text-slate-900">{movements.length}</span> de <span className="text-slate-900">{total}</span> registros
                         </p>
@@ -732,10 +867,11 @@ export default function MovementsPage() {
                 )}
             </div>
 
-            {sharingMovement && (
+            {/* Modals outside of the main flow for portal/z-index clarity */}
+            {sharingMovement && sharingMovement.created_at && (
                 <MovementDetailsModal
-                    clientId={sharingMovement.client?.id || null}
-                    customerName={sharingMovement.notes?.startsWith('Romaneio: ') ? sharingMovement.notes.replace('Romaneio: ', '').trim() : (sharingMovement.notes || 'Detalhes da Movimentação')}
+                    clientId={(sharingMovement as any).client_id || (sharingMovement as any).client?.id || null}
+                    customerName={(sharingMovement as any).notes?.startsWith('Romaneio: ') ? (sharingMovement as any).notes.replace('Romaneio: ', '').trim() : ((sharingMovement as any).notes || 'Detalhes da Movimentação')}
                     createdAt={sharingMovement.created_at}
                     items={[{
                         id: sharingMovement.product_id,
@@ -743,16 +879,19 @@ export default function MovementsPage() {
                         barcode: sharingMovement.product_barcode_snapshot,
                         quantity: sharingMovement.quantity,
                         unit: sharingMovement.unit_snapshot || 'UN',
-                        price: 0, // We don't have the price in the movement list snapshot here
-                        image: sharingMovement.product_image
+                        price: sharingMovement.unit_price_snapshot ?? sharingMovement.product_price ?? 0,
+                        image: sharingMovement.product_image,
+                        color: sharingMovement.product_color_snapshot || null,
+                        size: sharingMovement.product_size_snapshot || null
                     }]}
                     onClose={() => setSharingMovement(null)}
                     onExport={(cid) => {
+                        if (!sharingMovement) return;
                         setExportingMovement({
                             clientId: cid,
-                            customerName: sharingMovement.client?.name || (sharingMovement.notes?.startsWith('Romaneio: ') ? sharingMovement.notes.replace('Romaneio: ', '').trim() : (sharingMovement.notes || 'Consumidor')),
+                            customerName: (sharingMovement as any).client?.name || (sharingMovement.notes?.startsWith('Romaneio: ') ? sharingMovement.notes.replace('Romaneio: ', '').trim() : (sharingMovement.notes || 'Consumidor')),
                             createdAt: sharingMovement.created_at,
-                            phone: sharingMovement.client?.phone || null,
+                            phone: (sharingMovement as any).client?.phone || null,
                             image: sharingMovement.product_image,
                             items: [{
                                 id: sharingMovement.product_id,
@@ -760,8 +899,10 @@ export default function MovementsPage() {
                                 barcode: sharingMovement.product_barcode_snapshot,
                                 quantity: sharingMovement.quantity,
                                 unit: sharingMovement.unit_snapshot || 'UN',
-                                price: 0,
-                                image: sharingMovement.product_image
+                                price: sharingMovement.unit_price_snapshot ?? sharingMovement.product_price ?? 0,
+                                image: sharingMovement.product_image,
+                                color: sharingMovement.product_color_snapshot || null,
+                                size: sharingMovement.product_size_snapshot || null
                             }]
                         })
                         setSharingMovement(null)
@@ -769,7 +910,7 @@ export default function MovementsPage() {
                 />
             )}
 
-            {exportingMovement && (
+            {exportingMovement && exportingMovement.createdAt && (
                 <RomaneioExportModal
                     isOpen={!!exportingMovement}
                     clientId={exportingMovement.clientId}

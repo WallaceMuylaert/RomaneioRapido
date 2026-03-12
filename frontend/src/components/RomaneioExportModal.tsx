@@ -51,7 +51,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
     useEffect(() => {
         if (isOpen) {
             getBase64FromUrl(logoImg).then(setLogoBase64).catch(console.error)
-            
+
             if (user?.pix_key) {
                 const payload = generatePixPayload({
                     key: user.pix_key,
@@ -127,7 +127,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
             }
             text += `   Qtd: ${item.quantity} ${item.unit} | Unit: ${formatCurrency(item.price)} | Sub: ${formatCurrency(item.price * item.quantity)}\n\n`
         })
-        
+
         text += `*Total Itens:* ${totalItemsSummary}\n`
         text += `*VALOR TOTAL:* ${formatCurrency(totalValue)}\n\n`
         if (user?.pix_key) {
@@ -391,6 +391,20 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                         font-size: 11px; 
                         line-height: 1.3;
                     }
+                    .watermark-container { 
+                        position: fixed; 
+                        top: 0; left: 0; width: 100%; height: 100%; 
+                        display: flex; align-items: center; justify-content: center; 
+                        pointer-events: none; z-index: -1; 
+                    }
+                    .watermark-logo { width: 280px; opacity: 0.06; transform: rotate(-35deg); }
+                    .watermark-domain { 
+                        position: fixed; 
+                        bottom: 10px; right: 10px; 
+                        font-size: 8px; 
+                        color: #999; 
+                        opacity: 0.5;
+                    }
                     .center { text-align: center; }
                     .bold { font-weight: bold; }
                     .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
@@ -423,6 +437,10 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                 </style>
             </head>
             <body>
+                <div class="watermark-container">
+                    ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
+                </div>
+
                 <div class="header center">
                     <div class="brand-name">ROMANEIO RÁPIDO</div>
                     <div class="brand-sub">Comprovante de Separação</div>

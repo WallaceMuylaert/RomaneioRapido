@@ -72,6 +72,7 @@ interface Movement {
     product_name_snapshot: string
     product_barcode_snapshot: string | null
     unit_snapshot: string | null
+    unit_price_snapshot?: number | null
     romaneio_id?: string | number | null
 }
 
