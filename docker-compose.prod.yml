@@ -50,6 +50,14 @@ services:
       - PYTHONUNBUFFERED=1
       - ENVIRONMENT=production # desativa /docs /redoc /openapi.json
       - CORS_ORIGINS=https://romaneiorapido.com.br,https://www.romaneiorapido.com.br
+      - FRONTEND_URL=https://romaneiorapido.com.br
+      - SECRET_KEY=${SECRET_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - STRIPE_PRICE_BASIC=${STRIPE_PRICE_BASIC}
+      - STRIPE_PRICE_PLUS=${STRIPE_PRICE_PLUS}
+      - STRIPE_PRICE_PRO=${STRIPE_PRICE_PRO}
 
     command: >
       sh -c " python backend/database/migrate.py && uvicorn backend.server:app --host 0.0.0.0 --port 8002 --workers 4 "
