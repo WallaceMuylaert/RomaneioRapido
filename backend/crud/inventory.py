@@ -96,14 +96,16 @@ def get_stock_levels(db: Session, user_id: int):
     return levels
     
     
-def get_daily_reports(db: Session, user_id: int, start_date=None, end_date=None):
+def get_daily_reports(db: Session, user_id: int, start_date=None, end_date=None, movement_type: MovementType = None):
     from sqlalchemy import func
     from datetime import datetime, time
     
     query = db.query(InventoryMovement).filter(
-        InventoryMovement.created_by == user_id,
-        InventoryMovement.movement_type == MovementType.OUT
+        InventoryMovement.created_by == user_id
     )
+    
+    if movement_type:
+        query = query.filter(InventoryMovement.movement_type == movement_type)
     
     if start_date:
         if isinstance(start_date, str):
@@ -115,7 +117,7 @@ def get_daily_reports(db: Session, user_id: int, start_date=None, end_date=None)
             end_date = datetime.strptime(end_date, "%Y-%m-%d")
         query = query.filter(InventoryMovement.created_at <= datetime.combine(end_date, time.max))
         
-    movements = query.all()
+    movements = query.order_by(InventoryMovement.created_at.desc()).all()
     
     # Agrupar por romaneio_id para contar pedidos e somar valores
     romaneios = {}

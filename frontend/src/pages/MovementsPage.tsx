@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import api from '../services/api'
 import {
     Search,
@@ -12,13 +12,17 @@ import {
     Package,
     MoreVertical,
     Share2,
-    Smartphone
+    Smartphone,
+    Download,
+    BarChart3,
+    ArrowRight
 } from 'lucide-react'
 import MovementDetailsModal from '../components/MovementDetailsModal'
 import RomaneioExportModal from '../components/RomaneioExportModal'
 import type { CartItem } from '../components/RomaneioExportModal'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { toast } from 'react-hot-toast'
 
 interface Movement {
     id: number
@@ -30,6 +34,9 @@ interface Movement {
     product_name: string
     product_barcode_snapshot: string | null
     unit_snapshot: string | null
+    unit_price_snapshot?: number | null
+    romaneio_id?: string | number | null
+    client_id?: number | null
     product_image: string | null
     client?: {
         id: number
@@ -51,6 +58,19 @@ export default function MovementsPage() {
     const [exportingMovement, setExportingMovement] = useState<{ clientId: number | null, customerName: string, createdAt: string, phone: string | null, image: string | null, items: CartItem[] } | null>(null)
     const [openMenuId, setOpenMenuId] = useState<number | null>(null)
 
+    // Relatórios
+    const [reportData, setReportData] = useState<{
+        total_romaneios: number,
+        total_value: number,
+        start_date: string,
+        end_date: string
+    } | null>(null)
+    const [reportLoading, setReportLoading] = useState(false)
+    const [reportPeriod, setReportPeriod] = useState({
+        start: new Date().toISOString().split('T')[0],
+        end: new Date().toISOString().split('T')[0]
+    })
+
     // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -59,6 +79,301 @@ export default function MovementsPage() {
         }, 500)
         return () => clearTimeout(timer)
     }, [search])
+
+    // Agrupamento de Movimentações para permitir Re-gerar Romaneios e Exportação de PDF
+    const groupedMovementsForReport = useMemo(() => {
+        const groups: Record<string, any> = {}
+        const singles: any[] = []
+
+        if (!Array.isArray(movements)) return []
+
+        movements.forEach(m => {
+            if (m.romaneio_id) {
+                if (!groups[m.romaneio_id]) {
+                    let cName = ""
+                    if (m.notes && m.notes.startsWith("Romaneio: ")) {
+                        cName = m.notes.replace("Romaneio: ", "").trim()
+                    }
+
+                    groups[m.romaneio_id] = {
+                        id: m.romaneio_id,
+                        created_at: m.created_at,
+                        clientId: m.client_id || m.client?.id || null,
+                        customerName: m.client?.name || cName || 'Consumidor',
+                        customerPhone: m.client?.phone || null,
+                        items: [],
+                        movement_type: m.movement_type,
+                        totalValue: 0
+                    }
+                }
+                groups[m.romaneio_id].items.push(m)
+                groups[m.romaneio_id].totalValue += (m.quantity * (m.unit_price_snapshot || 0))
+
+                if (m.client || m.client_id) {
+                    groups[m.romaneio_id].customerName = m.client?.name || groups[m.romaneio_id].customerName;
+                    groups[m.romaneio_id].customerPhone = m.client?.phone || groups[m.romaneio_id].customerPhone;
+                    groups[m.romaneio_id].clientId = m.client_id || m.client?.id || groups[m.romaneio_id].clientId;
+                }
+            } else {
+                singles.push({
+                    ...m,
+                    totalValue: (m.quantity * (m.unit_price_snapshot || 0))
+                })
+            }
+        })
+
+        const result = [
+            ...Object.values(groups).map(g => ({ ...g, isGroup: true })),
+            ...singles.map(s => ({
+                ...s,
+                isGroup: false,
+                id: s.id,
+                clientId: s.client_id || s.client?.id || null,
+                items: [s],
+                customerName: s.notes && s.notes.includes("Romaneio: ") ? s.notes.replace("Romaneio: ", "").trim() : (s.notes || ""),
+                totalValue: s.totalValue
+            }))
+        ]
+
+        return result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    }, [movements])
+
+    const fetchReport = async () => {
+        setReportLoading(true)
+        try {
+            const params: any = {
+                start_date: reportPeriod.start,
+                end_date: reportPeriod.end
+            }
+            if (typeFilter) params.movement_type = typeFilter
+
+            const res = await api.get('/inventory/reports/daily', { params })
+            setReportData(res.data)
+        } catch (err) {
+            console.error('Erro ao buscar relatório:', err)
+            toast.error('Erro ao buscar dados do relatório.')
+        } finally {
+            setReportLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchReport()
+    }, [reportPeriod, typeFilter])
+
+    const handleExportReportPDF = () => {
+        if (!reportData) return;
+
+        const printWindow = window.open('', '', 'width=900,height=800');
+        if (!printWindow) return;
+
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/T/, '_').replace(/:/g, '-').split('.')[0];
+        const filename = `Relatorio_Balanco_${timestamp}`;
+
+        const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+        const dateRangeStr = reportPeriod.start === reportPeriod.end 
+            ? new Date(reportPeriod.start + 'T00:00:00').toLocaleDateString('pt-BR')
+            : `${new Date(reportPeriod.start + 'T00:00:00').toLocaleDateString('pt-BR')} até ${new Date(reportPeriod.end + 'T00:00:00').toLocaleDateString('pt-BR')}`;
+        
+        const getReportLabel = () => {
+            if (typeFilter === 'IN') return 'Relatório de Entradas';
+            if (typeFilter === 'OUT') return 'Relatório de Saídas';
+            if (typeFilter === 'ADJUSTMENT') return 'Relatório de Ajustes';
+            return 'Relatório de Balanço Geral';
+        };
+
+        const getValueLabel = () => {
+            if (typeFilter === 'IN') return 'Custo Total';
+            if (typeFilter === 'OUT') return 'Receita Total';
+            if (typeFilter === 'ADJUSTMENT') return 'Variação de Estoque';
+            return 'Valor Movimentado';
+        };
+
+        const html = `
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head>
+                <meta charset="UTF-8">
+                <title>${filename}</title>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { 
+                        font-family: 'Inter', -apple-system, sans-serif; 
+                        padding: 50px; 
+                        color: #1f2937; 
+                        line-height: 1.5;
+                        background: #fff;
+                    }
+                    .header { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        align-items: center; 
+                        margin-bottom: 40px; 
+                        border-bottom: 1px solid #e5e7eb; 
+                        padding-bottom: 24px; 
+                    }
+                    .brand { display: flex; align-items: center; gap: 12px; }
+                    .brand-logo { width: 40px; height: 40px; background: #2563eb; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 20px; }
+                    .brand-name { font-size: 18px; font-weight: 800; color: #111827; letter-spacing: -0.025em; }
+                    
+                    .report-title-container { text-align: right; }
+                    .report-title { font-size: 24px; font-weight: 900; color: #111827; letter-spacing: -0.025em; margin-bottom: 4px; }
+                    .report-period { font-size: 14px; color: #6b7280; font-weight: 500; }
+
+                    .stats-grid { 
+                        display: grid; 
+                        grid-template-columns: repeat(2, 1fr); 
+                        gap: 20px; 
+                        margin-bottom: 40px; 
+                    }
+                    .stat-card { 
+                        padding: 24px; 
+                        border-radius: 16px; 
+                        background: #f9fafb; 
+                        border: 1px solid #f3f4f6;
+                    }
+                    .stat-label { 
+                        font-size: 12px; 
+                        font-weight: 700; 
+                        text-transform: uppercase; 
+                        letter-spacing: 0.05em; 
+                        color: #6b7280; 
+                        margin-bottom: 8px; 
+                    }
+                    .stat-value { 
+                        font-size: 32px; 
+                        font-weight: 800; 
+                        color: #111827; 
+                        letter-spacing: -0.025em;
+                    }
+                    .stat-value.success { color: #059669; }
+
+                    .section-title { 
+                        font-size: 14px; 
+                        font-weight: 800; 
+                        text-transform: uppercase; 
+                        letter-spacing: 0.05em; 
+                        color: #111827; 
+                        margin-bottom: 16px; 
+                        padding-left: 4px;
+                        border-left: 4px solid #2563eb;
+                    }
+
+                    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 40px; }
+                    th { 
+                        text-align: left; 
+                        font-size: 11px; 
+                        font-weight: 700; 
+                        text-transform: uppercase; 
+                        color: #6b7280; 
+                        padding: 12px 16px; 
+                        background: #f9fafb;
+                        border-bottom: 1px solid #e5e7eb;
+                    }
+                    th:first-child { border-top-left-radius: 8px; }
+                    th:last-child { border-top-right-radius: 8px; }
+                    
+                    td { 
+                        padding: 16px; 
+                        font-size: 13px; 
+                        border-bottom: 1px solid #f3f4f6; 
+                        vertical-align: middle;
+                    }
+                    .row-date { color: #6b7280; font-family: tabular-nums; width: 140px; }
+                    .row-main { font-weight: 600; color: #111827; }
+                    .row-sub { font-size: 10px; color: #9ca3af; text-transform: uppercase; font-weight: 700; margin-top: 2px; }
+                    .row-qty { font-weight: 700; color: #4b5563; text-align: right; }
+                    .row-val { font-weight: 800; color: #111827; text-align: right; width: 120px; }
+
+                    .footer { 
+                        margin-top: 60px; 
+                        padding-top: 24px;
+                        border-top: 1px solid #f3f4f6;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        font-size: 11px; 
+                        color: #9ca3af; 
+                        font-weight: 500;
+                    }
+                    
+                    @media print {
+                        body { padding: 30px; }
+                        .stat-card { background: #f9fafb !important; -webkit-print-color-adjust: exact; }
+                        th { background: #f9fafb !important; -webkit-print-color-adjust: exact; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="brand">
+                        <div class="brand-logo">R</div>
+                        <div class="brand-name">Romaneio Rápido</div>
+                    </div>
+                    <div class="report-title-container">
+                        <div class="report-title">${getReportLabel()}</div>
+                        <div class="report-period">${dateRangeStr}</div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Movimentações (${typeFilter || 'Todas'})</div>
+                        <div class="stat-value">${reportData.total_romaneios}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">${getValueLabel()}</div>
+                        <div class="stat-value success">${formatCurrency(reportData.total_value)}</div>
+                    </div>
+                </div>
+
+                <div class="section-title">Histórico de Movimentações</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Cliente / Descrição</th>
+                            <th style="text-align: right;">Quantidade</th>
+                            <th style="text-align: right;">Valor Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${groupedMovementsForReport.map(g => `
+                            <tr>
+                                <td class="row-date">${new Date(g.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                                <td>
+                                    <div class="row-main">${g.isGroup ? (g.customerName || 'Consumidor Final') : (g.product_name || 'Produto')}</div>
+                                    <div class="row-sub">${g.isGroup ? 'Romaneio #' + String(g.id).slice(-6).toUpperCase() : 'Movimentação Avulsa'}</div>
+                                </td>
+                                <td class="row-qty">
+                                    ${g.isGroup ? g.items.length + ' itens' : g.quantity + ' ' + (g.unit_snapshot || 'UN')}
+                                </td>
+                                <td class="row-val">
+                                    ${formatCurrency(g.totalValue)}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+
+                <div class="footer">
+                    <div>Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+                    <div>romaneiorapido.com.br</div>
+                </div>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+        setTimeout(() => {
+            printWindow.print();
+        }, 300);
+    }
 
     const fetchMovements = async () => {
         setLoading(true)
@@ -124,6 +439,59 @@ export default function MovementsPage() {
                         Histórico detalhado de todas as entradas e saídas de estoque.
                     </p>
                 </div>
+                
+                {reportData && (
+                    <button
+                        onClick={handleExportReportPDF}
+                        className="flex items-center gap-2 px-5 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20 active:scale-95 shrink-0"
+                    >
+                        <Download className="w-4 h-4" />
+                        Baixar PDF do Período
+                    </button>
+                )}
+            </div>
+
+            {/* Dashboard de Resumo */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="glass-card rounded-[2rem] p-8 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
+                        <BarChart3 className="w-24 h-24" />
+                    </div>
+                    <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
+                                {typeFilter === 'IN' ? 'Total Entradas' : typeFilter === 'OUT' ? 'Total Romaneios' : 'Total Registros'}
+                            </p>
+                            <h3 className="text-4xl font-black text-slate-900 tracking-tighter">
+                                {reportLoading ? '...' : reportData?.total_romaneios || 0}
+                            </h3>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] font-bold text-blue-600">
+                            <span>Ver detalhamento abaixo</span>
+                            <ArrowRight className="w-3 h-3" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="glass-card rounded-[2rem] p-8 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
+                        <Settings2 className="w-24 h-24" />
+                    </div>
+                    <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
+                                {typeFilter === 'IN' ? 'Custo no Período' : typeFilter === 'OUT' ? 'Receita no Período' : 'Valor Movimentado'}
+                            </p>
+                            <h3 className={`text-4xl font-black tracking-tighter ${typeFilter === 'OUT' ? 'text-emerald-600' : typeFilter === 'IN' ? 'text-blue-600' : 'text-slate-900'}`}>
+                                {reportLoading ? '...' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(reportData?.total_value || 0)}
+                            </h3>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400">
+                            <span>Relatório Geral</span>
+                            <ArrowRight className="w-3 h-3" />
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Filters Header */}
@@ -140,7 +508,25 @@ export default function MovementsPage() {
                         />
                     </div>
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1 relative group">
+                            <Calendar className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="date"
+                                value={reportPeriod.start}
+                                onChange={(e) => setReportPeriod(prev => ({ ...prev, start: e.target.value }))}
+                                className="w-full h-12 pl-12 pr-6 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-bold"
+                            />
+                        </div>
+                        <div className="flex-1 relative group">
+                            <Calendar className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="date"
+                                value={reportPeriod.end}
+                                onChange={(e) => setReportPeriod(prev => ({ ...prev, end: e.target.value }))}
+                                className="w-full h-12 pl-12 pr-6 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-bold"
+                            />
+                        </div>
                         <div className="relative min-w-[180px]">
                             <Filter className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
                             <select
