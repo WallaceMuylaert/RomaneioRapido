@@ -14,8 +14,6 @@ import {
     UserCircle2,
     Smartphone,
     Minus,
-    ArrowUpCircle,
-    ArrowDownCircle,
     Calendar as CalendarIcon,
     Search,
     Copy,
@@ -141,6 +139,20 @@ export default function RomaneioPage() {
         unit: string
     }[] | null>(null)
     const [itemToRemove, setItemToRemove] = useState<number | null>(null)
+    const [confirmConfig, setConfirmConfig] = useState<{
+        isOpen: boolean,
+        title: string,
+        message: string,
+        onConfirm: () => void,
+        confirmText?: string,
+        cancelText?: string,
+        type?: 'danger' | 'warning' | 'info'
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => {}
+    })
 
     // Estado para feedback em tempo real do scanner
     const [scanStatus, setScanStatus] = useState<'idle' | 'searching' | 'success' | 'error'>('idle')
@@ -321,7 +333,7 @@ export default function RomaneioPage() {
     const fetchMovements = async () => {
         setLoading(true)
         try {
-            const res = await api.get('/inventory/movements', { params: { limit: 50 } })
+            const res = await api.get('/inventory/movements', { params: { limit: 50, movement_type: 'OUT' } })
             setMovements(res.data.items)
         } catch (err) {
             console.error('Erro ao buscar movimentações:', err)
@@ -379,75 +391,150 @@ export default function RomaneioPage() {
         }
     }
 
-    const handleResumePending = async (pending: PendingRomaneio) => {
-        if (cartItems.length > 0) {
-            if (!window.confirm('Isso irá substituir os itens atuais do romaneio. Continuar?')) return
+    const handleBlockerSave = async () => {
+        if (!customerName || !customerName.trim()) {
+            toast.error('Informe o nome do cliente antes de salvar')
+            return
         }
-
-        setCartItems(pending.items.map(item => ({
-            id: item.product_id,
-            name: item.name,
-            barcode: item.barcode,
-            quantity: item.quantity,
-            unit: item.unit,
-            price: item.price,
-            image: item.image,
-            color: item.color,
-            size: item.size
-        })))
-        setCustomerName(pending.customer_name || '')
-        setCustomerPhone(pending.customer_phone)
-        setSelectedClientId(pending.client_id)
         
-        // Opcional: deletar o rascunho ao retomar, ou deletar apenas na finalização
-        // Para evitar duplicidade e seguir o fluxo de "finalizar rascunho", 
-        // vamos deletar apenas quando for finalizado de verdade, ou se o usuário preferir, deletar agora.
-        // Decisão: Deletar na finalização é mais seguro caso o PC trave.
-        // Mas o usuário pediu "alterar e finalizar depois", então vamos carregar e se ele salvar de novo, cria um novo ou sobrescreve?
-        // Simplificação: Carrega para o carrinho e remove da lista de pendentes para não confundir.
+        setIsSavingPending(true)
         try {
-            await api.delete(`/pending/${pending.id}`)
-            setPendingRomaneios(p => p.filter(x => x.id !== pending.id))
-        } catch (err) {
-            console.error('Erro ao remover rascunho ao retomar:', err)
+            await api.post('/pending/', {
+                client_id: selectedClientId,
+                customer_name: customerName,
+                customer_phone: customerPhone,
+                items: cartItems.map(item => ({
+                    product_id: item.id,
+                    name: item.name,
+                    barcode: item.barcode,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    price: item.price,
+                    image: item.image,
+                    color: item.color,
+                    size: item.size
+                }))
+            })
+            toast.success('Pedido salvo em separação!')
+            blocker.proceed?.()
+        } catch (err: any) {
+            toast.error('Erro ao salvar rascunho. Saindo sem salvar...')
+            blocker.proceed?.()
+        } finally {
+            setIsSavingPending(false)
+        }
+    }
+
+    const handleResumePending = async (pending: PendingRomaneio) => {
+        const executeResume = async () => {
+            setCartItems(pending.items.map(item => ({
+                id: item.product_id,
+                name: item.name,
+                barcode: item.barcode,
+                quantity: item.quantity,
+                unit: item.unit,
+                price: item.price,
+                image: item.image,
+                color: item.color,
+                size: item.size
+            })))
+            setCustomerName(pending.customer_name || '')
+            setCustomerPhone(pending.customer_phone)
+            setSelectedClientId(pending.client_id)
+            
+            try {
+                await api.delete(`/pending/${pending.id}`)
+                setPendingRomaneios(p => p.filter(x => x.id !== pending.id))
+            } catch (err) {
+                console.error('Erro ao remover rascunho ao retomar:', err)
+            }
+
+            setActiveTab('romaneio')
+            toast.success('Rascunho carregado!')
+            setConfirmConfig(prev => ({ ...prev, isOpen: false }))
         }
 
-        setActiveTab('romaneio')
-        toast.success('Rascunho carregado!')
+        if (cartItems.length > 0) {
+            setConfirmConfig({
+                isOpen: true,
+                title: 'Substituir Itens?',
+                message: 'Isso irá apagar os itens atuais do romaneio para carregar o rascunho. Continuar?',
+                onConfirm: executeResume,
+                type: 'warning',
+                confirmText: 'Continuar',
+                cancelText: 'Voltar'
+            })
+            return
+        }
+
+        executeResume()
     }
 
     const handleDeletePending = async (id: number) => {
-        if (!window.confirm('Deseja excluir este rascunho?')) return
-        try {
-            await api.delete(`/pending/${id}`)
-            setPendingRomaneios(p => p.filter(x => x.id !== id))
-            toast.success('Rascunho excluído')
-        } catch (err) {
-            toast.error('Erro ao excluir rascunho')
-        }
+        setConfirmConfig({
+            isOpen: true,
+            title: 'Excluir Rascunho?',
+            message: 'Deseja remover permanentemente este rascunho de separação?',
+            type: 'danger',
+            confirmText: 'Excluir',
+            cancelText: 'Cancelar',
+            onConfirm: async () => {
+                try {
+                    await api.delete(`/pending/${id}`)
+                    setPendingRomaneios(p => p.filter(x => x.id !== id))
+                    toast.success('Rascunho excluído')
+                } catch (err) {
+                    toast.error('Erro ao excluir rascunho')
+                } finally {
+                    setConfirmConfig(prev => ({ ...prev, isOpen: false }))
+                }
+            }
+        })
     }
 
     const handleCopyRomaneio = (romaneio_id: string | number) => {
         const romaneioItems = movements.filter(m => m.romaneio_id === romaneio_id)
         if (romaneioItems.length === 0) return
 
-        if (cartItems.length > 0) {
-            if (!window.confirm('Isso irá substituir os itens atuais do romaneio. Continuar?')) return
+        const executeCopy = () => {
+            const newItems: CartItem[] = romaneioItems.map(m => ({
+                id: m.product_id,
+                name: m.product_name_snapshot,
+                barcode: m.product_barcode_snapshot,
+                quantity: m.quantity,
+                unit: m.unit_snapshot || 'UN',
+                price: 0,
+                image: null 
+            }))
+
+            setCartItems(newItems)
+            
+            const firstMovement = romaneioItems[0]
+            if (firstMovement && firstMovement.notes && firstMovement.notes.startsWith('Romaneio: ')) {
+                setCustomerName(firstMovement.notes.replace('Romaneio: ', '').trim())
+            } else {
+                setCustomerName('')
+            }
+
+            setActiveTab('romaneio')
+            toast.success('Pedido copiado para o carrinho!')
+            setConfirmConfig(prev => ({ ...prev, isOpen: false }))
         }
 
-        const newItems: CartItem[] = romaneioItems.map(m => ({
-            id: m.product_id,
-            name: m.product_name_snapshot,
-            barcode: m.product_barcode_snapshot,
-            quantity: m.quantity,
-            unit: m.unit_snapshot || 'UN',
-            price: 0,
-            image: null 
-        }))
+        if (cartItems.length > 0) {
+            setConfirmConfig({
+                isOpen: true,
+                title: 'Substituir Itens?',
+                message: 'Isso irá apagar os itens atuais do romaneio para copiar o pedido antigo. Continuar?',
+                type: 'warning',
+                confirmText: 'Copiar',
+                cancelText: 'Voltar',
+                onConfirm: executeCopy
+            })
+            return
+        }
 
-        setCartItems(newItems)
-        setActiveTab('romaneio')
-        toast.success('Pedido copiado para o carrinho!')
+        executeCopy()
     }
 
     useEffect(() => {
@@ -961,9 +1048,9 @@ export default function RomaneioPage() {
                         <div>
                             <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
                                 <History className="w-5 h-5 text-blue-600" />
-                                Histórico de Movimentações
+                                Histórico de Saídas
                             </h2>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Recentes na loja</p>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Recentes na loja (Vendas)</p>
                         </div>
                     </div>
 
@@ -973,7 +1060,6 @@ export default function RomaneioPage() {
                                 <tr>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Data</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Produto</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Tipo</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Qtd.</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Notas</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Ação</th>
@@ -1008,21 +1094,9 @@ export default function RomaneioPage() {
                                                 <p className="text-sm font-bold text-slate-900">{m.product_name_snapshot}</p>
                                                 <p className="text-[10px] font-mono text-slate-400">{m.product_barcode_snapshot || 'Sem SKU'}</p>
                                             </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter ${
-                                                    m.movement_type === 'IN' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                                                    m.movement_type === 'OUT' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-                                                    'bg-blue-50 text-blue-600 border border-blue-100'
-                                                }`}>
-                                                    {m.movement_type === 'IN' ? <ArrowUpCircle className="w-3 h-3" /> :
-                                                     m.movement_type === 'OUT' ? <ArrowDownCircle className="w-3 h-3" /> :
-                                                     null}
-                                                    {m.movement_type === 'IN' ? 'Entrada' : m.movement_type === 'OUT' ? 'Saída' : 'Ajuste'}
-                                                </span>
-                                            </td>
                                             <td className="px-6 py-4 text-right">
-                                                <span className={`text-sm font-black ${m.movement_type === 'OUT' ? 'text-rose-600' : m.movement_type === 'IN' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                                                    {m.movement_type === 'OUT' ? '-' : m.movement_type === 'IN' ? '+' : ''}{m.quantity}
+                                                <span className="text-sm font-black text-slate-900">
+                                                    {m.quantity}
                                                 </span>
                                                 <span className="ml-1 text-[10px] font-black text-slate-400 uppercase">{m.unit_snapshot}</span>
                                             </td>
@@ -1070,12 +1144,59 @@ export default function RomaneioPage() {
                 <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" onClick={() => blocker.reset()} />
                     <div className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-8 pb-4 flex flex-col items-center text-center"><div className="w-16 h-16 bg-red-100 text-red-600 rounded-3xl flex items-center justify-center mb-6"><AlertTriangle className="w-8 h-8" /></div><h2 className="text-2xl font-black text-slate-900 tracking-tight">Sair Agora?</h2><p className="text-sm font-bold text-slate-500 leading-relaxed mt-2">Os itens do carrinho serão perdidos.</p></div>
-                        <div className="p-8 flex flex-col gap-3"><button onClick={() => blocker.proceed()} className="w-full h-14 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black text-sm active:scale-95 transition-all">Sair</button><button onClick={() => blocker.reset()} className="w-full h-14 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-sm active:scale-95 transition-all">Voltar</button></div>
+                        <div className="p-8 pb-4 flex flex-col items-center text-center">
+                            <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-3xl flex items-center justify-center mb-6">
+                                <Clock className="w-8 h-8" />
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Salvar Separação?</h2>
+                            <p className="text-sm font-bold text-slate-500 leading-relaxed mt-2">
+                                Você tem itens no carrinho. Deseja salvar como rascunho antes de sair?
+                            </p>
+                        </div>
+
+                        <div className="px-8 py-2">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                                    {(!customerName || !customerName.trim()) ? 'Para quem é este pedido?' : 'Confirmar Nome do Cliente'}
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="Nome do Cliente"
+                                    value={customerName || ''}
+                                    onChange={(e) => setCustomerName(e.target.value)}
+                                    className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="p-8 flex flex-col gap-3">
+                            <button 
+                                onClick={handleBlockerSave} 
+                                disabled={isSavingPending}
+                                className="w-full h-14 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-sm active:scale-95 transition-all flex items-center justify-center gap-2"
+                            >
+                                {isSavingPending ? <Clock className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                Salvar e Sair
+                            </button>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button onClick={() => blocker.proceed()} className="h-12 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-black text-xs active:scale-95 transition-all">Sair sem salvar</button>
+                                <button onClick={() => blocker.reset()} className="h-12 bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-xl font-black text-xs active:scale-95 transition-all">Voltar</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
             <ConfirmModal isOpen={itemToRemove !== null} onClose={() => setItemToRemove(null)} onConfirm={() => { if (itemToRemove !== null) { removeFromCart(itemToRemove); setItemToRemove(null); } }} title="Remover?" message="Deseja retirar este produto?" confirmText="Sim" cancelText="Não" type="danger" />
+            <ConfirmModal 
+                isOpen={confirmConfig.isOpen} 
+                onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))} 
+                onConfirm={confirmConfig.onConfirm} 
+                title={confirmConfig.title} 
+                message={confirmConfig.message} 
+                confirmText={confirmConfig.confirmText} 
+                cancelText={confirmConfig.cancelText} 
+                type={confirmConfig.type} 
+            />
         </div>
     )
 }
