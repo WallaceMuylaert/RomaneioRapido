@@ -158,6 +158,7 @@ def run_migrations():
     from backend.models.inventory import InventoryMovement, MovementType as _MT
     from backend.models.clients import Client
     from backend.models.api_keys import ApiKey
+    from backend.models.pending_romaneio import PendingRomaneio
     from sqlalchemy import Enum as _SAEnum
 
     # Cria todas as tabelas (DDL principal) - Base para novas instalações
@@ -180,7 +181,8 @@ def run_migrations():
         Product,
         InventoryMovement,
         Client,
-        ApiKey
+        ApiKey,
+        PendingRomaneio
     ]
 
     for model in models:

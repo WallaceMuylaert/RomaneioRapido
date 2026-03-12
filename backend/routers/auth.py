@@ -75,6 +75,8 @@ def update_me(request: Request, update_data: UserUpdate, db: Session = Depends(g
             current_user.store_name = update_data.store_name
         if update_data.photo_base64 is not None:
             current_user.photo_base64 = update_data.photo_base64
+        if update_data.pix_key is not None:
+            current_user.pix_key = update_data.pix_key
         if update_data.password:
             current_user.hashed_password = get_password_hash(update_data.password)
             

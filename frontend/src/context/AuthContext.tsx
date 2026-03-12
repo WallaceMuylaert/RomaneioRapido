@@ -12,6 +12,7 @@ interface User {
     photo_base64?: string | null
     phone?: string | null
     store_name?: string | null
+    pix_key?: string | null
     trial_expired?: boolean
     trial_days_remaining?: number | null
 }

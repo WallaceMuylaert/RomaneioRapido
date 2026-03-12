@@ -83,6 +83,7 @@ export default function ProfilePage() {
         phone: '',
         store_name: '',
         photo_base64: '',
+        pix_key: '',
         password: '',
         confirm_password: ''
     })
@@ -113,7 +114,8 @@ export default function ProfilePage() {
                 email: user.email || '',
                 phone: user.phone || '',
                 store_name: user.store_name || '',
-                photo_base64: user.photo_base64 || ''
+                photo_base64: user.photo_base64 || '',
+                pix_key: user.pix_key || ''
             }))
             setImagePreview(user.photo_base64 || null)
         }
@@ -306,7 +308,8 @@ export default function ProfilePage() {
                 email: form.email,
                 phone: form.phone || null,
                 store_name: form.store_name || null,
-                photo_base64: form.photo_base64 || null
+                photo_base64: form.photo_base64 || null,
+                pix_key: form.pix_key || null
             }
 
             if (form.password) {
@@ -498,6 +501,22 @@ export default function ProfilePage() {
                                                 placeholder="(00) 00000-0000"
                                             />
                                         </div>
+                                    </div>
+
+                                    <div className="sm:col-span-2 group/input">
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block ml-1">Chave Pìx (Para Recebimento)</label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                                <Zap className="h-5 w-5 text-slate-300 group-focus-within/input:text-brand-500 transition-colors" />
+                                            </div>
+                                            <input
+                                                value={form.pix_key}
+                                                onChange={(e) => setForm({ ...form, pix_key: e.target.value })}
+                                                className="w-full h-12 pl-12 pr-4 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
+                                                placeholder="CPF, E-mail, Celular ou Chave Aleatória"
+                                            />
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-2 ml-1">Esta chave será impressa no PDF do romaneio para facilitar o pagamento via QR Code.</p>
                                     </div>
                                 </div>
 

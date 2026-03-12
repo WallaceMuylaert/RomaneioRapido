@@ -8,7 +8,7 @@ interface ConfirmModalProps {
     message: string
     confirmText?: string
     cancelText?: string
-    type?: 'danger' | 'info'
+    type?: 'danger' | 'info' | 'warning'
     loading?: boolean
 }
 
@@ -25,8 +25,12 @@ export default function ConfirmModal({
 }: ConfirmModalProps) {
     if (!isOpen) return null
 
-    const brandColor = type === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
-    const iconColor = type === 'danger' ? 'text-red-500 bg-red-50' : 'text-blue-500 bg-blue-50'
+    const brandColor = type === 'danger' ? 'bg-red-600 hover:bg-red-700' : 
+                       type === 'warning' ? 'bg-amber-500 hover:bg-amber-600' :
+                       'bg-blue-600 hover:bg-blue-700'
+    const iconColor = type === 'danger' ? 'text-red-500 bg-red-50' : 
+                      type === 'warning' ? 'text-amber-500 bg-amber-50' :
+                      'text-blue-500 bg-blue-50'
 
     return (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 animate-in fade-in duration-200">

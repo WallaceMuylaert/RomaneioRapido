@@ -9,6 +9,7 @@ import AlertModal from './AlertModal'
 import { getBase64FromUrl } from '../utils/imageUtils'
 import logoImg from '../assets/romaneiorapido_logo.png'
 import { WhatsAppIcon } from '../assets/WhatsAppIcon'
+import { generatePixPayload, generatePixQRCode } from '../utils/pix'
 
 export interface CartItem {
     id: number
@@ -44,13 +45,25 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
     const [tempPhone, setTempPhone] = useState('')
     const [savingPhone, setSavingPhone] = useState(false)
     const [logoBase64, setLogoBase64] = useState<string>('')
+    const [pixQRCode, setPixQRCode] = useState<string>('')
 
     // Carrega o logo dinamicamente para Base64 ao abrir o modal
     useEffect(() => {
         if (isOpen) {
             getBase64FromUrl(logoImg).then(setLogoBase64).catch(console.error)
+            
+            if (user?.pix_key) {
+                const payload = generatePixPayload({
+                    key: user.pix_key,
+                    name: user.full_name || 'Loja',
+                    city: 'Sao Paulo' // Default city as per BRCode requirements if not provided
+                });
+                generatePixQRCode(payload).then(setPixQRCode).catch(console.error);
+            } else {
+                setPixQRCode('');
+            }
         }
-    }, [isOpen])
+    }, [isOpen, user?.pix_key, user?.full_name])
     const [alertConfig, setAlertConfig] = useState<{
         isOpen: boolean,
         title: string,
@@ -63,7 +76,20 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
         type: 'info'
     })
 
-    const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
+    const totalsByUnit = items.reduce((acc, item) => {
+        const unit = (item.unit || 'UN').toUpperCase();
+        acc[unit] = (acc[unit] || 0) + item.quantity;
+        return acc;
+    }, {} as Record<string, number>);
+
+    const formatQuantity = (qty: number) => {
+        return Number.isInteger(qty) ? qty.toString() : qty.toFixed(3).replace(/\.?0+$/, '');
+    };
+
+    const totalItemsSummary = Object.entries(totalsByUnit)
+        .map(([unit, qty]) => `${formatQuantity(qty)} ${unit}`)
+        .join(' | ');
+
     const totalValue = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
     const dateStr = createdAt ? new Date(createdAt).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR')
 
@@ -101,9 +127,13 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
             }
             text += `   Qtd: ${item.quantity} ${item.unit} | Unit: ${formatCurrency(item.price)} | Sub: ${formatCurrency(item.price * item.quantity)}\n\n`
         })
-
-        text += `*Total de Itens:* ${totalItems}\n`
+        
+        text += `*Total Itens:* ${totalItemsSummary}\n`
         text += `*VALOR TOTAL:* ${formatCurrency(totalValue)}\n\n`
+        if (user?.pix_key) {
+            text += `*PAGAMENTO VIA PIX*\nChave: ${user.pix_key}\n\n`
+        }
+
         text += `_Gerado por RomaneioRapido_`
 
         // Limpeza de caracteres invisíveis e espaços especiais (comum em Intl.NumberFormat)
@@ -153,69 +183,174 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
         const printWindow = window.open('', '', 'width=800,height=600')
         if (!printWindow) return
 
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/T/, '_').replace(/:/g, '-').split('.')[0];
+        const filename = `Romaneio_${customerName.replace(/\s+/g, '_')}_${timestamp}`;
+
         let html = `
-            <html>
+            <!DOCTYPE html>
+            <html lang="pt-BR">
             <head>
-                <title>Romaneio - ${customerName}</title>
+                <meta charset="UTF-8">
+                <title>${filename}</title>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
                 <style>
-                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #111827; position: relative; }
-                    .watermark-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: -1; }
-                    .watermark-logo { width: 500px; opacity: 0.06; transform: rotate(-35deg); }
-                    .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #e5e7eb; padding-bottom: 20px; }
-                    .title { font-size: 24px; font-weight: bold; margin-bottom: 8px; }
-                    .info { color: #4B5563; font-size: 14px; margin-bottom: 4px; }
-                    table { w-full; border-collapse: collapse; margin-top: 20px; }
-                    th {text-align: left; padding: 12px; background-color: #f9fafb; border-bottom: 2px solid #e5e7eb; color: #374151; font-size: 14px;}
-                    td { padding: 12px; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
-                    .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #9CA3AF; border-top: 1px solid #e5e7eb; padding-top: 20px; }
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { 
+                        font-family: 'Inter', -apple-system, sans-serif; 
+                        padding: 40px; 
+                        color: #1f2937; 
+                        line-height: 1.4;
+                        background: #fff;
+                    }
+                    .watermark-container { 
+                        position: fixed; 
+                        top: 0; left: 0; width: 100%; height: 100%; 
+                        display: flex; align-items: center; justify-content: center; 
+                        pointer-events: none; z-index: -1; 
+                    }
+                    .watermark-logo { width: 500px; opacity: 0.04; transform: rotate(-35deg); }
+                    
+                    .header { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        align-items: flex-start; 
+                        margin-bottom: 40px; 
+                        padding-bottom: 24px;
+                        border-bottom: 2px solid #f3f4f6;
+                    }
+                    .logo-area { display: flex; align-items: center; gap: 12px; }
+                    .logo-icon { width: 36px; height: 36px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 18px; }
+                    .logo-text { font-size: 16px; font-weight: 700; color: #111827; }
+                    
+                    .doc-info { text-align: right; }
+                    .doc-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; color: #111827; margin-bottom: 4px; }
+                    .doc-date { font-size: 12px; color: #6b7280; font-weight: 500; }
+
+                    .customer-card { 
+                        background: #f9fafb; 
+                        padding: 20px; 
+                        border-radius: 12px; 
+                        margin-bottom: 30px; 
+                        border: 1px solid #f3f4f6;
+                    }
+                    .card-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #9ca3af; letter-spacing: 0.05em; margin-bottom: 4px; }
+                    .card-value { font-size: 15px; font-weight: 700; color: #111827; }
+
+                    table { width: 100%; border-collapse: separate; border-spacing: 0; }
+                    th { 
+                        text-align: left; padding: 12px 16px; background: #f9fafb; 
+                        color: #6b7280; font-size: 11px; font-weight: 700; 
+                        text-transform: uppercase; border-bottom: 1px solid #e5e7eb;
+                    }
+                    td { padding: 14px 16px; border-bottom: 1px solid #f3f4f6; font-size: 13px; vertical-align: middle; }
+                    .col-qty { width: 60px; text-align: center; font-weight: 700; font-size: 14px; }
+                    .col-unit { width: 60px; color: #6b7280; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+                    .product-name { font-weight: 700; color: #111827; margin-bottom: 2px; }
+                    .product-meta { font-size: 11px; color: #6b7280; display: flex; gap: 8px; }
+                    .variant-badge { background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
+                    .col-price { text-align: right; color: #4b5563; }
+                    .col-total { text-align: right; font-weight: 800; color: #111827; width: 110px; }
+                    .col-check { width: 40px; text-align: center; }
+                    .check-box { width: 18px; height: 18px; border: 2px solid #d1d5db; border-radius: 4px; display: inline-block; }
+
+                    .summary-section { margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-start; }
+                    
+                    .pix-area { 
+                        display: flex; align-items: center; gap: 16px; 
+                        background: #fdfdfd; padding: 16px; border-radius: 12px; 
+                        border: 1px dashed #e5e7eb; max-width: 400px;
+                    }
+                    .pix-qr { width: 90px; height: 90px; }
+                    .pix-details { display: flex; flex-direction: column; gap: 2px; }
+                    .pix-title { font-size: 11px; font-weight: 700; color: #111827; }
+                    .pix-key { font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2563eb; }
+
+                    .totals-area { text-align: right; }
+                    .total-label { font-size: 13px; color: #6b7280; font-weight: 500; }
+                    .total-value { font-size: 24px; font-weight: 800; color: #111827; margin-top: 4px; }
+                    .total-items { font-size: 11px; color: #9ca3af; font-weight: 600; margin-top: 4px; }
+
+                    .footer { 
+                        margin-top: 50px; padding-top: 20px; 
+                        border-top: 1px solid #f3f4f6; text-align: center; 
+                        font-size: 10px; color: #9ca3af; font-weight: 500;
+                    }
                 </style>
             </head>
             <body>
                 <div class="watermark-container">
                     ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
                 </div>
+                
                 <div class="header">
-                    <div class="title">DOCUMENTO DE ROMANEIO</div>
-                    <div class="info"><strong>Cliente/Destino:</strong> ${customerName || 'N/A'}</div>
-                    <div class="info"><strong>Data:</strong> ${dateStr}</div>
+                    <div class="logo-area">
+                        <div class="logo-icon">R</div>
+                        <div class="logo-text">Romaneio Rápido</div>
+                    </div>
+                    <div class="doc-info">
+                        <div class="doc-title">Documento de Romaneio</div>
+                        <div class="doc-date">${dateStr}</div>
+                    </div>
+                </div>
+
+                <div class="customer-card">
+                    <div class="card-label">Cliente / Destino</div>
+                    <div class="card-value">${customerName || 'Consumidor Final'}</div>
                 </div>
                 
-                <table style="width: 100%;">
+                <table>
                     <thead>
                         <tr>
-                            <th>Qtd</th>
-                            <th>Unid</th>
+                            <th class="col-qty">Qtd</th>
+                            <th class="col-unit">Un</th>
                             <th>Produto</th>
-                            <th style="text-align: right;">Val. Unit.</th>
+                            <th style="text-align: right;">v. Unit</th>
                             <th style="text-align: right;">Subtotal</th>
-                            <th>Confirmação</th>
+                            <th class="col-check">OK</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${items.map(item => `
                             <tr>
-                                <td><strong>${item.quantity}</strong></td>
-                                <td>${item.unit}</td>
+                                <td class="col-qty">${item.quantity}</td>
+                                <td class="col-unit">${item.unit}</td>
                                 <td>
-                                    <strong>${item.name}</strong>
-                                    ${(item.color || item.size) ? `<div style="color: #4B5563; font-weight: bold; font-size: 11px; margin-top: 2px;">Variante: ${[item.color, item.size].filter(Boolean).join(' • ')}</div>` : ''}
-                                    <div style="color: #6B7280; font-family: monospace; font-size: 11px;">${item.barcode || '-'}</div>
+                                    <div class="product-name">${item.name}</div>
+                                    <div class="product-meta">
+                                        ${(item.color || item.size) ? `<span class="variant-badge">${[item.color, item.size].filter(Boolean).join(' • ')}</span>` : ''}
+                                        <span>${item.barcode || '-'}</span>
+                                    </div>
                                 </td>
-                                <td style="text-align: right;">${formatCurrency(item.price)}</td>
-                                <td style="text-align: right; font-weight: bold;">${formatCurrency(item.price * item.quantity)}</td>
-                                <td style="text-align: center;"><div style="width: 20px; height: 20px; border: 1px solid #D1D5DB; border-radius: 4px; display: inline-block;"></div></td>
+                                <td class="col-price">${formatCurrency(item.price)}</td>
+                                <td class="col-total">${formatCurrency(item.price * item.quantity)}</td>
+                                <td class="col-check"><div class="check-box"></div></td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
                 
-                <div style="margin-top: 20px; text-align: right;">
-                    <div style="font-size: 14px; color: #4B5563;">Total de Itens: <strong>${totalItems}</strong></div>
-                    <div style="font-size: 20px; font-weight: bold; margin-top: 4px; color: #111827;">Valor Total: ${formatCurrency(totalValue)}</div>
+                <div class="summary-section">
+                    <div class="pix-area">
+                        ${pixQRCode ? `<img src="${pixQRCode}" class="pix-qr" />` : ''}
+                        <div class="pix-details">
+                            <div class="pix-title">PAGAMENTO VIA PIX</div>
+                            <div class="pix-key">${user?.pix_key || 'Chave não cadastrada'}</div>
+                            <div style="font-size: 10px; color: #9ca3af; margin-top: 4px;">Escaneie o QR Code ou use a chave.</div>
+                        </div>
+                    </div>
+
+                    <div class="totals-area">
+                        <div class="total-label">Total do Romaneio</div>
+                        <div class="total-value">${formatCurrency(totalValue)}</div>
+                        <div class="total-items">Volume Total: ${totalItemsSummary}</div>
+                    </div>
                 </div>
 
                 <div class="footer">
-                    Documento gerado pelo sistema RomaneioRapido.com.br
+                    Este documento não é um cupom fiscal. Gerado por romaneiorapido.com.br
                 </div>
             </body>
             </html>
@@ -224,80 +359,140 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
         printWindow.document.write(html)
         printWindow.document.close()
 
-        // Timeout para garantir que o Chrome renda os estilos antes de abrir a janela print
         setTimeout(() => {
             printWindow.print()
         }, 250)
     }
 
+
     const printThermal = () => {
         const printWindow = window.open('', '', 'width=400,height=600')
         if (!printWindow) return
 
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/T/, '_').replace(/:/g, '-').split('.')[0];
+        const filename = `Cupom_${customerName.replace(/\s+/g, '_')}_${timestamp}`;
+
         let html = `
-            <html>
+            <!DOCTYPE html>
+            <html lang="pt-BR">
             <head>
-                <title>Cupom - ${customerName}</title>
+                <meta charset="UTF-8">
+                <title>${filename}</title>
                 <style>
-                    /* Largura típica de bobina 80mm e fonte monoespaçada parecida com cupom fiscal */
                     @page { margin: 0; }
-                    body { font-family: 'Courier New', Courier, monospace; width: 280px; padding: 10px; color: #000; margin: 0 auto; font-size: 11px; line-height: 1.2; }
-                    .watermark-container { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); width: 200px; opacity: 0.05; pointer-events: none; z-index: -1; }
-                    .watermark-logo { width: 100%; }
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { 
+                        font-family: 'Courier New', Courier, monospace; 
+                        width: 280px; 
+                        padding: 15px; 
+                        color: #000; 
+                        margin: 0 auto; 
+                        font-size: 11px; 
+                        line-height: 1.3;
+                    }
                     .center { text-align: center; }
-                    .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
                     .bold { font-weight: bold; }
+                    .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
+                    
+                    .header { margin-bottom: 10px; }
+                    .brand-name { font-size: 16px; font-weight: bold; margin-bottom: 2px; }
+                    .brand-sub { font-size: 10px; }
+
+                    .info-block { margin-bottom: 15px; }
+                    .info-row { display: flex; justify-content: space-between; }
+                    .customer-name { font-size: 13px; margin-top: 4px; border: 1px solid #000; padding: 4px; text-align: center; }
+
                     .item { margin-bottom: 8px; }
-                    .item-name { font-weight: bold; font-size: 13px; }
-                    .item-details { display: flex; justify-content: space-between; font-size: 12px; }
+                    .item-header { font-weight: bold; font-size: 12px; }
+                    .item-variant { font-size: 9px; font-weight: bold; margin-bottom: 2px; }
+                    .item-details { display: flex; justify-content: space-between; }
+                    
+                    .total-block { margin-top: 10px; font-size: 12px; }
+                    .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+                    .grand-total { font-size: 16px; margin-top: 6px; border-top: 1px solid #000; padding-top: 6px; }
+
+                    .pix-section { margin-top: 15px; text-align: center; border: 1px solid #000; padding: 8px; }
+                    .qr-code { width: 140px; height: 140px; margin: 5px auto; display: block; }
+                    .pix-key { font-size: 9px; word-break: break-all; margin-top: 4px; }
+
+                    .signature-area { margin-top: 30px; text-align: center; }
+                    .signature-line { border-bottom: 1px solid #000; width: 80%; margin: 25px auto 5px; }
+
+                    .footer { margin-top: 20px; font-size: 9px; color: #333; }
                 </style>
             </head>
             <body>
-                <div class="watermark-container">
-                    ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
+                <div class="header center">
+                    <div class="brand-name">ROMANEIO RÁPIDO</div>
+                    <div class="brand-sub">Comprovante de Separação</div>
                 </div>
-                <div class="center" style="margin-bottom: 15px;">
-                    ${logoBase64 ? `<img src="${logoBase64}" style="width: 120px; height: auto;" />` : ''}
+
+                <div class="divider"></div>
+
+                <div class="info-block">
+                    <div class="info-row">
+                        <span>DATA:</span>
+                        <span>${dateStr.split(',')[0]}</span>
+                    </div>
+                    <div class="info-row">
+                        <span>HORA:</span>
+                        <span>${dateStr.split(',')[1] || ''}</span>
+                    </div>
+                    <div class="bold" style="margin-top: 8px;">CLIENTE:</div>
+                    <div class="customer-name bold">${customerName || 'CONSUMIDOR'}</div>
                 </div>
-                <div class="center bold" style="font-size: 16px; margin-bottom: 5px;">ROMANEIO RÁPIDO</div>
-                <div class="center" style="margin-bottom: 10px;">Comprovante de Separacao</div>
-                
-                <div>Data: ${dateStr}</div>
-                <div class="bold" style="font-size: 14px; margin-top: 5px;">Cliente: ${customerName || 'N/A'}</div>
-                
+
                 <div class="divider"></div>
                 <div class="center bold">ITENS DO PEDIDO</div>
                 <div class="divider"></div>
-                
+
                 ${items.map(item => `
                     <div class="item">
-                        <div class="item-name">${item.name}</div>
-                        ${(item.color || item.size) ? `<div style="font-size: 10px; font-weight: bold; margin-bottom: 2px;">Variante: ${[item.color, item.size].filter(Boolean).join(' • ')}</div>` : ''}
-                        <div class="item-details" style="margin-bottom: 2px;">
+                        <div class="item-header">${item.name.toUpperCase()}</div>
+                        ${(item.color || item.size) ? `<div class="item-variant">VAR: ${[item.color, item.size].filter(Boolean).join(' / ').toUpperCase()}</div>` : ''}
+                        <div class="item-details">
                             <span>${item.quantity} ${item.unit} x ${formatCurrency(item.price)}</span>
-                            <span>${formatCurrency(item.quantity * item.price)}</span>
+                            <span class="bold">${formatCurrency(item.quantity * item.price)}</span>
                         </div>
-                        ${item.barcode ? `<div style="font-size: 10px; color: #555;">Cód: ${item.barcode}</div>` : ''}
+                        ${item.barcode ? `<div style="font-size: 9px; color: #555;">REF: ${item.barcode}</div>` : ''}
                     </div>
                 `).join('')}
-                
+
                 <div class="divider"></div>
-                <div class="item-details">
-                    <span>Qtd Final de Itens:</span>
-                    <span class="bold">${totalItems}</span>
+
+                <div class="total-block">
+                    <div class="total-row">
+                        <span>VOLUMES:</span>
+                        <span class="bold">${totalItemsSummary}</span>
+                    </div>
+                    <div class="total-row grand-total bold">
+                        <span>TOTAL:</span>
+                        <span>${formatCurrency(totalValue)}</span>
+                    </div>
                 </div>
-                <div class="item-details" style="font-size: 15px; margin-top: 5px;">
-                    <span class="bold">VALOR TOTAL:</span>
-                    <span class="bold">${formatCurrency(totalValue)}</span>
+
+                ${pixQRCode ? `
+                    <div class="pix-section">
+                        <div class="bold">PAGAMENTO VIA PIX</div>
+                        <img src="${pixQRCode}" class="qr-code" />
+                        <div class="pix-key">${user?.pix_key}</div>
+                    </div>
+                ` : user?.pix_key ? `
+                    <div class="pix-section">
+                        <div class="bold">CHAVE PIX:</div>
+                        <div class="pix-key">${user?.pix_key}</div>
+                    </div>
+                ` : ''}
+
+                <div class="signature-area">
+                    <span>ASSINATURA RESPONSÁVEL</span>
+                    <div class="signature-line"></div>
                 </div>
-                
-                <div class="divider"></div>
-                <div class="center" style="margin-top: 20px; margin-bottom: 20px;">
-                    <div>Assinatura Entregador</div>
-                    <div style="border-bottom: 1px solid #000; margin-top: 30px; width: 80%; margin-left: auto; margin-right: auto;"></div>
-                </div>
-                <div class="center" style="font-size: 10px; margin-top: 20px;">
-                    RomaneioRapido.com.br
+
+                <div class="footer center">
+                    OBRIGADO PELA PREFERÊNCIA!<br>
+                    www.romaneiorapido.com.br
                 </div>
             </body>
             </html>

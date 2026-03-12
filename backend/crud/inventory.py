@@ -94,3 +94,45 @@ def get_stock_levels(db: Session, user_id: int):
             "is_low_stock": product.stock_quantity < product.min_stock
         })
     return levels
+    
+    
+def get_daily_reports(db: Session, user_id: int, start_date=None, end_date=None, movement_type: MovementType = None):
+    from sqlalchemy import func
+    from datetime import datetime, time
+    
+    query = db.query(InventoryMovement).filter(
+        InventoryMovement.created_by == user_id
+    )
+    
+    if movement_type:
+        query = query.filter(InventoryMovement.movement_type == movement_type)
+    
+    if start_date:
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        query = query.filter(InventoryMovement.created_at >= datetime.combine(start_date, time.min))
+        
+    if end_date:
+        if isinstance(end_date, str):
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+        query = query.filter(InventoryMovement.created_at <= datetime.combine(end_date, time.max))
+        
+    movements = query.order_by(InventoryMovement.created_at.desc()).all()
+    
+    # Agrupar por romaneio_id para contar pedidos e somar valores
+    romaneios = {}
+    for m in movements:
+        rid = m.romaneio_id or f"single-{m.id}"
+        if rid not in romaneios:
+            romaneios[rid] = 0
+        romaneios[rid] += (m.quantity * (m.unit_price_snapshot or 0))
+        
+    total_romaneios = len(romaneios)
+    total_value = sum(romaneios.values())
+    
+    return {
+        "total_romaneios": total_romaneios,
+        "total_value": total_value,
+        "start_date": start_date,
+        "end_date": end_date
+    }

@@ -34,6 +34,7 @@ class UserBase(BaseModel):
     phone: Optional[str] = Field(None, max_length=30)
     store_name: Optional[str] = Field(None, max_length=150)
     photo_base64: Optional[str] = Field(None, max_length=_MAX_BASE64_BYTES)
+    pix_key: Optional[str] = Field(None, max_length=100)
 
 
 class UserCreate(UserBase):
@@ -51,6 +52,7 @@ class UserUpdate(BaseModel):
     phone: Optional[str] = Field(None, max_length=30)
     store_name: Optional[str] = Field(None, max_length=150)
     photo_base64: Optional[str] = Field(None, max_length=_MAX_BASE64_BYTES)
+    pix_key: Optional[str] = Field(None, max_length=100)
     plan_id: Optional[str] = Field(None, max_length=50)
     password: Optional[str] = Field(None, min_length=8, max_length=256)
     is_active: Optional[bool] = None
@@ -68,6 +70,7 @@ class UserResponse(UserBase):
     is_admin: bool
     plan_id: str
     is_active: bool
+    pix_key: Optional[str] = None
     created_at: Optional[datetime] = None
     trial_expired: bool = False
     trial_days_remaining: Optional[int] = None

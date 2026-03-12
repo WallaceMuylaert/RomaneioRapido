@@ -13,6 +13,7 @@ class User(Base):
     phone = Column(String, nullable=True)
     store_name = Column(String, nullable=True)
     photo_base64 = Column(Text, nullable=True)
+    pix_key = Column(String, nullable=True)
     is_admin = Column(Boolean, default=False)
     plan_id = Column(String, default="trial")
     is_active = Column(Boolean, default=True)
