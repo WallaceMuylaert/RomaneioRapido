@@ -9,6 +9,7 @@ import AlertModal from './AlertModal'
 import { getBase64FromUrl } from '../utils/imageUtils'
 import logoImg from '../assets/romaneiorapido_logo.png'
 import { WhatsAppIcon } from '../assets/WhatsAppIcon'
+import { generatePixPayload, generatePixQRCode } from '../utils/pix'
 
 export interface CartItem {
     id: number
@@ -44,13 +45,25 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
     const [tempPhone, setTempPhone] = useState('')
     const [savingPhone, setSavingPhone] = useState(false)
     const [logoBase64, setLogoBase64] = useState<string>('')
+    const [pixQRCode, setPixQRCode] = useState<string>('')
 
     // Carrega o logo dinamicamente para Base64 ao abrir o modal
     useEffect(() => {
         if (isOpen) {
             getBase64FromUrl(logoImg).then(setLogoBase64).catch(console.error)
+            
+            if (user?.pix_key) {
+                const payload = generatePixPayload({
+                    key: user.pix_key,
+                    name: user.full_name || 'Loja',
+                    city: 'Sao Paulo' // Default city as per BRCode requirements if not provided
+                });
+                generatePixQRCode(payload).then(setPixQRCode).catch(console.error);
+            } else {
+                setPixQRCode('');
+            }
         }
-    }, [isOpen])
+    }, [isOpen, user?.pix_key, user?.full_name])
     const [alertConfig, setAlertConfig] = useState<{
         isOpen: boolean,
         title: string,
@@ -63,7 +76,20 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
         type: 'info'
     })
 
-    const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
+    const totalsByUnit = items.reduce((acc, item) => {
+        const unit = (item.unit || 'UN').toUpperCase();
+        acc[unit] = (acc[unit] || 0) + item.quantity;
+        return acc;
+    }, {} as Record<string, number>);
+
+    const formatQuantity = (qty: number) => {
+        return Number.isInteger(qty) ? qty.toString() : qty.toFixed(3).replace(/\.?0+$/, '');
+    };
+
+    const totalItemsSummary = Object.entries(totalsByUnit)
+        .map(([unit, qty]) => `${formatQuantity(qty)} ${unit}`)
+        .join(' | ');
+
     const totalValue = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
     const dateStr = createdAt ? new Date(createdAt).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR')
 
@@ -101,9 +127,13 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
             }
             text += `   Qtd: ${item.quantity} ${item.unit} | Unit: ${formatCurrency(item.price)} | Sub: ${formatCurrency(item.price * item.quantity)}\n\n`
         })
-
-        text += `*Total de Itens:* ${totalItems}\n`
+        
+        text += `*Total Itens:* ${totalItemsSummary}\n`
         text += `*VALOR TOTAL:* ${formatCurrency(totalValue)}\n\n`
+        if (user?.pix_key) {
+            text += `*PAGAMENTO VIA PIX*\nChave: ${user.pix_key}\n\n`
+        }
+
         text += `_Gerado por RomaneioRapido_`
 
         // Limpeza de caracteres invisíveis e espaços especiais (comum em Intl.NumberFormat)
@@ -166,7 +196,12 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                     .info { color: #4B5563; font-size: 14px; margin-bottom: 4px; }
                     table { w-full; border-collapse: collapse; margin-top: 20px; }
                     th {text-align: left; padding: 12px; background-color: #f9fafb; border-bottom: 2px solid #e5e7eb; color: #374151; font-size: 14px;}
-                    td { padding: 12px; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+                    td { padding: 12px; border-bottom: 2px solid #e5e7eb; font-size: 14px; }
+                    .item-row:last-child td { border-bottom: 2px solid #111827; }
+                    .pix-container { margin-top: 30px; padding: 20px; border: 2px dashed #e5e7eb; border-radius: 16px; display: flex; align-items: center; gap: 20px; }
+                    .pix-qr { width: 120px; height: 120px; }
+                    .pix-label { font-size: 12px; font-weight: bold; color: #4B5563; margin-bottom: 4px; }
+                    .pix-key { font-family: monospace; font-size: 14px; font-weight: bold; color: #111827; }
                     .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #9CA3AF; border-top: 1px solid #e5e7eb; padding-top: 20px; }
                 </style>
             </head>
@@ -193,8 +228,8 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                     </thead>
                     <tbody>
                         ${items.map(item => `
-                            <tr>
-                                <td><strong>${item.quantity}</strong></td>
+                            <tr class="item-row">
+                                <td style="text-align: center;"><strong>${item.quantity}</strong></td>
                                 <td>${item.unit}</td>
                                 <td>
                                     <strong>${item.name}</strong>
@@ -210,9 +245,27 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                 </table>
                 
                 <div style="margin-top: 20px; text-align: right;">
-                    <div style="font-size: 14px; color: #4B5563;">Total de Itens: <strong>${totalItems}</strong></div>
+                    <div style="font-size: 14px; color: #4B5563;">Total de Itens: <strong>${totalItemsSummary}</strong></div>
                     <div style="font-size: 20px; font-weight: bold; margin-top: 4px; color: #111827;">Valor Total: ${formatCurrency(totalValue)}</div>
                 </div>
+
+                ${pixQRCode ? `
+                    <div class="pix-container">
+                        <img src="${pixQRCode}" class="pix-qr" />
+                        <div>
+                            <div class="pix-label">PAGUE VIA PIX:</div>
+                            <div class="pix-key">${user?.pix_key}</div>
+                            <div style="font-size: 10px; color: #6B7280; mt-1">Escaneie o QR Code para pagar o romaneio.</div>
+                        </div>
+                    </div>
+                ` : user?.pix_key ? `
+                    <div class="pix-container" style="justify-content: center; text-align: center;">
+                        <div>
+                            <div class="pix-label">CHAVE PIX PARA PAGAMENTO:</div>
+                            <div class="pix-key">${user?.pix_key}</div>
+                        </div>
+                    </div>
+                ` : ''}
 
                 <div class="footer">
                     Documento gerado pelo sistema RomaneioRapido.com.br
@@ -250,6 +303,8 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                     .item { margin-bottom: 8px; }
                     .item-name { font-weight: bold; font-size: 13px; }
                     .item-details { display: flex; justify-content: space-between; font-size: 12px; }
+                    .pix-thermal { margin-top: 15px; text-align: center; border: 1px dashed #000; padding: 10px; }
+                    .pix-qr-thermal { width: 150px; height: 150px; margin: 5px auto; }
                 </style>
             </head>
             <body>
@@ -283,13 +338,26 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                 
                 <div class="divider"></div>
                 <div class="item-details">
-                    <span>Qtd Final de Itens:</span>
-                    <span class="bold">${totalItems}</span>
+                    <span>Subtotal por Unidade:</span>
+                    <span class="bold">${totalItemsSummary}</span>
                 </div>
                 <div class="item-details" style="font-size: 15px; margin-top: 5px;">
                     <span class="bold">VALOR TOTAL:</span>
                     <span class="bold">${formatCurrency(totalValue)}</span>
                 </div>
+
+                ${pixQRCode ? `
+                    <div class="pix-thermal">
+                        <div class="bold">PAGUE COM PIX</div>
+                        <img src="${pixQRCode}" class="pix-qr-thermal" />
+                        <div style="font-size: 9px; word-break: break-all;">${user?.pix_key}</div>
+                    </div>
+                ` : user?.pix_key ? `
+                    <div class="pix-thermal">
+                        <div class="bold">CHAVE PIX:</div>
+                        <div style="font-size: 11px;">${user?.pix_key}</div>
+                    </div>
+                ` : ''}
                 
                 <div class="divider"></div>
                 <div class="center" style="margin-top: 20px; margin-bottom: 20px;">

@@ -18,6 +18,9 @@ import {
     ArrowUpDown,
     ChevronUp,
     ChevronDown,
+    BarChart3,
+    Calendar,
+    ArrowRight
 } from 'lucide-react'
 import BarcodeScanner from '../components/BarcodeScanner'
 import RomaneioExportModal from '../components/RomaneioExportModal'
@@ -112,6 +115,19 @@ export default function RomaneioPage() {
 
     // Estado para feedback em tempo real do scanner
     const [scanStatus, setScanStatus] = useState<'idle' | 'searching' | 'success' | 'error'>('idle')
+
+    // Relatórios
+    const [reportData, setReportData] = useState<{
+        total_romaneios: number,
+        total_value: number,
+        start_date: string,
+        end_date: string
+    } | null>(null)
+    const [reportLoading, setReportLoading] = useState(false)
+    const [reportPeriod, setReportPeriod] = useState({
+        start: new Date().toISOString().split('T')[0],
+        end: new Date().toISOString().split('T')[0]
+    })
 
     // Bloqueador de Navegação do React Router (Para rotas externas)
     const blocker = useBlocker(
@@ -362,13 +378,16 @@ export default function RomaneioPage() {
     }, [])
 
     useEffect(() => {
-        if (activeTab === 'movimentacoes') fetchMovements()
+        if (activeTab === 'movimentacoes') {
+            fetchMovements()
+            fetchReport()
+        }
         if (activeTab === 'estoque') {
             setEstoquePage(1)
             setEstoqueSearch('')
             fetchStockLevels()
         }
-    }, [activeTab])
+    }, [activeTab, reportPeriod])
 
     // Aviso de saída da página se houver itens no romaneio
     useEffect(() => {
@@ -384,6 +403,24 @@ export default function RomaneioPage() {
 
     const handleTabChange = (tab: 'romaneio' | 'movimentacoes' | 'estoque') => {
         setActiveTab(tab)
+    }
+
+    const fetchReport = async () => {
+        setReportLoading(true)
+        try {
+            const res = await api.get('/inventory/reports/daily', {
+                params: {
+                    start_date: reportPeriod.start,
+                    end_date: reportPeriod.end
+                }
+            })
+            setReportData(res.data)
+        } catch (err) {
+            console.error('Erro ao buscar relatório:', err)
+            toast.error('Erro ao buscar dados do relatório.')
+        } finally {
+            setReportLoading(false)
+        }
     }
 
     // Busca Esperta: Autocomplete em tempo real ao digitar
@@ -1122,7 +1159,70 @@ export default function RomaneioPage() {
             )}
 
             {activeTab === 'movimentacoes' && (
-                <div className="space-y-4">
+                <div className="space-y-6">
+                    {/* Dashboard de Relatórios Integrado */}
+                    <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="bg-white rounded-[2rem] border border-gray-100 p-6 shadow-sm mb-6 flex flex-col lg:flex-row items-center justify-between gap-6">
+                            <div>
+                                <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                                    <BarChart3 className="w-6 h-6 text-blue-600" />
+                                    Balanço do Período
+                                </h2>
+                                <p className="text-sm font-bold text-gray-400 mt-1">Resumo do faturamento e vendas</p>
+                            </div>
+                            
+                            <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl border border-gray-100 w-full lg:w-auto">
+                                <div className="relative flex-1 lg:flex-initial">
+                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="date"
+                                        value={reportPeriod.start}
+                                        onChange={(e) => setReportPeriod(prev => ({ ...prev, start: e.target.value }))}
+                                        className="h-10 pl-9 pr-4 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none w-full"
+                                    />
+                                </div>
+                                <ArrowRight className="w-4 h-4 text-gray-300" />
+                                <div className="relative flex-1 lg:flex-initial">
+                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="date"
+                                        value={reportPeriod.end}
+                                        onChange={(e) => setReportPeriod(prev => ({ ...prev, end: e.target.value }))}
+                                        className="h-10 pl-9 pr-4 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none w-full"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                            <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-110" />
+                                <div className="relative z-10">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Total de Romaneios</p>
+                                    <h3 className="text-3xl font-black text-gray-900 tracking-tighter">
+                                        {reportLoading ? "..." : reportData?.total_romaneios || 0}
+                                    </h3>
+                                    <p className="text-[10px] font-bold text-blue-600 mt-2">Pedidos finalizados</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-110" />
+                                <div className="relative z-10">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Valor Total Vendido</p>
+                                    <h3 className="text-3xl font-black text-emerald-600 tracking-tighter">
+                                        {reportLoading ? "..." : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(reportData?.total_value || 0)}
+                                    </h3>
+                                    <p className="text-[10px] font-bold text-emerald-600 mt-2">Faturamento bruto</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-2">
+                        <MoreVertical className="w-4 h-4 text-gray-400" />
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Histórico de Movimentações (Saídas)</h3>
+                    </div>
                     {/* Desktop Table View */}
                     <div className="hidden md:block bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                         <div className="overflow-x-auto min-h-[400px]">
@@ -1714,6 +1814,7 @@ export default function RomaneioPage() {
                     )}
                 </div>
             )}
+
 
             {/* FLOATING CART SUMMARY (ESTOQUE) */}
             {activeTab === 'estoque' && cartItems.length > 0 && (

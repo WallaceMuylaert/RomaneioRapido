@@ -78,3 +78,19 @@ def get_stock_levels(request: Request, db: Session = Depends(get_db), current_us
     except Exception as e:
         logger.exception("Erro crítico ao buscar níveis de estoque")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+
+@router.get("/reports/daily")
+@limiter.limit("30/minute")
+def get_daily_reports(
+    request: Request,
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        return crud.get_daily_reports(db, user_id=current_user.id, start_date=start_date, end_date=end_date)
+    except Exception as e:
+        logger.exception("Erro crítico ao gerar relatório diário")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
