@@ -19,7 +19,9 @@ import {
     Calendar as CalendarIcon,
     Search,
     Copy,
-    History
+    History,
+    Save,
+    Clock
 } from 'lucide-react'
 import BarcodeScanner from '../components/BarcodeScanner'
 import RomaneioExportModal from '../components/RomaneioExportModal'
@@ -75,8 +77,31 @@ interface Movement {
     romaneio_id?: string | number | null
 }
 
+interface PendingItem {
+    product_id: number
+    name: string
+    barcode: string | null
+    quantity: number
+    unit: string
+    price: number
+    image?: string | null
+    color?: string | null
+    size?: string | null
+}
+
+interface PendingRomaneio {
+    id: number
+    user_id: number
+    client_id: number | null
+    customer_name: string | null
+    customer_phone: string | null
+    items: PendingItem[]
+    created_at: string
+    updated_at: string
+}
+
 export default function RomaneioPage() {
-    const [activeTab, setActiveTab] = useState<'romaneio' | 'estoque' | 'movimentacoes'>('romaneio')
+    const [activeTab, setActiveTab] = useState<'romaneio' | 'estoque' | 'movimentacoes' | 'separacao'>('romaneio')
     const [barcodeInput, setBarcodeInput] = useState('')
 
     // Novo Formato "Carrinho"
@@ -128,6 +153,10 @@ export default function RomaneioPage() {
         ({ currentLocation, nextLocation }) =>
             cartItems.length > 0 && currentLocation.pathname !== nextLocation.pathname
     );
+
+    // Pedidos Pendentes (Separação)
+    const [pendingRomaneios, setPendingRomaneios] = useState<PendingRomaneio[]>([])
+    const [isSavingPending, setIsSavingPending] = useState(false)
 
     // Fechar dropdowns ao clicar fora
     useEffect(() => {
@@ -301,6 +330,103 @@ export default function RomaneioPage() {
         }
     }
 
+    const fetchPendingRomaneios = async () => {
+        try {
+            const res = await api.get('/pending/')
+            setPendingRomaneios(res.data)
+        } catch (err) {
+            console.error('Erro ao buscar rascunhos:', err)
+        }
+    }
+
+    const handleSavePending = async () => {
+        if (cartItems.length === 0) {
+            toast.error('Adicione itens ao romaneio primeiro')
+            return
+        }
+
+        if (!customerName || !customerName.trim()) {
+            toast.error('Por favor, informe o nome do cliente para salvar a separação')
+            return
+        }
+
+        setIsSavingPending(true)
+        try {
+            await api.post('/pending/', {
+                client_id: selectedClientId,
+                customer_name: customerName,
+                customer_phone: customerPhone,
+                items: cartItems.map(item => ({
+                    product_id: item.id,
+                    name: item.name,
+                    barcode: item.barcode,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    price: item.price,
+                    image: item.image,
+                    color: item.color,
+                    size: item.size
+                }))
+            })
+            toast.success('Pedido salvo em separação!')
+            resetCart()
+            fetchPendingRomaneios()
+            setActiveTab('separacao')
+        } catch (err: any) {
+            toast.error(translateError(err))
+        } finally {
+            setIsSavingPending(false)
+        }
+    }
+
+    const handleResumePending = async (pending: PendingRomaneio) => {
+        if (cartItems.length > 0) {
+            if (!window.confirm('Isso irá substituir os itens atuais do romaneio. Continuar?')) return
+        }
+
+        setCartItems(pending.items.map(item => ({
+            id: item.product_id,
+            name: item.name,
+            barcode: item.barcode,
+            quantity: item.quantity,
+            unit: item.unit,
+            price: item.price,
+            image: item.image,
+            color: item.color,
+            size: item.size
+        })))
+        setCustomerName(pending.customer_name || '')
+        setCustomerPhone(pending.customer_phone)
+        setSelectedClientId(pending.client_id)
+        
+        // Opcional: deletar o rascunho ao retomar, ou deletar apenas na finalização
+        // Para evitar duplicidade e seguir o fluxo de "finalizar rascunho", 
+        // vamos deletar apenas quando for finalizado de verdade, ou se o usuário preferir, deletar agora.
+        // Decisão: Deletar na finalização é mais seguro caso o PC trave.
+        // Mas o usuário pediu "alterar e finalizar depois", então vamos carregar e se ele salvar de novo, cria um novo ou sobrescreve?
+        // Simplificação: Carrega para o carrinho e remove da lista de pendentes para não confundir.
+        try {
+            await api.delete(`/pending/${pending.id}`)
+            setPendingRomaneios(p => p.filter(x => x.id !== pending.id))
+        } catch (err) {
+            console.error('Erro ao remover rascunho ao retomar:', err)
+        }
+
+        setActiveTab('romaneio')
+        toast.success('Rascunho carregado!')
+    }
+
+    const handleDeletePending = async (id: number) => {
+        if (!window.confirm('Deseja excluir este rascunho?')) return
+        try {
+            await api.delete(`/pending/${id}`)
+            setPendingRomaneios(p => p.filter(x => x.id !== id))
+            toast.success('Rascunho excluído')
+        } catch (err) {
+            toast.error('Erro ao excluir rascunho')
+        }
+    }
+
     const handleCopyRomaneio = (romaneio_id: string | number) => {
         const romaneioItems = movements.filter(m => m.romaneio_id === romaneio_id)
         if (romaneioItems.length === 0) return
@@ -327,6 +453,7 @@ export default function RomaneioPage() {
     useEffect(() => {
         fetchStockLevels()
         fetchMovements()
+        fetchPendingRomaneios()
     }, [])
 
     useEffect(() => {
@@ -350,9 +477,6 @@ export default function RomaneioPage() {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload)
     }, [cartItems])
 
-    const handleTabChange = (tab: 'romaneio' | 'estoque') => {
-        setActiveTab(tab)
-    }
 
     const addToCart = (product: any, quantityOverride?: number) => {
         const qtyToAdd = quantityOverride !== undefined ? quantityOverride : 1;
@@ -553,9 +677,17 @@ export default function RomaneioPage() {
                 <p className="text-sm text-gray-400 mt-0.5">{loading ? 'Carregando dados...' : 'Gestão de estoque e vendas rápidas'}</p>
             </div>
 
-            <div className="flex bg-white border border-gray-100 rounded-xl p-1 mb-6 shadow-sm max-w-fit">
-                <button onClick={() => handleTabChange('romaneio')} className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'romaneio' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Romaneio</button>
-                <button onClick={() => handleTabChange('estoque')} className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'estoque' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Estoque</button>
+            <div className="flex bg-white border border-gray-100 rounded-xl p-1 mb-6 shadow-sm max-w-fit flex-wrap gap-1">
+                <button onClick={() => setActiveTab('romaneio')} className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'romaneio' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Romaneio</button>
+                <button onClick={() => setActiveTab('separacao')} className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all relative ${activeTab === 'separacao' ? 'bg-amber-500 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
+                    Em Separação
+                    {pendingRomaneios.length > 0 && (
+                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white animate-pulse">
+                            {pendingRomaneios.length}
+                        </span>
+                    )}
+                </button>
+                <button onClick={() => setActiveTab('estoque')} className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'estoque' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Estoque</button>
                 <button onClick={() => setActiveTab('movimentacoes')} className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'movimentacoes' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Movimentações</button>
             </div>
 
@@ -606,7 +738,113 @@ export default function RomaneioPage() {
                             ))}</div>}
                         </div>
                     </div>
-                    <div className="flex flex-col"><div className="bg-slate-900 rounded-2xl p-6 shadow-xl lg:sticky lg:top-24"><h2 className="text-sm font-bold text-white mb-6 flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-400" /> Resumo</h2><div className="space-y-4 mb-8"><div className="flex justify-between items-center pb-4 border-b border-slate-700/50"><span className="text-sm text-slate-400">Cliente</span><span className="text-sm font-semibold text-white truncate max-w-[150px]">{customerName || 'Consumidor'}</span></div><div className="flex justify-between items-center pb-4 border-b border-slate-700/50"><span className="text-sm text-slate-400">Total de Linhas</span><span className="text-sm font-bold text-white">{cartItems.length}</span></div><div className="flex justify-between items-center pb-4 border-b border-slate-700/50"><span className="text-sm text-slate-400">Unidades Totais</span><span className="text-sm font-bold text-white">{cartItems.reduce((acc, i) => acc + i.quantity, 0)}</span></div><div className="flex justify-between items-center pb-4"><span className="text-sm font-bold text-slate-300">Valor Total</span><span className="text-xl font-black text-emerald-400">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0))}</span></div></div><button onClick={handleFinalizeRomaneio} disabled={submitting || cartItems.length === 0} className="w-full h-12 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-600/20">{submitting ? 'Registrando...' : 'Finalizar'}</button></div></div>
+                    <div className="flex flex-col">
+                        <div className="bg-slate-900 rounded-2xl p-6 shadow-xl lg:sticky lg:top-24">
+                            <h2 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-400" /> Resumo
+                            </h2>
+                            <div className="space-y-4 mb-8">
+                                <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
+                                    <span className="text-sm text-slate-400">Cliente</span>
+                                    <span className="text-sm font-semibold text-white truncate max-w-[150px]">{customerName || 'Consumidor'}</span>
+                                </div>
+                                <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
+                                    <span className="text-sm text-slate-400">Total de Linhas</span>
+                                    <span className="text-sm font-bold text-white">{cartItems.length}</span>
+                                </div>
+                                <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
+                                    <span className="text-sm text-slate-400">Unidades Totais</span>
+                                    <span className="text-sm font-bold text-white">{cartItems.reduce((acc, i) => acc + i.quantity, 0)}</span>
+                                </div>
+                                <div className="flex justify-between items-center pb-4">
+                                    <span className="text-sm font-bold text-slate-300">Valor Total</span>
+                                    <span className="text-xl font-black text-emerald-400">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0))}</span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                <button 
+                                    onClick={handleFinalizeRomaneio} 
+                                    disabled={submitting || cartItems.length === 0} 
+                                    className="w-full h-12 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-600/20"
+                                >
+                                    {submitting ? 'Registrando...' : 'Finalizar Romaneio'}
+                                </button>
+                                <button 
+                                    onClick={handleSavePending} 
+                                    disabled={isSavingPending || cartItems.length === 0} 
+                                    className="w-full h-12 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-amber-400 font-bold rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-2"
+                                >
+                                    {isSavingPending ? 'Salvando...' : (
+                                        <>
+                                            <Save className="w-4 h-4" />
+                                            Salvar Separação
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {activeTab === 'separacao' && (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
+                    <div className="p-8 border-b border-gray-50 flex items-center justify-between bg-amber-50/30">
+                        <div>
+                            <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                                <Clock className="w-5 h-5 text-amber-600" />
+                                Pedidos em Separação
+                            </h2>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Rascunhos salvos para finalizar depois</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-6 gap-6">
+                        {pendingRomaneios.length === 0 ? (
+                            <div className="col-span-full py-20 text-center flex flex-col items-center justify-center text-slate-300">
+                                <Clock className="w-12 h-12 mb-4 opacity-10" />
+                                <p className="text-sm font-bold italic">Nenhum pedido em separação no momento.</p>
+                            </div>
+                        ) : (
+                            pendingRomaneios.map(p => (
+                                <div key={p.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md hover:border-amber-200 transition-all group">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente</p>
+                                            <h3 className="text-sm font-black text-slate-900 truncate max-w-[180px]">
+                                                {p.customer_name || 'Consumidor'}
+                                            </h3>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Itens</p>
+                                            <p className="text-sm font-black text-blue-600">{p.items.length}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-6 space-y-1">
+                                        <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                                            <CalendarIcon className="w-3 h-3" />
+                                            {new Date(p.created_at).toLocaleDateString()} às {new Date(p.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2 pt-4 border-t border-gray-50">
+                                        <button 
+                                            onClick={() => handleResumePending(p)}
+                                            className="flex-1 h-10 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                                        >
+                                            Continuar
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDeletePending(p.id)}
+                                            className="w-10 h-10 bg-gray-50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-xl transition-all flex items-center justify-center"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </div>
             )}
 
