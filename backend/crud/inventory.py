@@ -16,7 +16,9 @@ def create_movement(db: Session, movement: InventoryMovementCreate, user_id: int
             "product_name_snapshot": "name",
             "product_barcode_snapshot": "barcode", 
             "unit_price_snapshot": "price",
-            "unit_snapshot": "unit"
+            "unit_snapshot": "unit",
+            "product_color_snapshot": "color",
+            "product_size_snapshot": "size"
         }
         for snap_field, prod_field in snapshot_map.items():
             if not movement_data.get(snap_field):
@@ -49,6 +51,8 @@ def get_movements(
     product_id: int = None, 
     search: str = None,
     movement_type: MovementType = None,
+    start_date: str = None,
+    end_date: str = None,
     skip: int = 0, 
     limit: int = 100
 ):
@@ -69,9 +73,30 @@ def get_movements(
         
     if movement_type:
         query = query.filter(InventoryMovement.movement_type == movement_type)
+
+    if start_date:
+        from datetime import datetime, time, timedelta
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        # Ajuste para timezone local (Brasília -3h)
+        # created_at é UTC. Se queremos o começo do dia local, subtraímos a diferença.
+        base_start = datetime.combine(start_date, time.min)
+        query = query.filter(InventoryMovement.created_at >= base_start + timedelta(hours=3))
+        
+    if end_date:
+        from datetime import datetime, time, timedelta
+        if isinstance(end_date, str):
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+        base_end = datetime.combine(end_date, time.max)
+        query = query.filter(InventoryMovement.created_at <= base_end + timedelta(hours=3))
         
     total = query.count()
     items = query.order_by(InventoryMovement.created_at.desc()).offset(skip).limit(limit).all()
+    
+    # Adicionar product_price a cada item se não estiver no snapshot
+    for item in items:
+        if item.unit_price_snapshot is None and item.product:
+            item.product_price = item.product.price
     
     return items, total
 
@@ -108,14 +133,18 @@ def get_daily_reports(db: Session, user_id: int, start_date=None, end_date=None,
         query = query.filter(InventoryMovement.movement_type == movement_type)
     
     if start_date:
+        from datetime import datetime, time, timedelta
         if isinstance(start_date, str):
             start_date = datetime.strptime(start_date, "%Y-%m-%d")
-        query = query.filter(InventoryMovement.created_at >= datetime.combine(start_date, time.min))
+        base_start = datetime.combine(start_date, time.min)
+        query = query.filter(InventoryMovement.created_at >= base_start + timedelta(hours=3))
         
     if end_date:
+        from datetime import datetime, time, timedelta
         if isinstance(end_date, str):
             end_date = datetime.strptime(end_date, "%Y-%m-%d")
-        query = query.filter(InventoryMovement.created_at <= datetime.combine(end_date, time.max))
+        base_end = datetime.combine(end_date, time.max)
+        query = query.filter(InventoryMovement.created_at <= base_end + timedelta(hours=3))
         
     movements = query.order_by(InventoryMovement.created_at.desc()).all()
     

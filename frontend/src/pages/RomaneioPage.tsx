@@ -16,8 +16,6 @@ import {
     Minus,
     Calendar as CalendarIcon,
     Search,
-    Copy,
-    History,
     Save,
     Clock
 } from 'lucide-react'
@@ -62,19 +60,6 @@ interface StockLevel {
     size?: string | null
 }
 
-interface Movement {
-    id: number
-    product_id: number
-    quantity: number
-    movement_type: 'IN' | 'OUT' | 'ADJUSTMENT'
-    notes: string | null
-    created_at: string
-    product_name_snapshot: string
-    product_barcode_snapshot: string | null
-    unit_snapshot: string | null
-    romaneio_id?: string | number | null
-}
-
 interface PendingItem {
     product_id: number
     name: string
@@ -99,7 +84,7 @@ interface PendingRomaneio {
 }
 
 export default function RomaneioPage() {
-    const [activeTab, setActiveTab] = useState<'romaneio' | 'estoque' | 'movimentacoes' | 'separacao'>('romaneio')
+    const [activeTab, setActiveTab] = useState<'romaneio' | 'estoque' | 'separacao'>('romaneio')
     const [barcodeInput, setBarcodeInput] = useState('')
 
     // Novo Formato "Carrinho"
@@ -151,14 +136,12 @@ export default function RomaneioPage() {
         isOpen: false,
         title: '',
         message: '',
-        onConfirm: () => {}
+        onConfirm: () => { }
     })
+
 
     // Estado para feedback em tempo real do scanner
     const [scanStatus, setScanStatus] = useState<'idle' | 'searching' | 'success' | 'error'>('idle')
-
-    // Histórico de Movimentações
-    const [movements, setMovements] = useState<Movement[]>([])
 
     // Bloqueador de Navegação do React Router (Para rotas externas)
     const blocker = useBlocker(
@@ -330,18 +313,6 @@ export default function RomaneioPage() {
         }
     }
 
-    const fetchMovements = async () => {
-        setLoading(true)
-        try {
-            const res = await api.get('/inventory/movements', { params: { limit: 50, movement_type: 'OUT' } })
-            setMovements(res.data.items)
-        } catch (err) {
-            console.error('Erro ao buscar movimentações:', err)
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const fetchPendingRomaneios = async () => {
         try {
             const res = await api.get('/pending/')
@@ -396,7 +367,7 @@ export default function RomaneioPage() {
             toast.error('Informe o nome do cliente antes de salvar')
             return
         }
-        
+
         setIsSavingPending(true)
         try {
             await api.post('/pending/', {
@@ -441,7 +412,7 @@ export default function RomaneioPage() {
             setCustomerName(pending.customer_name || '')
             setCustomerPhone(pending.customer_phone)
             setSelectedClientId(pending.client_id)
-            
+
             try {
                 await api.delete(`/pending/${pending.id}`)
                 setPendingRomaneios(p => p.filter(x => x.id !== pending.id))
@@ -492,55 +463,28 @@ export default function RomaneioPage() {
         })
     }
 
-    const handleCopyRomaneio = (romaneio_id: string | number) => {
-        const romaneioItems = movements.filter(m => m.romaneio_id === romaneio_id)
-        if (romaneioItems.length === 0) return
-
-        const executeCopy = () => {
-            const newItems: CartItem[] = romaneioItems.map(m => ({
-                id: m.product_id,
-                name: m.product_name_snapshot,
-                barcode: m.product_barcode_snapshot,
-                quantity: m.quantity,
-                unit: m.unit_snapshot || 'UN',
-                price: 0,
-                image: null 
-            }))
-
-            setCartItems(newItems)
-            
-            const firstMovement = romaneioItems[0]
-            if (firstMovement && firstMovement.notes && firstMovement.notes.startsWith('Romaneio: ')) {
-                setCustomerName(firstMovement.notes.replace('Romaneio: ', '').trim())
-            } else {
-                setCustomerName('')
-            }
-
-            setActiveTab('romaneio')
-            toast.success('Pedido copiado para o carrinho!')
-            setConfirmConfig(prev => ({ ...prev, isOpen: false }))
-        }
-
-        if (cartItems.length > 0) {
-            setConfirmConfig({
-                isOpen: true,
-                title: 'Substituir Itens?',
-                message: 'Isso irá apagar os itens atuais do romaneio para copiar o pedido antigo. Continuar?',
-                type: 'warning',
-                confirmText: 'Copiar',
-                cancelText: 'Voltar',
-                onConfirm: executeCopy
-            })
-            return
-        }
-
-        executeCopy()
-    }
-
     useEffect(() => {
         fetchStockLevels()
-        fetchMovements()
         fetchPendingRomaneios()
+
+        // Verificar se há dados copiados de outro lugar
+        const copyDataRaw = sessionStorage.getItem('copy_romaneio_data')
+        if (copyDataRaw) {
+            try {
+                const copyData = JSON.parse(copyDataRaw)
+                if (copyData.items && copyData.items.length > 0) {
+                    setCartItems(copyData.items)
+                    setCustomerName(copyData.customerName || '')
+                    setCustomerPhone(copyData.customerPhone || null)
+                    setSelectedClientId(copyData.clientId || null)
+                    toast.success('Dados do romaneio retomados!')
+                }
+            } catch (err) {
+                console.error('Erro ao parsear dados copiados:', err)
+            } finally {
+                sessionStorage.removeItem('copy_romaneio_data')
+            }
+        }
     }, [])
 
     useEffect(() => {
@@ -548,8 +492,6 @@ export default function RomaneioPage() {
             setEstoquePage(1)
             setEstoqueSearch('')
             fetchStockLevels()
-        } else if (activeTab === 'movimentacoes') {
-            fetchMovements()
         }
     }, [activeTab])
 
@@ -624,7 +566,7 @@ export default function RomaneioPage() {
                 if (navigator.vibrate) navigator.vibrate(100)
                 return
             }
-        } catch (err) {}
+        } catch (err) { }
 
         try {
             const res = await api.get('/products/', { params: { search: trimmedCode } })
@@ -706,7 +648,6 @@ export default function RomaneioPage() {
             setShowExportModal(true)
             toast.success('Romaneio registrado com sucesso!')
             fetchStockLevels()
-            fetchMovements()
         } catch (err: any) {
             toast.error(translateError(err.response?.data?.detail) || 'Erro ao registrar movimentações do romaneio!')
         } finally {
@@ -775,7 +716,6 @@ export default function RomaneioPage() {
                     )}
                 </button>
                 <button onClick={() => setActiveTab('estoque')} className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'estoque' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Estoque</button>
-                <button onClick={() => setActiveTab('movimentacoes')} className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'movimentacoes' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Movimentações</button>
             </div>
 
             {activeTab === 'romaneio' && (
@@ -786,7 +726,7 @@ export default function RomaneioPage() {
                             <div className="space-y-4">
                                 <div ref={clientSearchContainerRef} className="relative">
                                     <label className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 block">Cliente</label>
-                                    <div className="flex justify-between items-end mb-1.5"><button onClick={() => setClientModalOpen(true)} className="text-[11px] font-black text-white bg-emerald-500 hover:bg-emerald-600 px-3 py-1.5 rounded-lg transition-all shadow-sm flex items-center gap-1 uppercase tracking-wider"><Plus className="w-3 h-3" /> Novo Cliente</button></div>
+                                    <div className="flex justify-between items-end mb-1.5"><button onClick={() => setClientModalOpen(true)} className="text-[11px] font-black text-white bg-emerald-500 hover:bg-emerald-600 px-3 py-1.5 rounded-lg transition-all shadow-sm flex items-center gap-1 uppercase tracking-wider"><Plus className="w-3 h-3" />Cadastrar / Novo Cliente</button></div>
                                     <div className="relative">
                                         <UserCircle2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
                                         <input type="text" placeholder="Buscar cliente..." value={customerName} onChange={(e) => handleSearchClient(e.target.value)} onFocus={() => setShowClientDropdown(true)} onKeyDown={handleClientKeyDown} className="w-full h-11 pl-10 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-900 font-semibold" />
@@ -849,16 +789,16 @@ export default function RomaneioPage() {
                                 </div>
                             </div>
                             <div className="flex flex-col gap-3">
-                                <button 
-                                    onClick={handleFinalizeRomaneio} 
-                                    disabled={submitting || cartItems.length === 0} 
+                                <button
+                                    onClick={handleFinalizeRomaneio}
+                                    disabled={submitting || cartItems.length === 0}
                                     className="w-full h-12 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-600/20"
                                 >
                                     {submitting ? 'Registrando...' : 'Finalizar Romaneio'}
                                 </button>
-                                <button 
-                                    onClick={handleSavePending} 
-                                    disabled={isSavingPending || cartItems.length === 0} 
+                                <button
+                                    onClick={handleSavePending}
+                                    disabled={isSavingPending || cartItems.length === 0}
                                     className="w-full h-12 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-amber-400 font-bold rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-2"
                                 >
                                     {isSavingPending ? 'Salvando...' : (
@@ -915,13 +855,13 @@ export default function RomaneioPage() {
                                     </div>
 
                                     <div className="flex gap-2 pt-4 border-t border-gray-50">
-                                        <button 
+                                        <button
                                             onClick={() => handleResumePending(p)}
                                             className="flex-1 h-10 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
                                         >
                                             Continuar
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => handleDeletePending(p.id)}
                                             className="w-10 h-10 bg-gray-50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-xl transition-all flex items-center justify-center"
                                         >
@@ -940,16 +880,16 @@ export default function RomaneioPage() {
                     <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                            <input 
-                                type="text" 
-                                placeholder="Pesquisar no estoque (Nome, Código)..." 
-                                value={estoqueSearch} 
-                                onChange={(e) => { setEstoqueSearch(e.target.value); setEstoquePage(1); }} 
-                                className="w-full h-11 pl-10 pr-4 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm" 
+                            <input
+                                type="text"
+                                placeholder="Pesquisar no estoque (Nome, Código)..."
+                                value={estoqueSearch}
+                                onChange={(e) => { setEstoqueSearch(e.target.value); setEstoquePage(1); }}
+                                className="w-full h-11 pl-10 pr-4 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
                             />
                         </div>
                     </div>
-                    
+
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-gray-50/80 border-b border-gray-100">
@@ -990,35 +930,35 @@ export default function RomaneioPage() {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-end gap-2">
                                                 <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             const q = parseFloat(stockQuantities[s.product_id] || '1')
                                                             const step = isIntegerUnit(s.unit) ? 1 : 0.1
                                                             setStockQuantities(p => ({ ...p, [s.product_id]: String(Math.max(step, q - step).toFixed(isIntegerUnit(s.unit) ? 0 : 2)) }))
-                                                        }} 
+                                                        }}
                                                         className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-blue-600 rounded-md"
                                                     >
                                                         <Minus className="w-3 h-3" />
                                                     </button>
-                                                    <input 
-                                                        type="number" 
-                                                        value={stockQuantities[s.product_id] || ''} 
-                                                        onChange={(e) => setStockQuantities(p => ({ ...p, [s.product_id]: e.target.value }))} 
+                                                    <input
+                                                        type="number"
+                                                        value={stockQuantities[s.product_id] || ''}
+                                                        onChange={(e) => setStockQuantities(p => ({ ...p, [s.product_id]: e.target.value }))}
                                                         placeholder="1"
-                                                        className="w-10 h-7 text-center text-xs font-bold border-none focus:ring-0 px-0" 
+                                                        className="w-10 h-7 text-center text-xs font-bold border-none focus:ring-0 px-0"
                                                     />
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             const q = parseFloat(stockQuantities[s.product_id] || '0')
                                                             const step = isIntegerUnit(s.unit) ? 1 : 0.1
                                                             setStockQuantities(p => ({ ...p, [s.product_id]: String((q + step).toFixed(isIntegerUnit(s.unit) ? 0 : 2)) }))
-                                                        }} 
+                                                        }}
                                                         className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-blue-600 rounded-md"
                                                     >
                                                         <Plus className="w-3 h-3" />
                                                     </button>
                                                 </div>
-                                                <button 
+                                                <button
                                                     onClick={() => {
                                                         const qStr = stockQuantities[s.product_id] || '1'
                                                         let q = parseFloat(qStr)
@@ -1026,7 +966,7 @@ export default function RomaneioPage() {
                                                         addToCart({ id: s.product_id, name: s.product_name, barcode: s.barcode, unit: s.unit, price: s.price, color: s.color, size: s.size }, q)
                                                         toast.success('Adicionado!')
                                                         setStockQuantities(p => ({ ...p, [s.product_id]: '' }))
-                                                    }} 
+                                                    }}
                                                     className="w-9 h-9 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md active:scale-95"
                                                 >
                                                     <Plus className="w-4 h-4" />
@@ -1039,89 +979,6 @@ export default function RomaneioPage() {
                         </table>
                     </div>
                     {totalEstoquePages > 1 && <div className="p-6 border-t border-gray-100 flex items-center justify-between"><span className="text-xs font-bold text-gray-400">Página {estoquePage} de {totalEstoquePages}</span><div className="flex gap-2"><button onClick={() => setEstoquePage(p => Math.max(1, p - 1))} disabled={estoquePage === 1} className="h-9 px-4 rounded-xl border text-xs font-bold disabled:opacity-30">Anterior</button><button onClick={() => setEstoquePage(p => Math.min(totalEstoquePages, p + 1))} disabled={estoquePage === totalEstoquePages} className="h-9 px-4 rounded-xl border text-xs font-bold disabled:opacity-30">Próxima</button></div></div>}
-                </div>
-            )}
-
-            {activeTab === 'movimentacoes' && (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
-                    <div className="p-8 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
-                        <div>
-                            <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                                <History className="w-5 h-5 text-blue-600" />
-                                Histórico de Saídas
-                            </h2>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Recentes na loja (Vendas)</p>
-                        </div>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-gray-50/50">
-                                <tr>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Data</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Produto</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Qtd.</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Notas</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {movements.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} className="px-6 py-20 text-center text-sm font-bold text-slate-300 italic">
-                                            Nenhuma movimentação registrada.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    movements.map((m) => (
-                                        <tr key={m.id} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-slate-400 shrink-0">
-                                                        <CalendarIcon className="w-4 h-4" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-bold text-slate-700">
-                                                            {new Date(m.created_at).toLocaleDateString('pt-BR')}
-                                                        </p>
-                                                        <p className="text-[10px] font-bold text-slate-400 uppercase">
-                                                            {new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <p className="text-sm font-bold text-slate-900">{m.product_name_snapshot}</p>
-                                                <p className="text-[10px] font-mono text-slate-400">{m.product_barcode_snapshot || 'Sem SKU'}</p>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <span className="text-sm font-black text-slate-900">
-                                                    {m.quantity}
-                                                </span>
-                                                <span className="ml-1 text-[10px] font-black text-slate-400 uppercase">{m.unit_snapshot}</span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <p className="text-xs font-medium text-slate-500 max-w-[150px] truncate" title={m.notes || ''}>
-                                                    {m.notes || '-'}
-                                                </p>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                {m.romaneio_id && (
-                                                    <button 
-                                                        onClick={() => handleCopyRomaneio(m.romaneio_id!)}
-                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                        title="Copiar Pedido Completo"
-                                                    >
-                                                        <Copy className="w-4 h-4" />
-                                                    </button>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
             )}
 
@@ -1170,8 +1027,8 @@ export default function RomaneioPage() {
                         </div>
 
                         <div className="p-8 flex flex-col gap-3">
-                            <button 
-                                onClick={handleBlockerSave} 
+                            <button
+                                onClick={handleBlockerSave}
                                 disabled={isSavingPending}
                                 className="w-full h-14 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-sm active:scale-95 transition-all flex items-center justify-center gap-2"
                             >
@@ -1187,15 +1044,15 @@ export default function RomaneioPage() {
                 </div>
             )}
             <ConfirmModal isOpen={itemToRemove !== null} onClose={() => setItemToRemove(null)} onConfirm={() => { if (itemToRemove !== null) { removeFromCart(itemToRemove); setItemToRemove(null); } }} title="Remover?" message="Deseja retirar este produto?" confirmText="Sim" cancelText="Não" type="danger" />
-            <ConfirmModal 
-                isOpen={confirmConfig.isOpen} 
-                onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))} 
-                onConfirm={confirmConfig.onConfirm} 
-                title={confirmConfig.title} 
-                message={confirmConfig.message} 
-                confirmText={confirmConfig.confirmText} 
-                cancelText={confirmConfig.cancelText} 
-                type={confirmConfig.type} 
+            <ConfirmModal
+                isOpen={confirmConfig.isOpen}
+                onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmConfig.onConfirm}
+                title={confirmConfig.title}
+                message={confirmConfig.message}
+                confirmText={confirmConfig.confirmText}
+                cancelText={confirmConfig.cancelText}
+                type={confirmConfig.type}
             />
         </div>
     )
