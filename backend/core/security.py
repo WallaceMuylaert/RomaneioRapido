@@ -48,6 +48,16 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 
+def get_current_superadmin(current_user: "User" = Depends(get_current_user)):
+    """Dependência para rotas que exigem privilégios de Administrador do Sistema."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso negado: Requer privilégios de Administrador"
+        )
+    return current_user
+
+
 def get_current_user_flexible(request: Request, db: Session = Depends(get_db)):
     """
     Autenticação flexível: aceita JWT (Bearer) ou API Key (X-API-Key header).

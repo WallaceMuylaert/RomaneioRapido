@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { toast } from 'react-hot-toast'
 import logo from '../assets/romaneiorapido_logo.png'
 import {
     LayoutDashboard,
@@ -13,10 +14,13 @@ import {
     ChevronLeft,
     ChevronRight,
     ArrowRightLeft,
-    Clock
+    Clock,
+    ShieldCheck
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import TrialExpiredBanner from './TrialExpiredBanner'
+import { useSubscription } from '../hooks/useSubscription'
+import PlansGrid from './PlansGrid'
 
 const navItems = [
     { to: '/dashboard', label: 'Painel', icon: LayoutDashboard },
@@ -28,10 +32,23 @@ const navItems = [
 ]
 
 export default function AppLayout() {
-    const { user, logout } = useAuth()
+    const { user, logout, refreshUser } = useAuth()
     const navigate = useNavigate()
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [isCollapsed, setIsCollapsed] = useState(false)
+    const { isSubscribing, handleSubscribe } = useSubscription()
+
+    const isLockEnabled = user?.plan_id === 'trial' && user?.trial_expired && !user?.is_admin
+
+    // Bloqueio de navegação forçada e refresh de status
+    useEffect(() => {
+        // Refresh status para garantir que expirou mesmo
+        refreshUser()
+
+        if (isLockEnabled && window.location.pathname !== '/perfil') {
+            navigate('/perfil?tab=subscription', { replace: true })
+        }
+    }, [isLockEnabled, navigate, window.location.pathname])
 
     const handleLogout = () => {
         logout()
@@ -58,7 +75,16 @@ export default function AppLayout() {
                 </button>
 
                 {/* Logo */}
-                <div className={`h-16 flex items-center border-b border-slate-100/50 group cursor-pointer transition-all ${isCollapsed ? 'justify-center px-0' : 'px-6 gap-3'}`} onClick={() => navigate('/dashboard')}>
+                <div 
+                    className={`h-16 flex items-center border-b border-slate-100/50 group cursor-pointer transition-all ${isCollapsed ? 'justify-center px-0' : 'px-6 gap-3'}`} 
+                    onClick={() => {
+                        if (isLockEnabled) {
+                            navigate('/perfil?tab=subscription')
+                        } else {
+                            navigate('/dashboard')
+                        }
+                    }}
+                >
                     <div className={`flex items-center justify-center transition-all duration-300 ${isCollapsed ? 'w-10 h-10' : 'w-auto h-10'}`}>
                         <img
                             src={logo}
@@ -78,33 +104,62 @@ export default function AppLayout() {
 
                 {/* Nav */}
                 <nav className={`flex-1 py-6 space-y-1.5 overflow-y-auto transition-all ${isCollapsed ? 'px-2' : 'px-4'}`}>
-                    {navItems.map((item) => (
-                        <NavLink
-                            key={item.to}
-                            to={item.to}
-                            onClick={() => setSidebarOpen(false)}
-                            title={isCollapsed ? item.label : ""}
-                            className={({ isActive }) =>
-                                `flex items-center rounded-xl text-[14px] font-semibold transition-all duration-200 group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} ${isActive
-                                    ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100/50'
-                                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50/80'
-                                }`
-                            }
-                        >
-                            <item.icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 shrink-0 ${sidebarOpen ? 'animate-in fade-in slide-in-from-left-2' : ''}`} />
-                            {!isCollapsed && <span className="whitespace-nowrap animate-in fade-in duration-300">{item.label}</span>}
-                        </NavLink>
-                    ))}
+                    {[
+                        ...navItems,
+                        ...(user?.is_admin ? [{ to: '/super-admin', label: 'Gerenciamento', icon: ShieldCheck }] : [])
+                    ].map((item) => {
+                        // Se o bloqueio estiver ativo, TUDO exceto perfil é desabilitado
+                        const isDisabled = isLockEnabled && item.to !== '/perfil'
+                        
+                        return (
+                            <NavLink
+                                key={item.to}
+                                to={isDisabled ? '#' : item.to}
+                                onClick={(e) => {
+                                    if (isDisabled) {
+                                        e.preventDefault()
+                                        toast.error('Seu teste expirou. Assine um plano para continuar.')
+                                        return
+                                    }
+                                    setSidebarOpen(false)
+                                }}
+                                title={isCollapsed ? item.label : ""}
+                                className={({ isActive }) =>
+                                    `flex items-center rounded-xl text-[14px] font-semibold transition-all duration-200 group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} 
+                                    ${isActive
+                                        ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100/50'
+                                        : isDisabled 
+                                            ? 'text-slate-300 cursor-not-allowed opacity-50' 
+                                            : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50/80'
+                                    }`
+                                }
+                            >
+                                <item.icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 shrink-0 ${sidebarOpen ? 'animate-in fade-in slide-in-from-left-2' : ''}`} />
+                                {!isCollapsed && (
+                                    <div className="flex-1 flex items-center justify-between min-w-0">
+                                        <span className="whitespace-nowrap animate-in fade-in duration-300 truncate">{item.label}</span>
+                                        {isDisabled && <ShieldCheck className="w-3.5 h-3.5 text-slate-300" />}
+                                    </div>
+                                )}
+                            </NavLink>
+                        )
+                    })}
                 </nav>
 
-                {/* Trial Badge */}
-                {user?.plan_id === 'trial' && !user?.trial_expired && (
+                {/* Trial Badge/Lock */}
+                {user?.plan_id === 'trial' && (
                     <div className={`mx-3 mb-2 ${isCollapsed ? 'px-1' : 'px-3'}`}>
-                        <div className={`flex items-center gap-2 bg-amber-50 border border-amber-200/60 rounded-xl text-amber-700 ${isCollapsed ? 'justify-center p-2' : 'px-3 py-2'}`}>
-                            <Clock className="w-4 h-4 shrink-0" />
+                        <div className={`flex items-center gap-2 rounded-xl transition-all ${isCollapsed ? 'justify-center p-2' : 'px-3 py-2'} ${user.trial_expired
+                            ? 'bg-red-50 border border-red-200/60 text-red-700'
+                            : 'bg-amber-50 border border-amber-200/60 text-amber-700'
+                            }`}>
+                            {user.trial_expired ? <ShieldCheck className="w-4 h-4 shrink-0" /> : <Clock className="w-4 h-4 shrink-0" />}
                             {!isCollapsed && (
                                 <span className="text-xs font-bold whitespace-nowrap">
-                                    Teste: {user.trial_days_remaining ?? 0} {(user.trial_days_remaining ?? 0) === 1 ? 'dia' : 'dias'}
+                                    {user.trial_expired 
+                                        ? 'Trial Expirado' 
+                                        : `Teste: ${user.trial_days_remaining ?? 0} ${(user.trial_days_remaining ?? 0) === 1 ? 'dia' : 'dias'}`
+                                    }
                                 </span>
                             )}
                         </div>
@@ -153,7 +208,13 @@ export default function AppLayout() {
                     <button onClick={() => setSidebarOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                         <Menu className="w-6 h-6" />
                     </button>
-                    <div className="flex items-center gap-2.5 group cursor-pointer" onClick={() => navigate('/dashboard')}>
+                    <div className="flex items-center gap-2.5 group cursor-pointer" onClick={() => {
+                        if (isLockEnabled) {
+                            navigate('/perfil?tab=subscription')
+                        } else {
+                            navigate('/dashboard')
+                        }
+                    }}>
                         <div className="h-7 flex items-center justify-center">
                             <img src={logo} alt="Logo" className="h-6 object-contain" />
                         </div>
@@ -163,7 +224,31 @@ export default function AppLayout() {
                 </header>
 
                 <main className="flex-1 p-4 md:p-8 lg:p-10 animate-slide-up">
-                    <Outlet />
+                    {/* Bloqueio estrito de renderização de conteúdo se as condições de lock forem atendidas */}
+                    {isLockEnabled && window.location.pathname !== '/perfil' ? (
+                        <div className="h-full flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in zoom-in-95 duration-500">
+                             <div className="w-20 h-20 rounded-[2.5rem] bg-red-50 flex items-center justify-center text-red-500 mb-4 border border-red-100 shadow-xl shadow-red-500/10">
+                                <ShieldCheck className="w-10 h-10" />
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-900 leading-tight">Acesso Bloqueado</h2>
+                            <p className="text-slate-400 font-semibold max-w-sm">
+                                Seu período de teste gratuito expirou. <br /> Escolha um plano abaixo para continuar usando o RomaneioRápido sem interrupções.
+                            </p>
+                            
+                            <div className="w-full max-w-5xl mt-8 pb-12 overflow-y-auto no-scrollbar" style={{ maxHeight: '60vh' }}>
+                                <PlansGrid 
+                                    effectivePlanId={user?.plan_id || 'trial'}
+                                    isSubscribing={isSubscribing}
+                                    handleSubscribe={handleSubscribe}
+                                />
+                            </div>
+                            <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-brand-600 animate-[progress_1.5s_ease-in-out_infinite]" style={{ width: '40%' }} />
+                            </div>
+                        </div>
+                    ) : (
+                        <Outlet />
+                    )}
                 </main>
             </div>
 

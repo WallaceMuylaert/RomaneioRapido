@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import api from '../services/api'
 
-interface User {
+export interface User {
     id: number
     email: string
     full_name: string

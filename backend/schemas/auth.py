@@ -56,6 +56,7 @@ class UserUpdate(BaseModel):
     plan_id: Optional[str] = Field(None, max_length=50)
     password: Optional[str] = Field(None, min_length=8, max_length=256)
     is_active: Optional[bool] = None
+    is_admin: Optional[bool] = None
 
     @field_validator("password")
     @classmethod

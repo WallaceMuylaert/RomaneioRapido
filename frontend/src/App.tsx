@@ -14,6 +14,7 @@ import { Toaster } from 'react-hot-toast'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import MovementsPage from './pages/MovementsPage'
+import SuperAdminPage from './pages/SuperAdminPage'
 import ErrorPage from './pages/ErrorPage'
 import './index.css'
 
@@ -43,6 +44,24 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   return token ? <Navigate to="/dashboard" replace /> : <>{children}</>
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!user || !user.is_admin) {
+    return <Navigate to="/error" replace state={{ code: 404 }} />
+  }
+
+  return <>{children}</>
 }
 
 const router = createBrowserRouter([
@@ -118,6 +137,14 @@ const router = createBrowserRouter([
       {
         path: "/perfil",
         element: <ProfilePage />,
+      },
+      {
+        path: "/super-admin",
+        element: (
+          <AdminRoute>
+            <SuperAdminPage />
+          </AdminRoute>
+        ),
       },
     ],
   },
