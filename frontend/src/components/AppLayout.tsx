@@ -30,19 +30,22 @@ const navItems = [
 ]
 
 export default function AppLayout() {
-    const { user, logout } = useAuth()
+    const { user, logout, refreshUser } = useAuth()
     const navigate = useNavigate()
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [isCollapsed, setIsCollapsed] = useState(false)
 
     const isLockEnabled = user?.plan_id === 'trial' && user?.trial_expired && !user?.is_admin
 
-    // Bloqueio de navegação forçada
+    // Bloqueio de navegação forçada e refresh de status
     useEffect(() => {
+        // Refresh status para garantir que expirou mesmo
+        refreshUser()
+
         if (isLockEnabled && window.location.pathname !== '/perfil') {
             navigate('/perfil?tab=subscription', { replace: true })
         }
-    }, [isLockEnabled, navigate])
+    }, [isLockEnabled, navigate, window.location.pathname])
 
     const handleLogout = () => {
         logout()
@@ -93,7 +96,8 @@ export default function AppLayout() {
                         ...navItems,
                         ...(user?.is_admin ? [{ to: '/super-admin', label: 'Gerenciamento', icon: ShieldCheck }] : [])
                     ].map((item) => {
-                        const isDisabled = isLockEnabled && item.to !== '/perfil' && item.to !== '/dashboard'
+                        // Se o bloqueio estiver ativo, TUDO exceto perfil é desabilitado
+                        const isDisabled = isLockEnabled && item.to !== '/perfil'
                         
                         return (
                             <NavLink
@@ -102,7 +106,7 @@ export default function AppLayout() {
                                 onClick={(e) => {
                                     if (isDisabled) {
                                         e.preventDefault()
-                                        toast.error('Assine um plano para liberar o acesso.')
+                                        toast.error('Seu teste expirou. Assine um plano para continuar.')
                                         return
                                     }
                                     setSidebarOpen(false)
@@ -202,7 +206,23 @@ export default function AppLayout() {
                 </header>
 
                 <main className="flex-1 p-4 md:p-8 lg:p-10 animate-slide-up">
-                    <Outlet />
+                    {/* Bloqueio estrito de renderização de conteúdo se as condições de lock forem atendidas */}
+                    {isLockEnabled && window.location.pathname !== '/perfil' ? (
+                        <div className="h-full flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in zoom-in-95 duration-500">
+                             <div className="w-20 h-20 rounded-[2.5rem] bg-red-50 flex items-center justify-center text-red-500 mb-4 border border-red-100 shadow-xl shadow-red-500/10">
+                                <ShieldCheck className="w-10 h-10" />
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-900">Acesso Bloqueado</h2>
+                            <p className="text-slate-400 font-semibold max-w-sm">
+                                Seu período de teste gratuito expirou. <br /> Redirecionando para a tela de planos...
+                            </p>
+                            <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-brand-600 animate-[progress_1.5s_ease-in-out_infinite]" style={{ width: '40%' }} />
+                            </div>
+                        </div>
+                    ) : (
+                        <Outlet />
+                    )}
                 </main>
             </div>
 

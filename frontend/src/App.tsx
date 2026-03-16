@@ -46,6 +46,24 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return token ? <Navigate to="/dashboard" replace /> : <>{children}</>
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!user || !user.is_admin) {
+    return <Navigate to="/error" replace state={{ code: 404 }} />
+  }
+
+  return <>{children}</>
+}
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -122,7 +140,11 @@ const router = createBrowserRouter([
       },
       {
         path: "/super-admin",
-        element: <SuperAdminPage />,
+        element: (
+          <AdminRoute>
+            <SuperAdminPage />
+          </AdminRoute>
+        ),
       },
     ],
   },
