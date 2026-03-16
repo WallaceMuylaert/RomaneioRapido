@@ -4,6 +4,8 @@ import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { toast } from 'react-hot-toast'
 import { translateError } from '../utils/errors'
+import { useSubscription } from '../hooks/useSubscription'
+import PlansGrid from '../components/PlansGrid'
 import {
     Camera,
     Loader2,
@@ -66,7 +68,7 @@ export default function ProfilePage() {
 
     const [saving, setSaving] = useState(false)
     const [isLoadingUsage, setIsLoadingUsage] = useState(false)
-    const [isSubscribing, setIsSubscribing] = useState<string | null>(null)
+    const { isSubscribing, handleSubscribe, handleManageSubscription } = useSubscription()
     const [imagePreview, setImagePreview] = useState<string | null>(null)
     const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -338,37 +340,6 @@ export default function ProfilePage() {
         }
     }
 
-    const handleSubscribe = async (planId: string) => {
-        if (planId === user?.plan_id) return
-        setIsSubscribing(planId)
-        try {
-            // Planos pagos: redirecionar para Stripe Checkout
-            if (['basic', 'plus', 'pro'].includes(planId)) {
-                const res = await api.post('/plans/checkout', { plan_id: planId })
-                window.location.href = res.data.checkout_url
-                return
-            }
-            // Fallback para planos sem pagamento
-            await api.patch('/plans/subscribe', { plan_id: planId })
-            toast.success('Plano atualizado com sucesso!')
-            setTimeout(() => {
-                window.location.reload()
-            }, 1000)
-        } catch (err: any) {
-            toast.error(translateError(err.response?.data?.detail) || 'Erro ao atualizar assinatura')
-        } finally {
-            setIsSubscribing(null)
-        }
-    }
-
-    const handleManageSubscription = async () => {
-        try {
-            const res = await api.post('/plans/portal')
-            window.location.href = res.data.portal_url
-        } catch (err: any) {
-            toast.error(translateError(err.response?.data?.detail) || 'Erro ao abrir portal de assinatura')
-        }
-    }
 
     const calculateProgress = (used: number, limit: number) => {
         if (limit >= 999999) return 0
@@ -393,21 +364,29 @@ export default function ProfilePage() {
                 {/* Refined Segmented Control - Mobile Responsive */}
                 <div className="flex bg-white/80 backdrop-blur shadow-sm border border-slate-200/60 p-1 rounded-xl sm:rounded-2xl w-full sm:w-fit overflow-x-auto no-scrollbar">
                     <div className="flex min-w-full sm:min-w-0">
-                        {(['general', 'subscription', 'security'] as const).map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-[10px] text-xs sm:text-sm font-semibold transition-all duration-300 whitespace-now-row flex-1 sm:flex-initial ${activeTab === tab
-                                    ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100/50'
-                                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                                    }`}
-                            >
-                                {tab === 'general' && <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                                {tab === 'subscription' && <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                                {tab === 'security' && <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                                <span>{tab === 'general' ? 'Geral' : tab === 'subscription' ? 'Assinatura' : 'Segurança'}</span>
-                            </button>
-                        ))}
+                        {(['general', 'subscription', 'security'] as const).map((tab) => {
+                            const isLocked = user?.plan_id === 'trial' && user?.trial_expired && !user?.is_admin
+                            const isDisabled = isLocked && tab !== 'subscription'
+
+                            return (
+                                <button
+                                    key={tab}
+                                    disabled={isDisabled}
+                                    onClick={() => !isDisabled && setActiveTab(tab)}
+                                    className={`flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-[10px] text-xs sm:text-sm font-semibold transition-all duration-300 whitespace-now-row flex-1 sm:flex-initial ${activeTab === tab
+                                        ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100/50'
+                                        : isDisabled
+                                            ? 'text-slate-300 cursor-not-allowed opacity-50'
+                                            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                                        }`}
+                                >
+                                    {tab === 'general' && <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                                    {tab === 'subscription' && <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                                    {tab === 'security' && <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                                    <span>{tab === 'general' ? 'Geral' : tab === 'subscription' ? 'Assinatura' : 'Segurança'}</span>
+                                </button>
+                            )
+                        })}
                     </div>
                 </div>
             </div>
@@ -552,19 +531,19 @@ export default function ProfilePage() {
                                     <div className="bg-white border border-brand-100 rounded-[2.5rem] p-8 sm:p-10 shadow-xl shadow-brand-100/50 relative overflow-hidden group/plan">
                                         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-full blur-[80px] -mr-20 -mt-20 transition-transform duration-1000 group-hover/plan:scale-125" />
 
-                                        <div className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center lg:items-center justify-between">
-                                            <div className="flex-1 text-center lg:text-left space-y-4">
-                                                <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
-                                                    <h4 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">{currentPlan.name}</h4>
-                                                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100/50 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 shadow-sm self-center">
+                                        <div className="relative z-10 flex flex-col md:flex-row gap-6 md:gap-12 items-center justify-between">
+                                            <div className="flex-1 text-center md:text-left space-y-4">
+                                                <div className="flex flex-col sm:flex-row items-center gap-3 justify-center md:justify-start">
+                                                    <h4 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">{currentPlan.name}</h4>
+                                                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100/50 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 shadow-sm">
                                                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Ativo
                                                     </span>
                                                 </div>
-                                                <p className="text-slate-500 text-sm sm:text-base font-medium max-w-sm mx-auto lg:mx-0 leading-relaxed">{currentPlan.description}</p>
-
-                                                {/* Botão Gerenciar Assinatura (Movido para dentro do contexto do plano) */}
+                                                <p className="text-slate-500 text-sm font-medium max-w-sm mx-auto md:mx-0 leading-relaxed">{currentPlan.description}</p>
+                                                
+                                                {/* Gerenciar Assinatura Button */}
                                                 {user?.plan_id && !['trial'].includes(user.plan_id) && (
-                                                    <div className="pt-2 flex justify-center lg:justify-start">
+                                                    <div className="pt-2 flex justify-center md:justify-start">
                                                         <button
                                                             onClick={handleManageSubscription}
                                                             className="h-11 px-5 text-sm font-bold bg-slate-900 text-white rounded-xl hover:bg-brand-600 transition-all shadow-lg shadow-slate-200 flex items-center gap-2 active:scale-95 group/btn"
@@ -576,18 +555,18 @@ export default function ProfilePage() {
                                                 )}
                                             </div>
 
-                                            {/* Progress Meters - Refactored Grid */}
-                                            <div className="w-full lg:w-96 flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 bg-slate-50/80 p-6 sm:p-8 rounded-[2rem] border border-slate-100/50 shadow-inner">
+                                            {/* Progress Meters */}
+                                            <div className="w-full md:w-80 lg:w-96 flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4 lg:gap-6 bg-slate-50/80 p-5 lg:p-8 rounded-[2rem] border border-slate-100/50 shadow-inner">
                                                 <div className="group/progress">
-                                                    <div className="flex justify-between items-end mb-2.5 px-0.5">
+                                                    <div className="flex justify-between items-end mb-2 px-0.5">
                                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produtos</span>
-                                                        <span className="text-sm font-black text-slate-700">
-                                                            <span className="text-brand-600 text-xl">{usage.products.used}</span>
-                                                            <span className="text-slate-300 mx-1.5 font-light">/</span>
+                                                        <span className="text-xs lg:text-sm font-black text-slate-700">
+                                                            <span className="text-brand-600 text-lg lg:text-xl">{usage.products.used}</span>
+                                                            <span className="text-slate-300 mx-1 font-light">/</span>
                                                             {usage.products.limit >= 999999 ? '∞' : usage.products.limit}
                                                         </span>
                                                     </div>
-                                                    <div className="h-2.5 w-full bg-slate-200/50 rounded-full overflow-hidden p-0.5 shadow-inner">
+                                                    <div className="h-2 w-full bg-slate-200/50 rounded-full overflow-hidden p-0.5 shadow-inner">
                                                         <div
                                                             className="h-full bg-gradient-to-r from-brand-500 to-indigo-600 rounded-full transition-all duration-1000 shadow-sm relative"
                                                             style={{ width: `${calculateProgress(usage.products.used, usage.products.limit)}%` }}
@@ -598,15 +577,15 @@ export default function ProfilePage() {
                                                 </div>
 
                                                 <div className="group/progress">
-                                                    <div className="flex justify-between items-end mb-2.5 px-0.5">
+                                                    <div className="flex justify-between items-end mb-2 px-0.5">
                                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Categorias</span>
-                                                        <span className="text-sm font-black text-slate-700">
-                                                            <span className="text-brand-600 text-xl">{usage.categories.used}</span>
-                                                            <span className="text-slate-300 mx-1.5 font-light">/</span>
+                                                        <span className="text-xs lg:text-sm font-black text-slate-700">
+                                                            <span className="text-brand-600 text-lg lg:text-xl">{usage.categories.used}</span>
+                                                            <span className="text-slate-300 mx-1 font-light">/</span>
                                                             {usage.categories.limit >= 999999 ? '∞' : usage.categories.limit}
                                                         </span>
                                                     </div>
-                                                    <div className="h-2.5 w-full bg-slate-200/50 rounded-full overflow-hidden p-0.5 shadow-inner">
+                                                    <div className="h-2 w-full bg-slate-200/50 rounded-full overflow-hidden p-0.5 shadow-inner">
                                                         <div
                                                             className="h-full bg-gradient-to-r from-brand-500 to-indigo-600 rounded-full transition-all duration-1000 shadow-sm relative"
                                                             style={{ width: `${calculateProgress(usage.categories.used, usage.categories.limit)}%` }}
@@ -640,74 +619,11 @@ export default function ProfilePage() {
                                         <p className="text-slate-500 font-medium mt-1 text-sm">Escolha a melhor opção para o tamanho do seu negócio.</p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 auto-rows-fr">
-                                        {PLANS.filter(p => !p.hidden).map((p) => {
-                                            const isSelected = p.id === effectivePlanId
-                                            const isPopular = p.highlight
-
-                                            return (
-                                                <div
-                                                    key={p.id}
-                                                    className={`group p-8 rounded-[2.5rem] border transition-all duration-500 flex flex-col h-full relative overflow-hidden ${isSelected
-                                                        ? 'border-brand-500 bg-brand-50/30 shadow-2xl shadow-brand-200/50 ring-1 ring-brand-200'
-                                                        : 'border-slate-200/80 bg-white hover:border-brand-300 hover:shadow-2xl hover:shadow-slate-200/50 hover:-translate-y-2'
-                                                        }`}
-                                                >
-                                                    {/* Popular Badge */}
-                                                    {isPopular && !isSelected && (
-                                                        <div className="absolute top-0 right-0 p-4">
-                                                            <div className="bg-brand-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-lg shadow-brand-500/30 animate-pulse">
-                                                                Destaque
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    <div className="flex flex-col items-start gap-5 mb-8">
-                                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 ${isSelected ? 'bg-brand-600 text-white shadow-xl shadow-brand-600/30' : 'bg-slate-50 text-slate-400 group-hover:bg-brand-100 group-hover:text-brand-600'
-                                                            }`}>
-                                                            <Zap className={`w-7 h-7 ${isSelected ? 'animate-pulse' : ''}`} />
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-extrabold text-slate-900 text-2xl tracking-tight leading-none mb-2">{p.name}</h4>
-                                                            <p className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest">{p.id === 'trial' ? 'Acesso inicial' : 'Assinatura mensal'}</p>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="mb-10 flex-grow">
-                                                        <ul className="space-y-4">
-                                                            {p.features.slice(0, 4).map((feat, i) => (
-                                                                <li key={i} className="flex items-start gap-3.5 text-sm font-semibold text-slate-600 transition-colors group-hover:text-slate-900">
-                                                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isSelected ? 'bg-brand-100 text-brand-600' : 'bg-slate-50 text-slate-300 group-hover:bg-brand-50 group-hover:text-brand-500'}`}>
-                                                                        <Check className="w-3.5 h-3.5" />
-                                                                    </div>
-                                                                    <span className="leading-tight">{feat}</span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-
-                                                    <div className="border-t border-slate-100/80 pt-8 mt-auto flex flex-col items-center">
-                                                        <div className="flex items-baseline gap-1 mb-8">
-                                                            <p className="font-black text-slate-900 text-4xl tracking-tighter">{p.price}</p>
-                                                            {p.period && <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{p.period}</p>}
-                                                        </div>
-                                                        <button
-                                                            onClick={() => !isSelected && handleSubscribe(p.id)}
-                                                            disabled={isSelected || isSubscribing === p.id}
-                                                            className={`w-full h-14 rounded-2xl text-[15px] font-black transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 ${isSelected
-                                                                ? 'bg-brand-100 text-brand-700 cursor-default font-black border border-brand-200'
-                                                                : 'bg-slate-900 text-white hover:bg-brand-600 shadow-xl shadow-slate-200 hover:shadow-brand-500/30'
-                                                                }`}
-                                                        >
-                                                            {isSubscribing === p.id
-                                                                ? <Loader2 className="w-5 h-5 animate-spin" />
-                                                                : isSelected ? 'Plano atual' : 'Próximo Passo'}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
+                                    <PlansGrid
+                                        effectivePlanId={effectivePlanId}
+                                        isSubscribing={isSubscribing}
+                                        handleSubscribe={handleSubscribe}
+                                    />
                                     <div className="mt-10 flex flex-col sm:flex-row items-center sm:items-start gap-5 p-6 bg-brand-50 border border-brand-100/50 rounded-[2rem] text-sm font-medium text-brand-800 shadow-sm max-w-3xl mx-auto text-center sm:text-left transition-all hover:bg-white hover:shadow-md">
                                         <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm">
                                             <AlertCircle className="w-6 h-6 text-brand-500" />

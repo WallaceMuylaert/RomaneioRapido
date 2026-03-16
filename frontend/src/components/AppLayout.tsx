@@ -19,6 +19,8 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import TrialExpiredBanner from './TrialExpiredBanner'
+import { useSubscription } from '../hooks/useSubscription'
+import PlansGrid from './PlansGrid'
 
 const navItems = [
     { to: '/dashboard', label: 'Painel', icon: LayoutDashboard },
@@ -34,6 +36,7 @@ export default function AppLayout() {
     const navigate = useNavigate()
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [isCollapsed, setIsCollapsed] = useState(false)
+    const { isSubscribing, handleSubscribe } = useSubscription()
 
     const isLockEnabled = user?.plan_id === 'trial' && user?.trial_expired && !user?.is_admin
 
@@ -72,7 +75,16 @@ export default function AppLayout() {
                 </button>
 
                 {/* Logo */}
-                <div className={`h-16 flex items-center border-b border-slate-100/50 group cursor-pointer transition-all ${isCollapsed ? 'justify-center px-0' : 'px-6 gap-3'}`} onClick={() => navigate('/dashboard')}>
+                <div 
+                    className={`h-16 flex items-center border-b border-slate-100/50 group cursor-pointer transition-all ${isCollapsed ? 'justify-center px-0' : 'px-6 gap-3'}`} 
+                    onClick={() => {
+                        if (isLockEnabled) {
+                            navigate('/perfil?tab=subscription')
+                        } else {
+                            navigate('/dashboard')
+                        }
+                    }}
+                >
                     <div className={`flex items-center justify-center transition-all duration-300 ${isCollapsed ? 'w-10 h-10' : 'w-auto h-10'}`}>
                         <img
                             src={logo}
@@ -137,14 +149,14 @@ export default function AppLayout() {
                 {/* Trial Badge/Lock */}
                 {user?.plan_id === 'trial' && (
                     <div className={`mx-3 mb-2 ${isCollapsed ? 'px-1' : 'px-3'}`}>
-                        <div className={`flex items-center gap-2 rounded-xl transition-all ${isCollapsed ? 'justify-center p-2' : 'px-3 py-2'} ${user.trial_expired && !user.is_admin
+                        <div className={`flex items-center gap-2 rounded-xl transition-all ${isCollapsed ? 'justify-center p-2' : 'px-3 py-2'} ${user.trial_expired
                             ? 'bg-red-50 border border-red-200/60 text-red-700'
                             : 'bg-amber-50 border border-amber-200/60 text-amber-700'
                             }`}>
-                            {user.trial_expired && !user.is_admin ? <ShieldCheck className="w-4 h-4 shrink-0" /> : <Clock className="w-4 h-4 shrink-0" />}
+                            {user.trial_expired ? <ShieldCheck className="w-4 h-4 shrink-0" /> : <Clock className="w-4 h-4 shrink-0" />}
                             {!isCollapsed && (
                                 <span className="text-xs font-bold whitespace-nowrap">
-                                    {user.trial_expired && !user.is_admin 
+                                    {user.trial_expired 
                                         ? 'Trial Expirado' 
                                         : `Teste: ${user.trial_days_remaining ?? 0} ${(user.trial_days_remaining ?? 0) === 1 ? 'dia' : 'dias'}`
                                     }
@@ -196,7 +208,13 @@ export default function AppLayout() {
                     <button onClick={() => setSidebarOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                         <Menu className="w-6 h-6" />
                     </button>
-                    <div className="flex items-center gap-2.5 group cursor-pointer" onClick={() => navigate('/dashboard')}>
+                    <div className="flex items-center gap-2.5 group cursor-pointer" onClick={() => {
+                        if (isLockEnabled) {
+                            navigate('/perfil?tab=subscription')
+                        } else {
+                            navigate('/dashboard')
+                        }
+                    }}>
                         <div className="h-7 flex items-center justify-center">
                             <img src={logo} alt="Logo" className="h-6 object-contain" />
                         </div>
@@ -212,10 +230,18 @@ export default function AppLayout() {
                              <div className="w-20 h-20 rounded-[2.5rem] bg-red-50 flex items-center justify-center text-red-500 mb-4 border border-red-100 shadow-xl shadow-red-500/10">
                                 <ShieldCheck className="w-10 h-10" />
                             </div>
-                            <h2 className="text-2xl font-black text-slate-900">Acesso Bloqueado</h2>
+                            <h2 className="text-2xl font-black text-slate-900 leading-tight">Acesso Bloqueado</h2>
                             <p className="text-slate-400 font-semibold max-w-sm">
-                                Seu período de teste gratuito expirou. <br /> Redirecionando para a tela de planos...
+                                Seu período de teste gratuito expirou. <br /> Escolha um plano abaixo para continuar usando o RomaneioRápido sem interrupções.
                             </p>
+                            
+                            <div className="w-full max-w-5xl mt-8 pb-12 overflow-y-auto no-scrollbar" style={{ maxHeight: '60vh' }}>
+                                <PlansGrid 
+                                    effectivePlanId={user?.plan_id || 'trial'}
+                                    isSubscribing={isSubscribing}
+                                    handleSubscribe={handleSubscribe}
+                                />
+                            </div>
                             <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                 <div className="h-full bg-brand-600 animate-[progress_1.5s_ease-in-out_infinite]" style={{ width: '40%' }} />
                             </div>
