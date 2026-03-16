@@ -12,6 +12,7 @@ import { WhatsAppIcon } from '../assets/WhatsAppIcon'
 import { generatePixPayload, generatePixQRCode } from '../utils/pix'
 
 export interface CartItem {
+    selectedKey: string
     id: number
     name: string
     barcode: string | null
