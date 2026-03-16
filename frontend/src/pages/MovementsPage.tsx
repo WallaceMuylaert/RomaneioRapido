@@ -403,6 +403,7 @@ export default function MovementsPage() {
 
     const handleCopyToRomaneio = (group: any) => {
         const cartItems: CartItem[] = group.items.map((m: Movement) => ({
+            selectedKey: `mov-${m.id}`,
             id: m.product_id,
             name: m.product_name,
             barcode: m.product_barcode_snapshot,
@@ -827,6 +828,7 @@ export default function MovementsPage() {
                                                                                     phone: gm.customerPhone,
                                                                                     image: null,
                                                                                     items: gm.items.map((i: any) => ({
+                                                                                        selectedKey: `gm-${i.id}`,
                                                                                         id: i.product_id,
                                                                                         name: i.product_name || i.product_name_snapshot,
                                                                                         barcode: i.product_barcode_snapshot,
@@ -846,6 +848,7 @@ export default function MovementsPage() {
                                                                                     phone: (m as any).client?.phone || null,
                                                                                     image: m.product_image,
                                                                                     items: [{
+                                                                                        selectedKey: `mov-${m.id}`,
                                                                                         id: m.product_id,
                                                                                         name: m.product_name,
                                                                                         barcode: m.product_barcode_snapshot,
@@ -917,6 +920,7 @@ export default function MovementsPage() {
                     customerName={(sharingMovement as any).notes?.startsWith('Romaneio: ') ? (sharingMovement as any).notes.replace('Romaneio: ', '').trim() : ((sharingMovement as any).notes || 'Detalhes da Movimentação')}
                     createdAt={sharingMovement.created_at}
                     items={[{
+                        selectedKey: `mov-${sharingMovement.id}`,
                         id: sharingMovement.product_id,
                         name: sharingMovement.product_name,
                         barcode: sharingMovement.product_barcode_snapshot,
@@ -937,6 +941,7 @@ export default function MovementsPage() {
                             phone: (sharingMovement as any).client?.phone || null,
                             image: sharingMovement.product_image,
                             items: [{
+                                selectedKey: `mov-${sharingMovement.id}`,
                                 id: sharingMovement.product_id,
                                 name: sharingMovement.product_name,
                                 barcode: sharingMovement.product_barcode_snapshot,
