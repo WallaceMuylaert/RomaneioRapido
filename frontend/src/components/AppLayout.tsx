@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { toast } from 'react-hot-toast'
 import logo from '../assets/romaneiorapido_logo.png'
 import {
     LayoutDashboard,
@@ -13,9 +14,10 @@ import {
     ChevronLeft,
     ChevronRight,
     ArrowRightLeft,
-    Clock
+    Clock,
+    ShieldCheck
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import TrialExpiredBanner from './TrialExpiredBanner'
 
 const navItems = [
@@ -32,6 +34,15 @@ export default function AppLayout() {
     const navigate = useNavigate()
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [isCollapsed, setIsCollapsed] = useState(false)
+
+    const isLockEnabled = user?.plan_id === 'trial' && user?.trial_expired && !user?.is_admin
+
+    // Bloqueio de navegação forçada
+    useEffect(() => {
+        if (isLockEnabled && window.location.pathname !== '/perfil') {
+            navigate('/perfil?tab=subscription', { replace: true })
+        }
+    }, [isLockEnabled, navigate])
 
     const handleLogout = () => {
         logout()
@@ -78,33 +89,61 @@ export default function AppLayout() {
 
                 {/* Nav */}
                 <nav className={`flex-1 py-6 space-y-1.5 overflow-y-auto transition-all ${isCollapsed ? 'px-2' : 'px-4'}`}>
-                    {navItems.map((item) => (
-                        <NavLink
-                            key={item.to}
-                            to={item.to}
-                            onClick={() => setSidebarOpen(false)}
-                            title={isCollapsed ? item.label : ""}
-                            className={({ isActive }) =>
-                                `flex items-center rounded-xl text-[14px] font-semibold transition-all duration-200 group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} ${isActive
-                                    ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100/50'
-                                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50/80'
-                                }`
-                            }
-                        >
-                            <item.icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 shrink-0 ${sidebarOpen ? 'animate-in fade-in slide-in-from-left-2' : ''}`} />
-                            {!isCollapsed && <span className="whitespace-nowrap animate-in fade-in duration-300">{item.label}</span>}
-                        </NavLink>
-                    ))}
+                    {[
+                        ...navItems,
+                        ...(user?.is_admin ? [{ to: '/super-admin', label: 'Gerenciamento', icon: ShieldCheck }] : [])
+                    ].map((item) => {
+                        const isDisabled = isLockEnabled && item.to !== '/perfil' && item.to !== '/dashboard'
+                        
+                        return (
+                            <NavLink
+                                key={item.to}
+                                to={isDisabled ? '#' : item.to}
+                                onClick={(e) => {
+                                    if (isDisabled) {
+                                        e.preventDefault()
+                                        toast.error('Assine um plano para liberar o acesso.')
+                                        return
+                                    }
+                                    setSidebarOpen(false)
+                                }}
+                                title={isCollapsed ? item.label : ""}
+                                className={({ isActive }) =>
+                                    `flex items-center rounded-xl text-[14px] font-semibold transition-all duration-200 group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} 
+                                    ${isActive
+                                        ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100/50'
+                                        : isDisabled 
+                                            ? 'text-slate-300 cursor-not-allowed opacity-50' 
+                                            : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50/80'
+                                    }`
+                                }
+                            >
+                                <item.icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 shrink-0 ${sidebarOpen ? 'animate-in fade-in slide-in-from-left-2' : ''}`} />
+                                {!isCollapsed && (
+                                    <div className="flex-1 flex items-center justify-between min-w-0">
+                                        <span className="whitespace-nowrap animate-in fade-in duration-300 truncate">{item.label}</span>
+                                        {isDisabled && <ShieldCheck className="w-3.5 h-3.5 text-slate-300" />}
+                                    </div>
+                                )}
+                            </NavLink>
+                        )
+                    })}
                 </nav>
 
-                {/* Trial Badge */}
-                {user?.plan_id === 'trial' && !user?.trial_expired && (
+                {/* Trial Badge/Lock */}
+                {user?.plan_id === 'trial' && (
                     <div className={`mx-3 mb-2 ${isCollapsed ? 'px-1' : 'px-3'}`}>
-                        <div className={`flex items-center gap-2 bg-amber-50 border border-amber-200/60 rounded-xl text-amber-700 ${isCollapsed ? 'justify-center p-2' : 'px-3 py-2'}`}>
-                            <Clock className="w-4 h-4 shrink-0" />
+                        <div className={`flex items-center gap-2 rounded-xl transition-all ${isCollapsed ? 'justify-center p-2' : 'px-3 py-2'} ${user.trial_expired && !user.is_admin
+                            ? 'bg-red-50 border border-red-200/60 text-red-700'
+                            : 'bg-amber-50 border border-amber-200/60 text-amber-700'
+                            }`}>
+                            {user.trial_expired && !user.is_admin ? <ShieldCheck className="w-4 h-4 shrink-0" /> : <Clock className="w-4 h-4 shrink-0" />}
                             {!isCollapsed && (
                                 <span className="text-xs font-bold whitespace-nowrap">
-                                    Teste: {user.trial_days_remaining ?? 0} {(user.trial_days_remaining ?? 0) === 1 ? 'dia' : 'dias'}
+                                    {user.trial_expired && !user.is_admin 
+                                        ? 'Trial Expirado' 
+                                        : `Teste: ${user.trial_days_remaining ?? 0} ${(user.trial_days_remaining ?? 0) === 1 ? 'dia' : 'dias'}`
+                                    }
                                 </span>
                             )}
                         </div>

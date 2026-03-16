@@ -14,6 +14,7 @@ import { Toaster } from 'react-hot-toast'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import MovementsPage from './pages/MovementsPage'
+import SuperAdminPage from './pages/SuperAdminPage'
 import ErrorPage from './pages/ErrorPage'
 import './index.css'
 
@@ -118,6 +119,10 @@ const router = createBrowserRouter([
       {
         path: "/perfil",
         element: <ProfilePage />,
+      },
+      {
+        path: "/super-admin",
+        element: <SuperAdminPage />,
       },
     ],
   },

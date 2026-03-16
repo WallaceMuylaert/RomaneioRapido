@@ -107,6 +107,14 @@ export default function ProfilePage() {
     const [paymentError, setPaymentError] = useState<string | undefined>(undefined)
 
     useEffect(() => {
+        const params = new URLSearchParams(window.location.search)
+        const tabParam = params.get('tab')
+        if (tabParam === 'subscription') {
+            setActiveTab('subscription')
+        } else if (user?.plan_id === 'trial' && user?.trial_expired && !user?.is_admin) {
+            setActiveTab('subscription')
+        }
+
         if (user) {
             setForm(prev => ({
                 ...prev,

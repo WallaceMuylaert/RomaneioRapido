@@ -1,6 +1,6 @@
 import { useAuth } from '../context/AuthContext'
 import { PLANS } from '../constants/plans'
-import { Crown, ArrowUpRight, Clock } from 'lucide-react'
+import { Crown, ArrowUpRight, Clock, ShieldAlert } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export default function TrialExpiredBanner() {
@@ -60,9 +60,9 @@ export default function TrialExpiredBanner() {
                     ))}
                 </div>
 
-                <div className="px-6 pb-6">
-                    <p className="text-[11px] font-medium text-slate-400 text-center leading-relaxed">
-                        Você ainda pode visualizar seus dados. Para criar, editar ou excluir itens, é necessário assinar um plano.
+                <div className="px-6 pb-6 pt-2">
+                    <p className="text-[11px] font-bold text-red-500 text-center leading-relaxed flex items-center justify-center gap-1.5 uppercase tracking-wider">
+                        <ShieldAlert className="w-3.5 h-3.5" /> Acesso bloqueado até a regularização.
                     </p>
                 </div>
             </div>
