@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
     X, 
     ShieldCheck, 
@@ -20,6 +20,7 @@ interface User {
     is_active: boolean
     is_admin: boolean
     trial_days?: number
+    created_at?: string
 }
 
 interface UserManagementModalProps {
@@ -39,10 +40,54 @@ export default function UserManagementModal({
 }: UserManagementModalProps) {
     const [newPassword, setNewPassword] = useState('')
     const [isResettingPassword, setIsResettingPassword] = useState(false)
+    
+    // Local state for buffered changes
+    const [localPlan, setLocalPlan] = useState(user.plan_id)
+    const [localIsActive, setLocalIsActive] = useState(user.is_active)
+    const [localIsAdmin, setLocalIsAdmin] = useState(user.is_admin)
+    const [localTrialDays, setLocalTrialDays] = useState(user.trial_days || 7)
+
+    // Reset local state when modal opens with a different user
+    useEffect(() => {
+        setLocalPlan(user.plan_id)
+        setLocalIsActive(user.is_active)
+        setLocalIsAdmin(user.is_admin)
+        setLocalTrialDays(user.trial_days || 7)
+        setIsResettingPassword(false)
+        setNewPassword('')
+    }, [user.id, isOpen])
 
     if (!isOpen) return null
 
-    const plans = ['trial', 'basic', 'plus', 'pro', 'enterprise']
+    const plans = ['trial', 'basic', 'plus', 'pro', 'enterprise', 'api']
+
+    const hasChanges = 
+        localPlan !== user.plan_id || 
+        localIsActive !== user.is_active || 
+        localIsAdmin !== user.is_admin || 
+        localTrialDays !== (user.trial_days || 7)
+
+    const handleSaveChanges = async () => {
+        if (!hasChanges) return
+        
+        // Em um cenário ideal, o backend aceitaria um objeto completo. 
+        // Aqui vamos disparar as atualizações necessárias.
+        if (localPlan !== user.plan_id) await onUpdate('plan_id', localPlan)
+        if (localIsActive !== user.is_active) await onUpdate('is_active', localIsActive)
+        if (localIsAdmin !== user.is_admin) await onUpdate('is_admin', localIsAdmin)
+        if (localTrialDays !== (user.trial_days || 7)) await onUpdate('trial_days', localTrialDays)
+        
+        toast.success('Alterações salvas com sucesso!')
+    }
+
+    const calculateExpiryDate = () => {
+        if (!user.created_at) return null
+        const created = new Date(user.created_at)
+        created.setDate(created.getDate() + localTrialDays)
+        return created
+    }
+
+    const expiryDate = calculateExpiryDate()
 
     const handlePasswordReset = async () => {
         if (newPassword.length < 8) {
@@ -101,16 +146,16 @@ export default function UserManagementModal({
                                 {plans.map((p) => (
                                     <button
                                         key={p}
-                                        onClick={() => onUpdate('plan_id', p)}
+                                        onClick={() => setLocalPlan(p)}
                                         disabled={updating}
                                         className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-between border ${
-                                            user.plan_id === p 
+                                            localPlan === p 
                                             ? 'bg-brand-600 text-white border-brand-600 shadow-lg shadow-brand-500/20' 
                                             : 'bg-white text-slate-600 border-slate-100 hover:border-brand-200'
                                         }`}
                                     >
-                                        <span className="uppercase">{p}</span>
-                                        {user.plan_id === p && <CheckCircle2 className="w-4 h-4" />}
+                                        <span className="uppercase">{p === 'api' ? 'Acesso API' : p}</span>
+                                        {localPlan === p && <CheckCircle2 className="w-4 h-4" />}
                                     </button>
                                 ))}
                             </div>
@@ -121,30 +166,30 @@ export default function UserManagementModal({
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status do Acesso</label>
                                 <button
-                                    onClick={() => onUpdate('is_active', !user.is_active)}
+                                    onClick={() => setLocalIsActive(!localIsActive)}
                                     disabled={updating}
                                     className={`w-full p-4 rounded-3xl border transition-all flex items-center gap-4 ${
-                                        user.is_active 
+                                        localIsActive 
                                         ? 'bg-emerald-50 border-emerald-100 text-emerald-700' 
                                         : 'bg-red-50 border-red-100 text-red-600'
                                     }`}
                                 >
-                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${user.is_active ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
-                                        {user.is_active ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${localIsActive ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
+                                        {localIsActive ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
                                     </div>
                                     <div className="text-left">
                                         <p className="text-sm font-black uppercase text-current">
-                                            {user.is_active ? 'Conta Ativa' : 'Conta Bloqueada'}
+                                            {localIsActive ? 'Conta Ativa' : 'Conta Bloqueada'}
                                         </p>
                                         <p className="text-[10px] font-medium opacity-70">
-                                            {user.is_active ? 'O usuário possui acesso normal.' : 'O usuário não consegue fazer login.'}
+                                            {localIsActive ? 'O usuário possui acesso normal.' : 'O usuário não consegue fazer login.'}
                                         </p>
                                     </div>
                                 </button>
                             </div>
 
                             {/* TRIAL DAYS SETTING */}
-                            {user.plan_id === 'trial' && (
+                            {localPlan === 'trial' && (
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dias de Teste (Trial)</label>
                                     <div className="flex items-center gap-3">
@@ -154,8 +199,8 @@ export default function UserManagementModal({
                                                 type="number"
                                                 min="1"
                                                 max="365"
-                                                value={user.trial_days || 7}
-                                                onChange={(e) => onUpdate('trial_days', parseInt(e.target.value))}
+                                                value={localTrialDays}
+                                                onChange={(e) => setLocalTrialDays(parseInt(e.target.value) || 0)}
                                                 disabled={updating}
                                                 className="w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 transition-all font-mono"
                                             />
@@ -164,8 +209,10 @@ export default function UserManagementModal({
                                             Dias
                                         </div>
                                     </div>
-                                    <p className="text-[9px] font-semibold text-slate-400 ml-1">
-                                        * Alterar este valor recalcula a expiração com base na data de criação da conta.
+                                    <p className="text-[9px] font-semibold text-slate-500 ml-1">
+                                        {expiryDate && (
+                                            <>Vencimento previsto: <span className="font-black text-brand-600">{expiryDate.toLocaleDateString('pt-BR')}</span></>
+                                        )}
                                     </p>
                                 </div>
                             )}
@@ -174,23 +221,23 @@ export default function UserManagementModal({
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Permissões Admin</label>
                                 <button
-                                    onClick={() => onUpdate('is_admin', !user.is_admin)}
+                                    onClick={() => setLocalIsAdmin(!localIsAdmin)}
                                     disabled={updating}
                                     className={`w-full p-4 rounded-3xl border transition-all flex items-center gap-4 ${
-                                        user.is_admin 
+                                        localIsAdmin 
                                         ? 'bg-orange-50 border-orange-100 text-orange-700' 
                                         : 'bg-slate-50 border-slate-100 text-slate-500'
                                     }`}
                                 >
-                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${user.is_admin ? 'bg-orange-500 text-white' : 'bg-slate-300 text-white'}`}>
+                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${localIsAdmin ? 'bg-orange-500 text-white' : 'bg-slate-300 text-white'}`}>
                                         <ShieldCheck className="w-5 h-5" />
                                     </div>
                                     <div className="text-left">
                                         <p className="text-sm font-black uppercase text-current">
-                                            {user.is_admin ? 'Super Admin' : 'Usuário Comum'}
+                                            {localIsAdmin ? 'Super Admin' : 'Usuário Comum'}
                                         </p>
                                         <p className="text-[10px] font-medium opacity-70">
-                                            {user.is_admin ? 'Acesso total às configurações.' : 'Acesso limitado ao painel operacional.'}
+                                            {localIsAdmin ? 'Acesso total às configurações.' : 'Acesso limitado ao painel operacional.'}
                                         </p>
                                     </div>
                                 </button>
@@ -265,12 +312,29 @@ export default function UserManagementModal({
                 </div>
 
                 {/* FOOTER */}
-                <div className="px-8 py-6 bg-slate-50 flex justify-end">
+                <div className="px-8 py-6 bg-slate-50 flex items-center justify-between border-t border-slate-100">
                     <button
                         onClick={onClose}
-                        className="px-8 h-12 rounded-2xl font-bold bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition-all shadow-sm"
+                        className="px-6 h-12 rounded-2xl font-bold text-slate-500 hover:text-slate-800 transition-all"
                     >
-                        Fechar
+                        Descartar
+                    </button>
+
+                    <button
+                        onClick={handleSaveChanges}
+                        disabled={!hasChanges || updating}
+                        className={`px-10 h-12 rounded-2xl font-bold flex items-center gap-3 transition-all ${
+                            hasChanges && !updating
+                            ? 'bg-brand-600 text-white shadow-xl shadow-brand-500/20 hover:scale-[1.02] active:scale-95' 
+                            : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        }`}
+                    >
+                        {updating ? (
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            <CheckCircle2 className="w-5 h-5" />
+                        )}
+                        {updating ? 'Salvando...' : 'Salvar Alterações'}
                     </button>
                 </div>
             </div>
