@@ -25,6 +25,7 @@ import type { CartItem } from '../components/RomaneioExportModal'
 import { isIntegerUnit } from '../utils/units'
 import ClientModal from '../components/ClientModal'
 import ConfirmModal from '../components/ConfirmModal'
+import DiscountCalculatorModal from '../components/DiscountCalculatorModal'
 
 interface Product {
     id: number
@@ -139,6 +140,9 @@ export default function RomaneioPage() {
         onConfirm: () => { }
     })
 
+    // Desconto
+    const [showDiscountModal, setShowDiscountModal] = useState(false)
+    const [discountPercentage, setDiscountPercentage] = useState<number>(0)
 
     // Estado para feedback em tempo real do scanner
     const [scanStatus, setScanStatus] = useState<'idle' | 'searching' | 'success' | 'error'>('idle')
@@ -656,7 +660,13 @@ const executeFinalize = async () => {
     setSubmitting(true)
     try {
         const romaneioBatchId = `ROM-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+        const currentSubtotal = cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+        const currentDiscountAmount = currentSubtotal * (discountPercentage / 100);
+        
         for (const item of cartItems) {
+            const itemTotal = item.price * item.quantity;
+            const itemDiscount = currentSubtotal > 0 ? (itemTotal / currentSubtotal) * currentDiscountAmount : 0;
+            
             await api.post('/inventory/movements', {
                 product_id: item.id,
                 quantity: item.quantity,
@@ -667,7 +677,8 @@ const executeFinalize = async () => {
                 product_name_snapshot: item.name,
                 product_barcode_snapshot: item.barcode,
                 unit_price_snapshot: item.price,
-                unit_snapshot: item.unit
+                unit_snapshot: item.unit,
+                discount_snapshot: Number(itemDiscount.toFixed(2))
             })
         }
         setShowExportModal(true)
@@ -687,7 +698,12 @@ const resetCart = () => {
     setSelectedClientId(null)
     setShowExportModal(false)
     setBarcodeInput('')
+    setDiscountPercentage(0)
 }
+
+const romaneioSubtotal = cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+const discountAmount = romaneioSubtotal * (discountPercentage / 100);
+const romaneioTotal = romaneioSubtotal - discountAmount;
 
 const filteredAndSortedStock = useMemo(() => {
     let result = [...stockLevels]
@@ -881,9 +897,29 @@ return (
                                 <span className="text-sm text-slate-400">Unidades Totais</span>
                                 <span className="text-sm font-bold text-white">{cartItems.reduce((acc, i) => acc + i.quantity, 0)}</span>
                             </div>
+                            <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
+                                <span className="text-sm font-bold text-slate-300">Subtotal</span>
+                                <span className="text-sm font-black text-slate-200">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(romaneioSubtotal)}</span>
+                            </div>
+                            
+                            <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
+                                <span className="text-sm text-slate-400">Desconto {discountPercentage > 0 ? `(${discountPercentage.toFixed(2)}%)` : ''}</span>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-sm font-bold text-red-400">
+                                        {discountAmount > 0 ? `- ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(discountAmount)}` : 'R$ 0,00'}
+                                    </span>
+                                    <button
+                                        onClick={() => setShowDiscountModal(true)}
+                                        className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 rounded-lg transition-colors border border-slate-600"
+                                    >
+                                        Alterar
+                                    </button>
+                                </div>
+                            </div>
+
                             <div className="flex justify-between items-center pb-4">
                                 <span className="text-sm font-bold text-slate-300">Valor Total</span>
-                                <span className="text-xl font-black text-emerald-400">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0))}</span>
+                                <span className="text-xl font-black text-emerald-400">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(romaneioTotal)}</span>
                             </div>
                         </div>
                         <div className="flex flex-col gap-3">
@@ -1080,7 +1116,8 @@ return (
             </div>
         )}
 
-        {showExportModal && <RomaneioExportModal isOpen={showExportModal} onClose={resetCart} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} />}
+        {showExportModal && <RomaneioExportModal isOpen={showExportModal} onClose={resetCart} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} discount={discountAmount} />}
+        <DiscountCalculatorModal isOpen={showDiscountModal} subtotal={romaneioSubtotal} currentPercentage={discountPercentage} onClose={() => setShowDiscountModal(false)} onApply={(_, pct) => { setDiscountPercentage(pct); if (pct > 0) { toast.success(`Desconto de ${pct.toFixed(2)}% aplicado!`) } else { toast.success('Desconto removido!') } }} />
         <ClientModal isOpen={clientModalOpen} onClose={() => setClientModalOpen(false)} onSuccess={(newClient) => { setCustomerName(newClient.name); setSelectedClientId(newClient.id); setCustomerPhone(newClient.phone); }} />
         {cameraOpen && <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setCameraOpen(false)} status={scanStatus} />}
         {stockValidationError && (
