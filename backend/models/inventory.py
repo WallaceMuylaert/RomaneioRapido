@@ -29,6 +29,7 @@ class InventoryMovement(Base):
     unit_snapshot = Column(String, nullable=True)
     product_color_snapshot = Column(String, nullable=True)
     product_size_snapshot = Column(String, nullable=True)
+    discount_snapshot = Column(Float, nullable=True, default=0.0)
     romaneio_id = Column(String, nullable=True, index=True)
 
     product = relationship("Product", back_populates="movements")

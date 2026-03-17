@@ -18,7 +18,7 @@ logger = get_dynamic_logger("api_keys")
 
 router = APIRouter(prefix="/api-keys")
 
-ALLOWED_PLANS = {"plus", "pro", "enterprise"}
+ALLOWED_PLANS = {"api", "enterprise"}
 
 
 def _require_api_key_plan(user: User):
@@ -26,7 +26,7 @@ def _require_api_key_plan(user: User):
     if user.plan_id not in ALLOWED_PLANS:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Seu plano não permite a geração de chaves de API. Faça upgrade para o plano Plus ou superior.",
+            detail="Seu plano não permite a geração de chaves de API. Faça upgrade para o plano API Especialista ou superior.",
         )
 
 

@@ -34,9 +34,10 @@ interface RomaneioExportModalProps {
     title?: string
     onClose: () => void
     onPhoneUpdated?: (newPhone: string) => void
+    discount?: number
 }
 
-export default function RomaneioExportModal({ isOpen, clientId, customerName, customerPhone, items, createdAt, title, onClose, onPhoneUpdated }: RomaneioExportModalProps) {
+export default function RomaneioExportModal({ isOpen, clientId, customerName, customerPhone, items, createdAt, title, onClose, onPhoneUpdated, discount = 0 }: RomaneioExportModalProps) {
     if (!isOpen) return null
     const { user } = useAuth()
 
@@ -91,7 +92,8 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
         .map(([unit, qty]) => `${formatQuantity(qty)} ${unit}`)
         .join(' | ');
 
-    const totalValue = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+    const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+    const totalValue = subtotal - discount
     const dateStr = createdAt ? new Date(createdAt).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR')
 
     const formatCurrency = (val: number) => {
@@ -130,6 +132,10 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
         })
 
         text += `*Total Itens:* ${totalItemsSummary}\n`
+        text += `*SUBTOTAL:* ${formatCurrency(subtotal)}\n`
+        if (discount > 0) {
+            text += `*DESCONTO:* -${formatCurrency(discount)}\n`
+        }
         text += `*VALOR TOTAL:* ${formatCurrency(totalValue)}\n\n`
         if (user?.pix_key) {
             text += `*PAGAMENTO VIA PIX*\nChave: ${user.pix_key}\n\n`
@@ -223,7 +229,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                         border-bottom: 2px solid #f3f4f6;
                     }
                     .logo-area { display: flex; align-items: center; gap: 12px; }
-                    .logo-icon { width: 36px; height: 36px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 18px; }
+                    .logo-img { height: 40px; width: auto; object-fit: contain; }
                     .logo-text { font-size: 16px; font-weight: 700; color: #111827; }
                     
                     .doc-info { text-align: right; }
@@ -272,6 +278,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                     .totals-area { text-align: right; }
                     .total-label { font-size: 13px; color: #6b7280; font-weight: 500; }
                     .total-value { font-size: 24px; font-weight: 800; color: #111827; margin-top: 4px; }
+                    .discount-label { font-size: 14px; color: #ef4444; font-weight: 600; margin-top: 4px; }
                     .total-items { font-size: 11px; color: #9ca3af; font-weight: 600; margin-top: 4px; }
 
                     .footer { 
@@ -288,7 +295,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                 
                 <div class="header">
                     <div class="logo-area">
-                        <div class="logo-icon">R</div>
+                        ${logoBase64 ? `<img src="${logoBase64}" class="logo-img" />` : '<div style="width: 36px; height: 36px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 18px;">R</div>'}
                         <div class="logo-text">Romaneio Rápido</div>
                     </div>
                     <div class="doc-info">
@@ -344,7 +351,11 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                     </div>
 
                     <div class="totals-area">
-                        <div class="total-label">Total do Romaneio</div>
+                        <div class="total-label">Subtotal</div>
+                        <div style="font-size: 16px; font-weight: 700; color: #374151;">${formatCurrency(subtotal)}</div>
+                        ${discount > 0 ? `<div class="discount-label">Desconto: -${formatCurrency(discount)}</div>` : ''}
+                        
+                        <div class="total-label" style="margin-top: 12px;">Total do Romaneio</div>
                         <div class="total-value">${formatCurrency(totalValue)}</div>
                         <div class="total-items">Volume Total: ${totalItemsSummary}</div>
                     </div>
@@ -411,6 +422,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                     .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
                     
                     .header { margin-bottom: 10px; }
+                    .brand-logo { height: 40px; width: auto; object-fit: contain; margin-bottom: 5px; }
                     .brand-name { font-size: 16px; font-weight: bold; margin-bottom: 2px; }
                     .brand-sub { font-size: 10px; }
 
@@ -425,6 +437,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                     
                     .total-block { margin-top: 10px; font-size: 12px; }
                     .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+                    .discount-row { display: flex; justify-content: space-between; margin-bottom: 2px; color: #444; }
                     .grand-total { font-size: 16px; margin-top: 6px; border-top: 1px solid #000; padding-top: 6px; }
 
                     .pix-section { margin-top: 15px; text-align: center; border: 1px solid #000; padding: 8px; }
@@ -443,6 +456,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                 </div>
 
                 <div class="header center">
+                    ${logoBase64 ? `<img src="${logoBase64}" class="brand-logo" />` : ''}
                     <div class="brand-name">ROMANEIO RÁPIDO</div>
                     <div class="brand-sub">Comprovante de Separação</div>
                 </div>
@@ -485,6 +499,16 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                         <span>VOLUMES:</span>
                         <span class="bold">${totalItemsSummary}</span>
                     </div>
+                    <div class="total-row">
+                        <span>SUBTOTAL:</span>
+                        <span>${formatCurrency(subtotal)}</span>
+                    </div>
+                    ${discount > 0 ? `
+                        <div class="discount-row">
+                            <span>DESCONTO:</span>
+                            <span>-${formatCurrency(discount)}</span>
+                        </div>
+                    ` : ''}
                     <div class="total-row grand-total bold">
                         <span>TOTAL:</span>
                         <span>${formatCurrency(totalValue)}</span>

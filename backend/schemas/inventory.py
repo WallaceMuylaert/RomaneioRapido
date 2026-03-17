@@ -15,6 +15,7 @@ class InventoryMovementBase(BaseModel):
     unit_snapshot: Optional[str] = Field(None, max_length=20)
     product_color_snapshot: Optional[str] = Field(None, max_length=50)
     product_size_snapshot: Optional[str] = Field(None, max_length=50)
+    discount_snapshot: Optional[float] = Field(None, ge=0)
     romaneio_id: Optional[str] = Field(None, max_length=100)
     client_id: Optional[int] = None
 

@@ -26,6 +26,8 @@ import { ptBR } from 'date-fns/locale'
 import { toast } from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { Copy } from 'lucide-react'
+import { getBase64FromUrl } from '../utils/imageUtils'
+import logoImg from '../assets/romaneiorapido_logo.png'
 
 interface Movement {
     id: number
@@ -42,6 +44,7 @@ interface Movement {
     product_size_snapshot?: string;
     romaneio_id?: string | number | null
     client_id?: number | null
+    discount_snapshot?: number | null
     product_image: string | null
     product_color?: string | null
     product_size?: string | null
@@ -65,8 +68,13 @@ export default function MovementsPage() {
     const [viewMode, setViewMode] = useState<'movements' | 'romaneios'>('romaneios')
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [sharingMovement, setSharingMovement] = useState<Movement | null>(null)
-    const [exportingMovement, setExportingMovement] = useState<{ clientId: number | null, customerName: string, createdAt: string, phone: string | null, image: string | null, items: CartItem[] } | null>(null)
+    const [exportingMovement, setExportingMovement] = useState<{ clientId: number | null, customerName: string, createdAt: string, phone: string | null, image: string | null, items: CartItem[], discount?: number } | null>(null)
     const [openMenuId, setOpenMenuId] = useState<number | null>(null)
+    const [logoBase64, setLogoBase64] = useState<string>('')
+
+    useEffect(() => {
+        getBase64FromUrl(logoImg).then(setLogoBase64).catch(console.error)
+    }, [])
     
     // Helper para obter o preço efetivo (snapshot ou preço atual do produto)
     const getEffectivePrice = (item: any) => item.unit_price_snapshot ?? item.product_price ?? 0
@@ -226,6 +234,17 @@ export default function MovementsPage() {
                         line-height: 1.5;
                         background: #fff;
                     }
+                    .watermark-container { 
+                        position: fixed; 
+                        top: 0; left: 0; width: 100%; height: 100%; 
+                        display: flex; align-items: center; justify-content: center; 
+                        pointer-events: none; z-index: -1; 
+                    }
+                    .watermark-logo { 
+                        width: 500px; 
+                        opacity: 0.04; 
+                        transform: rotate(-35deg); 
+                    }
                     .header { 
                         display: flex; 
                         justify-content: space-between; 
@@ -235,7 +254,7 @@ export default function MovementsPage() {
                         padding-bottom: 24px; 
                     }
                     .brand { display: flex; align-items: center; gap: 12px; }
-                    .brand-logo { width: 40px; height: 40px; background: #2563eb; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 20px; }
+                    .brand-logo { height: 40px; width: auto; object-fit: contain; }
                     .brand-name { font-size: 18px; font-weight: 800; color: #111827; letter-spacing: -0.025em; }
                     
                     .report-title-container { text-align: right; }
@@ -327,9 +346,12 @@ export default function MovementsPage() {
                 </style>
             </head>
             <body>
+                <div class="watermark-container">
+                    ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
+                </div>
                 <div class="header">
                     <div class="brand">
-                        <div class="brand-logo">R</div>
+                        ${logoBase64 ? `<img src="${logoBase64}" class="brand-logo" />` : '<div style="width: 40px; height: 40px; background: #2563eb; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 20px;">R</div>'}
                         <div class="brand-name">Romaneio Rápido</div>
                     </div>
                     <div class="report-title-container">
@@ -838,7 +860,8 @@ export default function MovementsPage() {
                                                                                         image: i.product_image,
                                                                                         color: i.product_color_snapshot || null,
                                                                                         size: i.product_size_snapshot || null
-                                                                                    }))
+                                                                                    })),
+                                                                                    discount: gm.items.reduce((acc: number, item: any) => acc + (item.discount_snapshot || 0), 0)
                                                                                 })
                                                                             } else {
                                                                                 setExportingMovement({
@@ -858,7 +881,8 @@ export default function MovementsPage() {
                                                                                         image: m.product_image,
                                                                                         color: m.product_color_snapshot || null,
                                                                                         size: m.product_size_snapshot || null
-                                                                                    }]
+                                                                                    }],
+                                                                                    discount: m.discount_snapshot || 0
                                                                                 })
                                                                             }
                                                                             setOpenMenuId(null)
@@ -951,7 +975,8 @@ export default function MovementsPage() {
                                 image: sharingMovement.product_image,
                                 color: sharingMovement.product_color_snapshot || null,
                                 size: sharingMovement.product_size_snapshot || null
-                            }]
+                            }],
+                            discount: sharingMovement.discount_snapshot || 0
                         })
                         setSharingMovement(null)
                     }}
@@ -966,6 +991,7 @@ export default function MovementsPage() {
                     customerPhone={exportingMovement.phone}
                     items={exportingMovement.items}
                     createdAt={exportingMovement.createdAt}
+                    discount={exportingMovement.discount}
                     title="Exportar Romaneio"
                     onClose={() => setExportingMovement(null)}
                 />

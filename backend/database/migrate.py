@@ -105,6 +105,16 @@ def add_column_if_not_exists(table_name, column_name, column_type, nullable=True
                 except Exception as e:
                     print(f"  ⚠️ Could not set NOT NULL for {column_name}: {e}")
             
+            # Preenchimento de defaults para colunas específicas mesmo que sejam NULLABLE
+            if column_name == 'trial_days':
+                print(f"  [⚡] Filling existing rows for 'trial_days' with default (7)...")
+                conn.execute(text(f"UPDATE {table_name} SET trial_days = 7 WHERE trial_days IS NULL;"))
+                conn.commit()
+            elif column_name == 'discount_snapshot':
+                print(f"  [⚡] Filling existing rows for 'discount_snapshot' with default (0)...")
+                conn.execute(text(f"UPDATE {table_name} SET discount_snapshot = 0 WHERE discount_snapshot IS NULL;"))
+                conn.commit()
+            
             return True
         return False
 
