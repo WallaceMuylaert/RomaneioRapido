@@ -68,14 +68,13 @@ export const PLANS: Plan[] = [
             'Até 200 produtos (SKU)',
             'Até 20 categorias',
             'Suporte técnico prioritário',
-            'Acesso API (2 chaves, 60 req/min)',
             'Impressão de romaneios otimizada'
         ],
-        highlight: true,
+        highlight: false,
         limit_products: 200,
         limit_categories: 20,
-        limit_api_keys: 2,
-        api_rate_limit: '60/minuto',
+        limit_api_keys: 0,
+        api_rate_limit: '0/minuto',
         color: 'blue'
     },
     {
@@ -88,15 +87,34 @@ export const PLANS: Plan[] = [
             'Produtos ilimitados (300+ SKU)',
             'Categorias infinitas',
             'Suporte VIP 24/7',
-            'Acesso API Avançado (5 chaves, 120 req/min)',
             'Performance e prioridade máxima'
         ],
         highlight: false,
         limit_products: 999999,
         limit_categories: 999999,
-        limit_api_keys: 5,
-        api_rate_limit: '120/minuto',
+        limit_api_keys: 0,
+        api_rate_limit: '0/minuto',
         color: 'purple'
+    },
+    {
+        id: 'api',
+        name: 'API Especialista',
+        price: 'R$ 499',
+        period: '/mês',
+        description: 'Acesso total via API para integrações personalizadas e automação.',
+        features: [
+            'Produtos ilimitados (300+ SKU)',
+            'Categorias infinitas',
+            'Acesso API Total (10 chaves, 500 req/min)',
+            'Suporte técnico especializado API',
+            'A integração da api pode ser realizada pelo cliente ou por nos com o valor a combinar'
+        ],
+        highlight: true,
+        limit_products: 999999,
+        limit_categories: 999999,
+        limit_api_keys: 10,
+        api_rate_limit: '500/minuto',
+        color: 'brand'
     },
     {
         id: 'enterprise',
