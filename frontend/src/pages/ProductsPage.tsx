@@ -18,11 +18,14 @@ import {
     MoreVertical,
     ArrowDownUp,
     ChevronUp,
-    ChevronDown
+    ChevronDown,
+    Download
 } from 'lucide-react'
 import BarcodeScanner from '../components/BarcodeScanner'
 import ImageCropper from '../components/ImageCropper'
 import ConfirmModal from '../components/ConfirmModal'
+import { getBase64FromUrl } from '../utils/imageUtils'
+import logoImg from '../assets/romaneiorapido_logo.png'
 
 const applyCurrencyMask = (value: string) => {
     const cleaned = value.replace(/\D/g, "");
@@ -109,6 +112,15 @@ export default function ProductsPage() {
         size: ''
     })
 
+    const [colorFilter, setColorFilter] = useState('')
+    const [sizeFilter, setSizeFilter] = useState('')
+    const [categoryFilter, setCategoryFilter] = useState('')
+    const [logoBase64, setLogoBase64] = useState<string>('')
+
+    useEffect(() => {
+        getBase64FromUrl(logoImg).then(setLogoBase64).catch(console.error)
+    }, [])
+
 
     const fetchProducts = async (p: number = page) => {
         try {
@@ -119,6 +131,9 @@ export default function ProductsPage() {
                 order: sortOrder
             }
             if (search) params.search = search
+            if (colorFilter) params.color = colorFilter
+            if (sizeFilter) params.size = sizeFilter
+            if (categoryFilter) params.category_id = categoryFilter
             const res = await api.get('/products/', { params })
             setProducts(res.data.items)
             setTotalPages(res.data.pages)
@@ -198,7 +213,7 @@ export default function ProductsPage() {
             fetchProducts(1)
         }, 300)
         return () => clearTimeout(timeout)
-    }, [search])
+    }, [search, colorFilter, sizeFilter, categoryFilter])
 
     const handleSearchKeyDown = (e: React.KeyboardEvent) => {
         if (products.length === 0) return
@@ -405,6 +420,242 @@ export default function ProductsPage() {
         )
     }
 
+    const handleExportStockPDF = async () => {
+        try {
+            toast.loading('Gerando relatório...', { id: 'report' });
+            
+            // Buscar todos os produtos com os filtros atuais (sem paginação limitando)
+            const params: any = {
+                page: 1,
+                per_page: 1000, // Limite alto para o relatório
+                sort_by: sortBy,
+                order: sortOrder
+            }
+            if (search) params.search = search
+            if (colorFilter) params.color = colorFilter
+            if (sizeFilter) params.size = sizeFilter
+            if (categoryFilter) params.category_id = categoryFilter
+
+            const res = await api.get('/products/', { params })
+            const allProducts: Product[] = res.data.items
+
+            const printWindow = window.open('', '', 'width=900,height=800');
+            if (!printWindow) {
+                toast.error('Bloqueador de popup impediu a abertura do relatório.', { id: 'report' });
+                return;
+            }
+
+            const now = new Date();
+            const timestamp = now.toISOString().replace(/T/, '_').replace(/:/g, '-').split('.')[0];
+            const filename = `Relatorio_Estoque_${timestamp}`;
+
+            const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+            const html = `
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${filename}</title>
+                    <link rel="preconnect" href="https://fonts.googleapis.com">
+                    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body { 
+                            font-family: 'Inter', -apple-system, sans-serif; 
+                            padding: 50px; 
+                            color: #1f2937; 
+                            line-height: 1.5;
+                            background: #fff;
+                        }
+                        .watermark-container { 
+                            position: fixed; 
+                            top: 0; left: 0; width: 100%; height: 100%; 
+                            display: flex; align-items: center; justify-content: center; 
+                            pointer-events: none; z-index: -1; 
+                        }
+                        .watermark-logo { 
+                            width: 500px; 
+                            opacity: 0.04; 
+                            transform: rotate(-35deg); 
+                        }
+                        .header { 
+                            display: flex; 
+                            justify-content: space-between; 
+                            align-items: center; 
+                            margin-bottom: 40px; 
+                            border-bottom: 1px solid #e5e7eb; 
+                            padding-bottom: 24px; 
+                        }
+                        .brand { display: flex; align-items: center; gap: 12px; }
+                        .brand-logo { height: 40px; width: auto; object-fit: contain; }
+                        .brand-name { font-size: 18px; font-weight: 800; color: #111827; letter-spacing: -0.025em; }
+                        
+                        .report-title-container { text-align: right; }
+                        .report-title { font-size: 24px; font-weight: 900; color: #111827; letter-spacing: -0.025em; margin-bottom: 4px; }
+                        .report-period { font-size: 14px; color: #6b7280; font-weight: 500; }
+
+                        .stats-grid { 
+                            display: grid; 
+                            grid-template-columns: repeat(2, 1fr); 
+                            gap: 20px; 
+                            margin-bottom: 40px; 
+                        }
+                        .stat-card { 
+                            padding: 24px; 
+                            border-radius: 16px; 
+                            background: #f9fafb; 
+                            border: 1px solid #f3f4f6;
+                        }
+                        .stat-label { 
+                            font-size: 12px; 
+                            font-weight: 700; 
+                            text-transform: uppercase; 
+                            letter-spacing: 0.05em; 
+                            color: #6b7280; 
+                            margin-bottom: 8px; 
+                        }
+                        .stat-value { 
+                            font-size: 32px; 
+                            font-weight: 800; 
+                            color: #111827; 
+                            letter-spacing: -0.025em;
+                        }
+
+                        .section-title { 
+                            font-size: 14px; 
+                            font-weight: 800; 
+                            text-transform: uppercase; 
+                            letter-spacing: 0.05em; 
+                            color: #111827; 
+                            margin-bottom: 16px; 
+                            padding-left: 4px;
+                            border-left: 4px solid #10b981;
+                        }
+
+                        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 40px; }
+                        th { 
+                            text-align: left; 
+                            font-size: 11px; 
+                            font-weight: 700; 
+                            text-transform: uppercase; 
+                            color: #6b7280; 
+                            padding: 12px 16px; 
+                            background: #f9fafb;
+                            border-bottom: 1px solid #e5e7eb;
+                        }
+                        th:first-child { border-top-left-radius: 8px; }
+                        th:last-child { border-top-right-radius: 8px; }
+                        
+                        td { 
+                            padding: 12px 16px; 
+                            font-size: 13px; 
+                            border-bottom: 1px solid #f3f4f6; 
+                            vertical-align: middle;
+                        }
+                        .row-main { font-weight: 600; color: #111827; }
+                        .row-sub { font-size: 10px; color: #9ca3af; text-transform: uppercase; font-weight: 700; margin-top: 2px; }
+                        .variant-info { font-size: 11px; color: #6b7280; font-weight: 600; }
+                        .row-qty { font-weight: 700; color: #111827; text-align: center; }
+                        .row-val { font-weight: 700; color: #4b5563; text-align: right; }
+                        .row-total { font-weight: 800; color: #111827; text-align: right; }
+
+                        .footer { 
+                            margin-top: 60px; 
+                            padding-top: 24px;
+                            border-top: 1px solid #f3f4f6;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            font-size: 11px; 
+                            color: #9ca3af; 
+                            font-weight: 500;
+                        }
+                        
+                        @media print {
+                            body { padding: 30px; }
+                            .stat-card { background: #f9fafb !important; -webkit-print-color-adjust: exact; }
+                            th { background: #f9fafb !important; -webkit-print-color-adjust: exact; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="watermark-container">
+                        ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
+                    </div>
+                    <div class="header">
+                        <div class="brand">
+                            ${logoBase64 ? `<img src="${logoBase64}" class="brand-logo" />` : '<div style="width: 40px; height: 40px; background: #10b981; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 20px;">R</div>'}
+                            <div class="brand-name">Romaneio Rápido</div>
+                        </div>
+                        <div class="report-title-container">
+                            <div class="report-title">Relatório de Estoque</div>
+                            <div class="report-period">Gerado em ${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR')}</div>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total de Itens</div>
+                            <div class="stat-value">${allProducts.reduce((acc, p) => acc + p.stock_quantity, 0).toFixed(0)}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Valor Total em Estoque</div>
+                            <div class="stat-value" style="color: #10b981;">${formatCurrency(allProducts.reduce((acc, p) => acc + (p.stock_quantity * p.price), 0))}</div>
+                        </div>
+                    </div>
+
+                    <div class="section-title">Listagem de Produtos</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Produto / Referência</th>
+                                <th>Cor/Variação</th>
+                                <th>Tam.</th>
+                                <th style="text-align: center;">Qtd.</th>
+                                <th style="text-align: right;">Preço Unit.</th>
+                                <th style="text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${allProducts.map(p => `
+                                <tr>
+                                    <td>
+                                        <div class="row-main">${p.name}</div>
+                                        <div class="row-sub">${p.barcode || p.sku || 'SEM SKU'}</div>
+                                    </td>
+                                    <td class="variant-info">${p.color || '-'}</td>
+                                    <td class="variant-info">${p.size || '-'}</td>
+                                    <td class="row-qty">${p.stock_quantity} <span style="font-size: 9px; color: #9ca3af;">${p.unit}</span></td>
+                                    <td class="row-val">${formatCurrency(p.price)}</td>
+                                    <td class="row-total">${formatCurrency(p.stock_quantity * p.price)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    <div class="footer">
+                        <div>www.romaneiorapido.com.br</div>
+                        <div>Folha 1 de 1</div>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            printWindow.document.write(html);
+            printWindow.document.close();
+            setTimeout(() => {
+                printWindow.print();
+                toast.dismiss('report');
+            }, 300);
+
+        } catch (err) {
+            console.error('Erro ao gerar relatório:', err);
+            toast.error('Erro ao gerar relatório de estoque.', { id: 'report' });
+        }
+    }
+
     return (
         <div>
             {/* Header */}
@@ -421,6 +672,12 @@ export default function ProductsPage() {
                         <Camera className="w-4 h-4" /> Leitura rápida
                     </button>
                     <button
+                        onClick={() => handleExportStockPDF()}
+                        className="h-9 px-4 text-[13px] font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2"
+                    >
+                        <Download className="w-4 h-4" /> Relatório
+                    </button>
+                    <button
                         onClick={() => openCreate()}
                         className="h-9 px-4 text-[13px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
                     >
@@ -429,17 +686,47 @@ export default function ProductsPage() {
                 </div>
             </div>
 
-            {/* Search */}
-            <div className="relative mb-5">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                <input
-                    type="text"
-                    placeholder="Buscar por nome, código de barras ou SKU..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    onKeyDown={handleSearchKeyDown}
-                    className="w-full h-10 pl-10 pr-4 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-300"
-                />
+            {/* Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+                <div className="md:col-span-2 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                    <input
+                        type="text"
+                        placeholder="Buscar por nome, código de barras ou SKU..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={handleSearchKeyDown}
+                        className="w-full h-10 pl-10 pr-4 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-300"
+                    />
+                </div>
+                <div>
+                    <select
+                        value={categoryFilter}
+                        onChange={(e) => setCategoryFilter(e.target.value)}
+                        className="w-full h-10 px-3 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-medium text-gray-600"
+                    >
+                        <option value="">Todas Categorias</option>
+                        {categories.map(cat => (
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                    <input
+                        type="text"
+                        placeholder="Cor..."
+                        value={colorFilter}
+                        onChange={(e) => setColorFilter(e.target.value)}
+                        className="w-full h-10 px-3 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                    />
+                    <input
+                        type="text"
+                        placeholder="Tam..."
+                        value={sizeFilter}
+                        onChange={(e) => setSizeFilter(e.target.value)}
+                        className="w-full h-10 px-3 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                    />
+                </div>
             </div>
 
             {/* Table */}

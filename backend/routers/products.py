@@ -23,9 +23,11 @@ router = APIRouter(prefix="/products")
 def list_products(
     request: Request,
     page: int = Query(1, ge=1, description="Número da página"),
-    per_page: int = Query(20, ge=1, le=100, description="Itens por página"),
+    per_page: int = Query(20, ge=1, le=2000, description="Itens por página"),
     search: Optional[str] = Query(None, description="Busca por nome, barcode ou SKU"),
     category_id: Optional[int] = Query(None, description="Filtrar por categoria"),
+    color: Optional[str] = Query(None, description="Filtrar por cor"),
+    size: Optional[str] = Query(None, description="Filtrar por tamanho"),
     sort_by: str = Query("name", description="Coluna para ordenação"),
     order: str = Query("asc", description="Ordem: asc ou desc"),
     db: Session = Depends(get_db),
@@ -33,8 +35,8 @@ def list_products(
 ):
     try:
         skip = (page - 1) * per_page
-        total = crud.count_products(db, user_id=current_user.id, search=search, category_id=category_id)
-        items = crud.get_products(db, user_id=current_user.id, skip=skip, limit=per_page, search=search, category_id=category_id, sort_by=sort_by, order=order)
+        total = crud.count_products(db, user_id=current_user.id, search=search, category_id=category_id, color=color, size=size)
+        items = crud.get_products(db, user_id=current_user.id, skip=skip, limit=per_page, search=search, category_id=category_id, color=color, size=size, sort_by=sort_by, order=order)
         pages = math.ceil(total / per_page) if total > 0 else 1
         return {
             "items": items,
