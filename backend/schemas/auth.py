@@ -55,6 +55,7 @@ class UserUpdate(BaseModel):
     pix_key: Optional[str] = Field(None, max_length=100)
     plan_id: Optional[str] = Field(None, max_length=50)
     password: Optional[str] = Field(None, min_length=8, max_length=256)
+    trial_days: Optional[int] = Field(7, ge=1, le=365)
     is_active: Optional[bool] = None
     is_admin: Optional[bool] = None
 
@@ -73,6 +74,7 @@ class UserResponse(UserBase):
     is_active: bool
     pix_key: Optional[str] = None
     created_at: Optional[datetime] = None
+    trial_days: Optional[int] = 7
     trial_expired: bool = False
     trial_days_remaining: Optional[int] = None
 

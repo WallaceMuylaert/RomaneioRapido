@@ -41,6 +41,8 @@ def update_user_system(
             user.is_active = update_data.is_active
         if update_data.is_admin is not None:
             user.is_admin = update_data.is_admin
+        if update_data.trial_days is not None:
+            user.trial_days = update_data.trial_days
 
         db.commit()
         db.refresh(user)

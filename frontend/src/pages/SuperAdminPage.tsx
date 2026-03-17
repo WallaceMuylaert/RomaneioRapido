@@ -23,6 +23,7 @@ interface User {
     is_active: boolean
     is_admin: boolean
     created_at: string
+    trial_days?: number
 }
 
 export default function SuperAdminPage() {

@@ -7,7 +7,8 @@ import {
     Key, 
     UserCog,
     ChevronRight,
-    Lock
+    Lock,
+    Calendar
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
@@ -18,6 +19,7 @@ interface User {
     plan_id: string
     is_active: boolean
     is_admin: boolean
+    trial_days?: number
 }
 
 interface UserManagementModalProps {
@@ -140,6 +142,33 @@ export default function UserManagementModal({
                                     </div>
                                 </button>
                             </div>
+
+                            {/* TRIAL DAYS SETTING */}
+                            {user.plan_id === 'trial' && (
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dias de Teste (Trial)</label>
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative flex-1">
+                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <input 
+                                                type="number"
+                                                min="1"
+                                                max="365"
+                                                value={user.trial_days || 7}
+                                                onChange={(e) => onUpdate('trial_days', parseInt(e.target.value))}
+                                                disabled={updating}
+                                                className="w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 transition-all font-mono"
+                                            />
+                                        </div>
+                                        <div className="px-4 py-2 bg-brand-50 text-brand-700 rounded-xl text-[10px] font-black uppercase tracking-wider border border-brand-100">
+                                            Dias
+                                        </div>
+                                    </div>
+                                    <p className="text-[9px] font-semibold text-slate-400 ml-1">
+                                        * Alterar este valor recalcula a expiração com base na data de criação da conta.
+                                    </p>
+                                </div>
+                            )}
 
                             {/* ADMIN TOGGLE */}
                             <div className="space-y-3">

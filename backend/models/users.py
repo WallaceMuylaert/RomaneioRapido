@@ -16,6 +16,7 @@ class User(Base):
     pix_key = Column(String, nullable=True)
     is_admin = Column(Boolean, default=False)
     plan_id = Column(String, default="trial")
+    trial_days = Column(Integer, default=7)
     is_active = Column(Boolean, default=True)
 
     # Stripe

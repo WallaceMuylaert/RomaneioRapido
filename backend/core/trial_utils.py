@@ -12,7 +12,7 @@ def is_trial_expired(user) -> bool:
     if user.plan_id != "trial":
         return False
 
-    trial_days = PLANS_CONFIG.get("trial", {}).get("trial_days", 7)
+    trial_days = getattr(user, 'trial_days', 7) or 7
     if not user.created_at:
         return True
 
@@ -30,7 +30,7 @@ def get_trial_days_remaining(user) -> Optional[int]:
     if user.plan_id != "trial":
         return None
 
-    trial_days = PLANS_CONFIG.get("trial", {}).get("trial_days", 7)
+    trial_days = getattr(user, 'trial_days', 7) or 7
     if not user.created_at:
         return 0
 
