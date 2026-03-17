@@ -11,7 +11,7 @@ _ALLOWED_SORT_COLUMNS = {
 }
 
 
-def get_products(db: Session, user_id: int, skip: int = 0, limit: int = 100, search: str = None, category_id: int = None, sort_by: str = "name", order: str = "asc"):
+def get_products(db: Session, user_id: int, skip: int = 0, limit: int = 2000, search: str = None, category_id: int = None, color: str = None, size: str = None, sort_by: str = "name", order: str = "asc"):
     query = db.query(Product).filter(Product.is_active == True, Product.user_id == user_id)
     if search:
         query = query.filter(
@@ -21,6 +21,10 @@ def get_products(db: Session, user_id: int, skip: int = 0, limit: int = 100, sea
         )
     if category_id:
         query = query.filter(Product.category_id == category_id)
+    if color:
+        query = query.filter(Product.color.ilike(f"%{color}%"))
+    if size:
+        query = query.filter(Product.size.ilike(f"%{size}%"))
 
     if sort_by not in _ALLOWED_SORT_COLUMNS:
         sort_by = "name"
@@ -41,7 +45,7 @@ def get_products(db: Session, user_id: int, skip: int = 0, limit: int = 100, sea
     return query.offset(skip).limit(limit).all()
 
 
-def count_products(db: Session, user_id: int, search: str = None, category_id: int = None):
+def count_products(db: Session, user_id: int, search: str = None, category_id: int = None, color: str = None, size: str = None):
     query = db.query(Product).filter(Product.is_active == True, Product.user_id == user_id)
     if search:
         query = query.filter(
@@ -51,6 +55,10 @@ def count_products(db: Session, user_id: int, search: str = None, category_id: i
         )
     if category_id:
         query = query.filter(Product.category_id == category_id)
+    if color:
+        query = query.filter(Product.color.ilike(f"%{color}%"))
+    if size:
+        query = query.filter(Product.size.ilike(f"%{size}%"))
     return query.count()
 
 
