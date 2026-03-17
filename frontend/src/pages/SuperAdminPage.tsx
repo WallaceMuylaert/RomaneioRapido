@@ -10,7 +10,8 @@ import {
     XCircle, 
     Search,
     Users,
-    Settings2
+    Settings2,
+    AlertTriangle
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -24,6 +25,8 @@ interface User {
     is_admin: boolean
     created_at: string
     trial_days?: number
+    trial_expired?: boolean
+    trial_days_remaining?: number | null
 }
 
 export default function SuperAdminPage() {
@@ -56,7 +59,7 @@ export default function SuperAdminPage() {
 
         setUpdatingUserId(selectedUser.id)
         try {
-            await api.patch(`/admin/users/${selectedUser.id}`, { [field]: value })
+            await api.put(`/admin/users/${selectedUser.id}`, { [field]: value })
             toast.success(`${field === 'password' ? 'Senha' : 'Usuário'} atualizado!`)
             
             // Refresh data
@@ -191,15 +194,20 @@ export default function SuperAdminPage() {
                                         </td>
                                         <td className="px-10 py-6 text-center">
                                             <div className="flex justify-center">
-                                                {u.is_active ? (
-                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100">
-                                                        <CheckCircle2 className="w-3.5 h-3.5" />
-                                                        <span className="text-[10px] font-black uppercase tracking-wider">Ativo</span>
-                                                    </div>
-                                                ) : (
+                                                {!u.is_active ? (
                                                     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-full border border-red-100">
                                                         <XCircle className="w-3.5 h-3.5" />
                                                         <span className="text-[10px] font-black uppercase tracking-wider">Bloqueado</span>
+                                                    </div>
+                                                ) : u.trial_expired ? (
+                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
+                                                        <AlertTriangle className="w-3.5 h-3.5" />
+                                                        <span className="text-[10px] font-black uppercase tracking-wider">Expirado</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100">
+                                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                                        <span className="text-[10px] font-black uppercase tracking-wider">Ativo</span>
                                                     </div>
                                                 )}
                                             </div>

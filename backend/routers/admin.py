@@ -5,6 +5,7 @@ from backend.core.database import get_db
 from backend.core.security import get_current_superadmin, get_password_hash
 from backend.models.users import User
 from backend.schemas.auth import UserResponse, UserUpdate
+from backend.core.trial_utils import is_trial_expired, get_trial_days_remaining
 from backend.config.logger import get_dynamic_logger
 
 logger = get_dynamic_logger("admin")
@@ -16,12 +17,16 @@ def list_users(db: Session = Depends(get_db)):
     """Lista todos os usuários do sistema (apenas Super Admin)."""
     try:
         users = db.query(User).all()
+        # Injetar informações de trial em tempo de execução
+        for u in users:
+            u.trial_expired = is_trial_expired(u)
+            u.trial_days_remaining = get_trial_days_remaining(u)
         return users
     except Exception as e:
         logger.exception("Erro ao listar usuários para o Super Admin")
         raise HTTPException(status_code=500, detail="Erro interno ao buscar usuários")
 
-@router.patch("/users/{user_id}", response_model=UserResponse)
+@router.put("/users/{user_id}", response_model=UserResponse)
 def update_user_system(
     user_id: int, 
     update_data: UserUpdate, 

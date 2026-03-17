@@ -94,18 +94,20 @@ cors_origins_env = os.getenv("CORS_ORIGINS", "")
 if cors_origins_env:
     origins = [origin.strip() for origin in cors_origins_env.split(",")]
 else:
-    if _is_production:
-        logger.warning("CORS_ORIGINS não definido em produção — bloqueando todas as origens externas.")
-        origins = [] 
-    else:
-        origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    # Domínios oficiais e locais para garantir compatibilidade
+    origins = [
+        "https://romaneiorapido.com.br",
+        "https://www.romaneiorapido.com.br",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-API-Key"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key", "Accept"],
 )
 
 @app.middleware("http")
