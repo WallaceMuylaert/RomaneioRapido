@@ -223,7 +223,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                         border-bottom: 2px solid #f3f4f6;
                     }
                     .logo-area { display: flex; align-items: center; gap: 12px; }
-                    .logo-icon { width: 36px; height: 36px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 18px; }
+                    .logo-img { height: 40px; width: auto; object-fit: contain; }
                     .logo-text { font-size: 16px; font-weight: 700; color: #111827; }
                     
                     .doc-info { text-align: right; }
@@ -288,7 +288,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                 
                 <div class="header">
                     <div class="logo-area">
-                        <div class="logo-icon">R</div>
+                        ${logoBase64 ? `<img src="${logoBase64}" class="logo-img" />` : '<div style="width: 36px; height: 36px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 18px;">R</div>'}
                         <div class="logo-text">Romaneio Rápido</div>
                     </div>
                     <div class="doc-info">
@@ -411,6 +411,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                     .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
                     
                     .header { margin-bottom: 10px; }
+                    .brand-logo { height: 40px; width: auto; object-fit: contain; margin-bottom: 5px; }
                     .brand-name { font-size: 16px; font-weight: bold; margin-bottom: 2px; }
                     .brand-sub { font-size: 10px; }
 
@@ -443,6 +444,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                 </div>
 
                 <div class="header center">
+                    ${logoBase64 ? `<img src="${logoBase64}" class="brand-logo" />` : ''}
                     <div class="brand-name">ROMANEIO RÁPIDO</div>
                     <div class="brand-sub">Comprovante de Separação</div>
                 </div>
