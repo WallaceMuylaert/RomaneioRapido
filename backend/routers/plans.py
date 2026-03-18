@@ -27,7 +27,27 @@ def _get_stripe():
 def _get_or_create_customer(user: User, db: Session) -> str:
     """Retorna stripe_customer_id existente ou cria um novo customer."""
     if user.stripe_customer_id:
-        return user.stripe_customer_id
+        try:
+            stripe.Customer.retrieve(user.stripe_customer_id)
+            return user.stripe_customer_id
+        except stripe.error.InvalidRequestError as e:
+            if e.code == "resource_missing":
+                logger.warning(
+                    f"stripe_customer_id inválido para usuário {user.id}: {user.stripe_customer_id}. Recriando customer."
+                )
+                try:
+                    user.stripe_customer_id = None
+                    db.commit()
+                except Exception:
+                    db.rollback()
+                    logger.exception(f"Erro ao limpar stripe_customer_id inválido para o usuário {user.id}")
+                    raise HTTPException(status_code=500, detail="Erro ao processar dados de pagamento")
+            else:
+                logger.exception(f"Erro ao validar customer Stripe para o usuário {user.id}")
+                raise HTTPException(status_code=502, detail="Erro ao validar cliente de pagamento")
+        except stripe.error.StripeError:
+            logger.exception(f"Erro ao validar customer Stripe para o usuário {user.id}")
+            raise HTTPException(status_code=502, detail="Erro ao validar cliente de pagamento")
 
     try:
         customer = stripe.Customer.create(
