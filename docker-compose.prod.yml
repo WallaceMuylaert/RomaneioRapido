@@ -58,6 +58,7 @@ services:
       - STRIPE_PRICE_BASIC=${STRIPE_PRICE_BASIC}
       - STRIPE_PRICE_PLUS=${STRIPE_PRICE_PLUS}
       - STRIPE_PRICE_PRO=${STRIPE_PRICE_PRO}
+      - STRIPE_PRICE_API=${STRIPE_PRICE_API}
 
     command: >
       sh -c " python backend/database/migrate.py && uvicorn backend.server:app --host 0.0.0.0 --port 8002 --workers 4 "
