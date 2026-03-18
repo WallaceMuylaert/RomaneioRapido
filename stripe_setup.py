@@ -45,6 +45,12 @@ PLANS = [
         "description": "Produtos e categorias ilimitados, suporte VIP 24/7, API avançada (5 chaves, 120 req/min).",
         "price_brl": 29900,  # R$ 299,00 em centavos
     },
+    {
+        "id": "api",
+        "name": "API Especialista",
+        "description": "Produtos e categorias ilimitados, 10 chaves API, 500 req/min, suporte técnico especializado API.",
+        "price_brl": 49900,  # R$ 499,00 em centavos
+    },
 ]
 
 
