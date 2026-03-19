@@ -35,9 +35,22 @@ interface RomaneioExportModalProps {
     onClose: () => void
     onPhoneUpdated?: (newPhone: string) => void
     discount?: number
+    isDraft?: boolean
 }
 
-export default function RomaneioExportModal({ isOpen, clientId, customerName, customerPhone, items, createdAt, title, onClose, onPhoneUpdated, discount = 0 }: RomaneioExportModalProps) {
+export default function RomaneioExportModal({ 
+    isOpen, 
+    clientId, 
+    customerName, 
+    customerPhone, 
+    items, 
+    createdAt, 
+    title, 
+    onClose, 
+    onPhoneUpdated, 
+    discount = 0,
+    isDraft = false
+}: RomaneioExportModalProps) {
     if (!isOpen) return null
     const { user } = useAuth()
 
@@ -115,7 +128,8 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
 
         const phoneOnlyDigits = phone.replace(/\D/g, '')
 
-        let text = `*ROMANEIO RÁPIDO*\n`
+        let text = isDraft ? `*--- RASCUNHO EXECUTIVO ---*\n*ESTA NÃO É UMA VENDA FINALIZADA*\n\n` : ''
+        text += `*ROMANEIO RÁPIDO*\n`
         text += `*Cliente:* ${customerName || 'Não informado'}\n`
         text += `*Data:* ${dateStr}\n\n`
         text += `*ITENS DO PEDIDO:*\n`
@@ -219,6 +233,20 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                         pointer-events: none; z-index: -1; 
                     }
                     .watermark-logo { width: 500px; opacity: 0.04; transform: rotate(-35deg); }
+                    .draft-watermark {
+                        position: fixed;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%) rotate(-45deg);
+                        font-size: 150px;
+                        font-weight: 900;
+                        color: rgba(239, 68, 68, 0.08);
+                        white-space: nowrap;
+                        pointer-events: none;
+                        z-index: 1000;
+                        text-transform: uppercase;
+                        letter-spacing: 0.1em;
+                    }
                     
                     .header { 
                         display: flex; 
@@ -291,6 +319,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
             <body>
                 <div class="watermark-container">
                     ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
+                    ${isDraft ? `<div class="draft-watermark">RASCUNHO</div>` : ''}
                 </div>
                 
                 <div class="header">
@@ -299,7 +328,7 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
                         <div class="logo-text">Romaneio Rápido</div>
                     </div>
                     <div class="doc-info">
-                        <div class="doc-title">Documento de Romaneio</div>
+                        <div class="doc-title">${isDraft ? 'Rascunho de Separação' : 'Documento de Romaneio'}</div>
                         <div class="doc-date">${dateStr}</div>
                     </div>
                 </div>
@@ -453,6 +482,10 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
             <body>
                 <div class="watermark-container">
                     ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
+                    ${isDraft ? `
+                        <div style="position: fixed; top: 100px; left: 0; width: 100%; text-align: center; font-size: 40px; font-weight: 900; color: rgba(0,0,0,0.05); transform: rotate(-20deg); pointer-events: none;">RASCUNHO</div>
+                        <div style="position: fixed; top: 300px; left: 0; width: 100%; text-align: center; font-size: 40px; font-weight: 900; color: rgba(0,0,0,0.05); transform: rotate(-20deg); pointer-events: none;">RASCUNHO</div>
+                    ` : ''}
                 </div>
 
                 <div class="header center">
@@ -556,8 +589,12 @@ export default function RomaneioExportModal({ isOpen, clientId, customerName, cu
             <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
                 <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900">{title || "Romaneio Finalizado! 🎉"}</h2>
-                        <p className="text-sm text-gray-500 mt-1">Escolha como deseja exportar a lista</p>
+                        <h2 className="text-lg font-bold text-gray-900">
+                            {title || (isDraft ? "Rascunho de Separação 📝" : "Romaneio Finalizado! 🎉")}
+                        </h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                            {isDraft ? "Conclua a separação antes de finalizar" : "Escolha como deseja exportar a lista"}
+                        </p>
                     </div>
                     <button onClick={onClose} className="p-2 text-gray-400 hover:bg-gray-50 hover:text-gray-700 rounded-full transition-colors">
                         <X className="w-5 h-5" />

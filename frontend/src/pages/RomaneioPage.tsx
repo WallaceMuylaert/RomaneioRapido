@@ -17,7 +17,8 @@ import {
     Calendar as CalendarIcon,
     Search,
     Save,
-    Clock
+    Clock,
+    Printer
 } from 'lucide-react'
 import BarcodeScanner from '../components/BarcodeScanner'
 import RomaneioExportModal from '../components/RomaneioExportModal'
@@ -26,6 +27,7 @@ import { isIntegerUnit } from '../utils/units'
 import ClientModal from '../components/ClientModal'
 import ConfirmModal from '../components/ConfirmModal'
 import DiscountCalculatorModal from '../components/DiscountCalculatorModal'
+import { maskCurrency, unmaskCurrency } from '../utils/masks'
 
 interface Product {
     id: number
@@ -95,6 +97,7 @@ export default function RomaneioPage() {
     const [customerPhone, setCustomerPhone] = useState<string | null>(null)
     const [selectedClientId, setSelectedClientId] = useState<number | null>(null)
     const [showExportModal, setShowExportModal] = useState(false)
+    const [showDraftModal, setShowDraftModal] = useState(false)
 
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -556,6 +559,11 @@ const updateCartQuantity = (selectedKey: string, quant: string, unit: string) =>
     setCartItems(prev => prev.map(item => item.selectedKey === selectedKey ? { ...item, quantity: val } : item))
 }
 
+const updateCartPrice = (selectedKey: string, priceStr: string) => {
+    const val = unmaskCurrency(priceStr)
+    setCartItems(prev => prev.map(item => item.selectedKey === selectedKey ? { ...item, price: val } : item))
+}
+
 const handleQuantityBlur = (selectedKey: string) => {
     setCartItems(prev => prev.filter(item => {
         if (item.selectedKey === selectedKey && (item.quantity <= 0 || isNaN(item.quantity))) {
@@ -836,7 +844,17 @@ return (
                                             <div className="flex items-center gap-3 ml-7 mt-1">
                                                 <p className="text-[10px] text-gray-400 font-mono">{item.barcode || 'Sem código'}</p>
                                                 <span className="text-[10px] text-gray-300">|</span>
-                                                <p className="text-xs font-bold text-emerald-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>
+                                                <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100/50 rounded-lg px-2 py-0.5 group/price hover:border-emerald-200 transition-all shadow-sm">
+                                                    <span className="text-[10px] font-bold text-emerald-600/60 uppercase">R$</span>
+                                                    <input 
+                                                        type="text" 
+                                                        value={maskCurrency(item.price)} 
+                                                        onChange={(e) => updateCartPrice(item.selectedKey, e.target.value)}
+                                                        onFocus={(e) => e.target.select()}
+                                                        inputMode="numeric"
+                                                        className="w-20 h-5 bg-transparent border-none focus:ring-0 p-0 text-xs font-black text-emerald-600" 
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
@@ -931,6 +949,14 @@ return (
                                 {submitting ? 'Registrando...' : 'Finalizar Romaneio'}
                             </button>
                             <button
+                                onClick={() => setShowDraftModal(true)}
+                                disabled={cartItems.length === 0}
+                                className="w-full h-12 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-700 font-bold rounded-xl border border-slate-200 transition-all flex items-center justify-center gap-2 shadow-sm"
+                            >
+                                <Printer className="w-4 h-4 text-blue-500" />
+                                Imprimir Rascunho
+                            </button>
+                            <button
                                 onClick={handleSavePending}
                                 disabled={isSavingPending || cartItems.length === 0}
                                 className="w-full h-12 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-amber-400 font-bold rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-2"
@@ -990,8 +1016,32 @@ return (
 
                                 <div className="flex gap-2 pt-4 border-t border-gray-50">
                                     <button
+                                        onClick={() => {
+                                            setCartItems(p.items.map(i => ({
+                                                selectedKey: `${i.product_id}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                                                id: i.product_id,
+                                                name: i.name,
+                                                barcode: i.barcode,
+                                                quantity: i.quantity,
+                                                unit: i.unit,
+                                                price: i.price,
+                                                color: i.color,
+                                                size: i.size
+                                            })))
+                                            setCustomerName(p.customer_name || '')
+                                            setCustomerPhone(p.customer_phone)
+                                            setSelectedClientId(p.client_id)
+                                            setDiscountPercentage(0)
+                                            setShowDraftModal(true)
+                                        }}
+                                        className="h-10 bg-white border border-gray-200 text-slate-600 hover:bg-gray-50 px-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
+                                        title="Imprimir Rascunho"
+                                    >
+                                        <Printer className="w-4 h-4 text-blue-500" />
+                                    </button>
+                                    <button
                                         onClick={() => handleResumePending(p)}
-                                        className="flex-1 h-10 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                                        className="flex-1 h-10 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md shadow-blue-200"
                                     >
                                         Continuar
                                     </button>
@@ -1117,6 +1167,7 @@ return (
         )}
 
         {showExportModal && <RomaneioExportModal isOpen={showExportModal} onClose={resetCart} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} discount={discountAmount} />}
+        {showDraftModal && <RomaneioExportModal isOpen={showDraftModal} onClose={() => setShowDraftModal(false)} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} discount={discountAmount} isDraft={true} />}
         <DiscountCalculatorModal isOpen={showDiscountModal} subtotal={romaneioSubtotal} currentPercentage={discountPercentage} onClose={() => setShowDiscountModal(false)} onApply={(_, pct) => { setDiscountPercentage(pct); if (pct > 0) { toast.success(`Desconto de ${pct.toFixed(2)}% aplicado!`) } else { toast.success('Desconto removido!') } }} />
         <ClientModal isOpen={clientModalOpen} onClose={() => setClientModalOpen(false)} onSuccess={(newClient) => { setCustomerName(newClient.name); setSelectedClientId(newClient.id); setCustomerPhone(newClient.phone); }} />
         {cameraOpen && <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setCameraOpen(false)} status={scanStatus} />}
