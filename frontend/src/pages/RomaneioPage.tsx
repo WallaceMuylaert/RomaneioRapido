@@ -17,7 +17,8 @@ import {
     Calendar as CalendarIcon,
     Search,
     Save,
-    Clock
+    Clock,
+    Printer
 } from 'lucide-react'
 import BarcodeScanner from '../components/BarcodeScanner'
 import RomaneioExportModal from '../components/RomaneioExportModal'
@@ -96,6 +97,7 @@ export default function RomaneioPage() {
     const [customerPhone, setCustomerPhone] = useState<string | null>(null)
     const [selectedClientId, setSelectedClientId] = useState<number | null>(null)
     const [showExportModal, setShowExportModal] = useState(false)
+    const [showDraftModal, setShowDraftModal] = useState(false)
 
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -947,6 +949,14 @@ return (
                                 {submitting ? 'Registrando...' : 'Finalizar Romaneio'}
                             </button>
                             <button
+                                onClick={() => setShowDraftModal(true)}
+                                disabled={cartItems.length === 0}
+                                className="w-full h-12 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-700 font-bold rounded-xl border border-slate-200 transition-all flex items-center justify-center gap-2 shadow-sm"
+                            >
+                                <Printer className="w-4 h-4 text-blue-500" />
+                                Imprimir Rascunho
+                            </button>
+                            <button
                                 onClick={handleSavePending}
                                 disabled={isSavingPending || cartItems.length === 0}
                                 className="w-full h-12 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-amber-400 font-bold rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-2"
@@ -1006,8 +1016,32 @@ return (
 
                                 <div className="flex gap-2 pt-4 border-t border-gray-50">
                                     <button
+                                        onClick={() => {
+                                            setCartItems(p.items.map(i => ({
+                                                selectedKey: `${i.product_id}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                                                id: i.product_id,
+                                                name: i.name,
+                                                barcode: i.barcode,
+                                                quantity: i.quantity,
+                                                unit: i.unit,
+                                                price: i.price,
+                                                color: i.color,
+                                                size: i.size
+                                            })))
+                                            setCustomerName(p.customer_name || '')
+                                            setCustomerPhone(p.customer_phone)
+                                            setSelectedClientId(p.client_id)
+                                            setDiscountPercentage(0)
+                                            setShowDraftModal(true)
+                                        }}
+                                        className="h-10 bg-white border border-gray-200 text-slate-600 hover:bg-gray-50 px-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
+                                        title="Imprimir Rascunho"
+                                    >
+                                        <Printer className="w-4 h-4 text-blue-500" />
+                                    </button>
+                                    <button
                                         onClick={() => handleResumePending(p)}
-                                        className="flex-1 h-10 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                                        className="flex-1 h-10 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md shadow-blue-200"
                                     >
                                         Continuar
                                     </button>
@@ -1133,6 +1167,7 @@ return (
         )}
 
         {showExportModal && <RomaneioExportModal isOpen={showExportModal} onClose={resetCart} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} discount={discountAmount} />}
+        {showDraftModal && <RomaneioExportModal isOpen={showDraftModal} onClose={() => setShowDraftModal(false)} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} discount={discountAmount} isDraft={true} />}
         <DiscountCalculatorModal isOpen={showDiscountModal} subtotal={romaneioSubtotal} currentPercentage={discountPercentage} onClose={() => setShowDiscountModal(false)} onApply={(_, pct) => { setDiscountPercentage(pct); if (pct > 0) { toast.success(`Desconto de ${pct.toFixed(2)}% aplicado!`) } else { toast.success('Desconto removido!') } }} />
         <ClientModal isOpen={clientModalOpen} onClose={() => setClientModalOpen(false)} onSuccess={(newClient) => { setCustomerName(newClient.name); setSelectedClientId(newClient.id); setCustomerPhone(newClient.phone); }} />
         {cameraOpen && <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setCameraOpen(false)} status={scanStatus} />}
