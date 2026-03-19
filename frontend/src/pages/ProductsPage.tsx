@@ -116,6 +116,7 @@ export default function ProductsPage() {
     const [sizeFilter, setSizeFilter] = useState('')
     const [categoryFilter, setCategoryFilter] = useState('')
     const [logoBase64, setLogoBase64] = useState<string>('')
+    const [reportMenuOpen, setReportMenuOpen] = useState(false)
 
     useEffect(() => {
         getBase64FromUrl(logoImg).then(setLogoBase64).catch(console.error)
@@ -420,7 +421,7 @@ export default function ProductsPage() {
         )
     }
 
-    const handleExportStockPDF = async () => {
+    const handleExportStockPDF = async (includePrices: boolean = true) => {
         try {
             toast.loading('Gerando relatório...', { id: 'report' });
             
@@ -447,7 +448,7 @@ export default function ProductsPage() {
 
             const now = new Date();
             const timestamp = now.toISOString().replace(/T/, '_').replace(/:/g, '-').split('.')[0];
-            const filename = `Relatorio_Estoque_${timestamp}`;
+            const filename = `Relatorio_Estoque_${includePrices ? 'Completo' : 'Sem_Precos'}_${timestamp}`;
 
             const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
@@ -595,15 +596,17 @@ export default function ProductsPage() {
                         </div>
                     </div>
 
-                    <div class="stats-grid">
+                    <div class="stats-grid" style="${!includePrices ? 'grid-template-columns: 1fr;' : ''}">
                         <div class="stat-card">
                             <div class="stat-label">Total de Itens</div>
                             <div class="stat-value">${allProducts.reduce((acc, p) => acc + p.stock_quantity, 0).toFixed(0)}</div>
                         </div>
+                        ${includePrices ? `
                         <div class="stat-card">
                             <div class="stat-label">Valor Total em Estoque</div>
                             <div class="stat-value" style="color: #10b981;">${formatCurrency(allProducts.reduce((acc, p) => acc + (p.stock_quantity * p.price), 0))}</div>
                         </div>
+                        ` : ''}
                     </div>
 
                     <div class="section-title">Listagem de Produtos</div>
@@ -614,8 +617,10 @@ export default function ProductsPage() {
                                 <th>Cor/Variação</th>
                                 <th>Tam.</th>
                                 <th style="text-align: center;">Qtd.</th>
+                                ${includePrices ? `
                                 <th style="text-align: right;">Preço Unit.</th>
                                 <th style="text-align: right;">Total</th>
+                                ` : ''}
                             </tr>
                         </thead>
                         <tbody>
@@ -627,9 +632,11 @@ export default function ProductsPage() {
                                     </td>
                                     <td class="variant-info">${p.color || '-'}</td>
                                     <td class="variant-info">${p.size || '-'}</td>
-                                    <td class="row-qty">${p.stock_quantity} <span style="font-size: 9px; color: #9ca3af;">${p.unit}</span></td>
+                                    <td class="row-qty" style="${!includePrices ? 'text-align: right;' : ''}">${p.stock_quantity} <span style="font-size: 9px; color: #9ca3af;">${p.unit}</span></td>
+                                    ${includePrices ? `
                                     <td class="row-val">${formatCurrency(p.price)}</td>
                                     <td class="row-total">${formatCurrency(p.stock_quantity * p.price)}</td>
+                                    ` : ''}
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -671,12 +678,34 @@ export default function ProductsPage() {
                     >
                         <Camera className="w-4 h-4" /> Leitura rápida
                     </button>
-                    <button
-                        onClick={() => handleExportStockPDF()}
-                        className="h-9 px-4 text-[13px] font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2"
-                    >
-                        <Download className="w-4 h-4" /> Relatório
-                    </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setReportMenuOpen(!reportMenuOpen)}
+                            className="h-9 px-4 text-[13px] font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2"
+                        >
+                            <Download className="w-4 h-4" /> Relatório <ChevronDown className={`w-3 h-3 transition-transform ${reportMenuOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {reportMenuOpen && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setReportMenuOpen(false)} />
+                                <div className="absolute right-0 top-10 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                                    <button
+                                        onClick={() => { handleExportStockPDF(true); setReportMenuOpen(false); }}
+                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors text-left"
+                                    >
+                                        Relatório Completo
+                                    </button>
+                                    <button
+                                        onClick={() => { handleExportStockPDF(false); setReportMenuOpen(false); }}
+                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors text-left border-t border-gray-50"
+                                    >
+                                        Relatório sem Preços
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
                     <button
                         onClick={() => openCreate()}
                         className="h-9 px-4 text-[13px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
