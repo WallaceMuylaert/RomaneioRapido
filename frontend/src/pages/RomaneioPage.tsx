@@ -26,6 +26,7 @@ import { isIntegerUnit } from '../utils/units'
 import ClientModal from '../components/ClientModal'
 import ConfirmModal from '../components/ConfirmModal'
 import DiscountCalculatorModal from '../components/DiscountCalculatorModal'
+import { maskCurrency, unmaskCurrency } from '../utils/masks'
 
 interface Product {
     id: number
@@ -556,6 +557,11 @@ const updateCartQuantity = (selectedKey: string, quant: string, unit: string) =>
     setCartItems(prev => prev.map(item => item.selectedKey === selectedKey ? { ...item, quantity: val } : item))
 }
 
+const updateCartPrice = (selectedKey: string, priceStr: string) => {
+    const val = unmaskCurrency(priceStr)
+    setCartItems(prev => prev.map(item => item.selectedKey === selectedKey ? { ...item, price: val } : item))
+}
+
 const handleQuantityBlur = (selectedKey: string) => {
     setCartItems(prev => prev.filter(item => {
         if (item.selectedKey === selectedKey && (item.quantity <= 0 || isNaN(item.quantity))) {
@@ -836,7 +842,17 @@ return (
                                             <div className="flex items-center gap-3 ml-7 mt-1">
                                                 <p className="text-[10px] text-gray-400 font-mono">{item.barcode || 'Sem código'}</p>
                                                 <span className="text-[10px] text-gray-300">|</span>
-                                                <p className="text-xs font-bold text-emerald-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>
+                                                <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100/50 rounded-lg px-2 py-0.5 group/price hover:border-emerald-200 transition-all shadow-sm">
+                                                    <span className="text-[10px] font-bold text-emerald-600/60 uppercase">R$</span>
+                                                    <input 
+                                                        type="text" 
+                                                        value={maskCurrency(item.price)} 
+                                                        onChange={(e) => updateCartPrice(item.selectedKey, e.target.value)}
+                                                        onFocus={(e) => e.target.select()}
+                                                        inputMode="numeric"
+                                                        className="w-20 h-5 bg-transparent border-none focus:ring-0 p-0 text-xs font-black text-emerald-600" 
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
