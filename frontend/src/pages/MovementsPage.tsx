@@ -21,7 +21,7 @@ import {
 import MovementDetailsModal from '../components/MovementDetailsModal'
 import RomaneioExportModal from '../components/RomaneioExportModal'
 import type { CartItem } from '../components/RomaneioExportModal'
-import { format } from 'date-fns'
+import { format, startOfMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
@@ -88,7 +88,7 @@ export default function MovementsPage() {
     } | null>(null)
     const [reportLoading, setReportLoading] = useState(false)
     const [reportPeriod, setReportPeriod] = useState({
-        start: format(new Date(), 'yyyy-MM-dd'),
+        start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
         end: format(new Date(), 'yyyy-MM-dd')
     })
 

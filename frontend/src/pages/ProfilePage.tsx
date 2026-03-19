@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import type { FormEvent } from 'react'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -28,7 +29,8 @@ import {
     KeyRound,
     ArrowUpRight,
     ShieldAlert,
-    CheckCircle2
+    CheckCircle2,
+    Sparkles
 } from 'lucide-react'
 import ImageCropper from '../components/ImageCropper'
 import { PLANS } from '../constants/plans'
@@ -614,9 +616,18 @@ export default function ProfilePage() {
 
                                 {/* Upgrades List */}
                                 <div className="w-full mt-4">
-                                    <div className="mb-8 text-center md:text-left pl-2">
-                                        <h3 className="text-2xl font-extrabold text-slate-800 tracking-tight">Evolua seu plano</h3>
-                                        <p className="text-slate-500 font-medium mt-1 text-sm">Escolha a melhor opção para o tamanho do seu negócio.</p>
+                                    <div className="mb-8 flex items-center justify-between">
+                                        <div className="pl-2">
+                                            <h3 className="text-2xl font-extrabold text-slate-800 tracking-tight">Sua Assinatura</h3>
+                                            <p className="text-slate-500 font-medium text-sm">Visualize o status atual e seus limites.</p>
+                                        </div>
+                                        <Link
+                                            to="/onboarding"
+                                            className="px-4 py-2 bg-brand-50 text-brand-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-100 transition-all flex items-center gap-2 shadow-sm shadow-brand-100 active:scale-95"
+                                        >
+                                            <Sparkles className="w-3.5 h-3.5 fill-current text-brand-500" />
+                                            Instruções de Uso
+                                        </Link>
                                     </div>
 
                                     <PlansGrid

@@ -16,6 +16,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import MovementsPage from './pages/MovementsPage'
 import SuperAdminPage from './pages/SuperAdminPage'
 import ErrorPage from './pages/ErrorPage'
+import OnboardingPage from './pages/OnboardingPage'
 import './index.css'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -147,6 +148,14 @@ const router = createBrowserRouter([
         ),
       },
     ],
+  },
+  {
+    path: "/onboarding",
+    element: (
+      <PrivateRoute>
+        <OnboardingPage />
+      </PrivateRoute>
+    ),
   },
   {
     path: "/error",

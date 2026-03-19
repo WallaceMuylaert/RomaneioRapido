@@ -1,5 +1,6 @@
 import { PartyPopper, Check, X, Sparkles, Loader2, AlertCircle, Clock } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 export type PaymentStatus = 'processing' | 'success' | 'failed' | 'pending'
 
@@ -13,6 +14,7 @@ interface PaymentStatusModalProps {
 
 export default function PaymentStatusModal({ status, isOpen, onClose, planName = 'Premium', error }: PaymentStatusModalProps) {
     const [animate, setAnimate] = useState(false)
+    const navigate = useNavigate()
 
     useEffect(() => {
         if (isOpen) {
@@ -131,7 +133,12 @@ export default function PaymentStatusModal({ status, isOpen, onClose, planName =
 
                         {!isProcessing && (
                             <button
-                                onClick={onClose}
+                                onClick={() => {
+                                    if (isSuccess) {
+                                        navigate('/onboarding')
+                                    }
+                                    onClose()
+                                }}
                                 className={`w-full h-12 sm:h-14 rounded-xl sm:rounded-[1.25rem] font-black text-base sm:text-lg transition-all shadow-xl active:scale-[0.98] ${isFailed ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-100' :
                                         'bg-slate-900 hover:bg-slate-800 text-white shadow-slate-200'
                                     }`}
