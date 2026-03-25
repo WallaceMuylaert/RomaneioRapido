@@ -33,7 +33,7 @@ services:
       - ./backend:/app/backend:rw
       - ./database:/app/database:ro
       - ./backend/.log:/app/.log:rw
-    command: uvicorn backend.server:app --host 0.0.0.0 --port 8002 --reload
+    command: sh -c "python backend/database/migrate.py && uvicorn backend.server:app --host 0.0.0.0 --port 8002 --reload"
     ports:
       - "127.0.0.1:${PORT_BACKEND:-8002}:8002"
 
