@@ -18,7 +18,7 @@ class PendingRomaneioBase(BaseModel):
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None
     items: List[PendingItem]
-    empenhar_estoque: bool = False
+    empenhar_estoque: Optional[bool] = False
 
 class PendingRomaneioCreate(PendingRomaneioBase):
     pass
