@@ -146,3 +146,18 @@ def reset_password(request: Request, data: ResetPasswordRequest, db: Session = D
         db.rollback()
         logger.exception("Erro crítico no reset-password")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+
+@router.post("/refresh", response_model=Token)
+@limiter.limit("5/minute")
+def refresh_token(request: Request, current_user: User = Depends(get_current_user)):
+    try:
+        from datetime import timedelta
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": current_user.email}, expires_delta=access_token_expires
+        )
+        return {"access_token": access_token, "token_type": "bearer"}
+    except Exception as e:
+        logger.exception(f"Erro ao atualizar token para {current_user.email}: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
