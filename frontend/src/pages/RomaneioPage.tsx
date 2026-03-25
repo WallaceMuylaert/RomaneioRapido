@@ -18,7 +18,8 @@ import {
     Search,
     Save,
     Clock,
-    Printer
+    Printer,
+    HelpCircle
 } from 'lucide-react'
 import BarcodeScanner from '../components/BarcodeScanner'
 import RomaneioExportModal from '../components/RomaneioExportModal'
@@ -82,6 +83,7 @@ interface PendingRomaneio {
     customer_name: string | null
     customer_phone: string | null
     items: PendingItem[]
+    empenhar_estoque: boolean
     created_at: string
     updated_at: string
 }
@@ -159,6 +161,8 @@ export default function RomaneioPage() {
     // Pedidos Pendentes (Separação)
     const [pendingRomaneios, setPendingRomaneios] = useState<PendingRomaneio[]>([])
     const [isSavingPending, setIsSavingPending] = useState(false)
+    const [empenharAoDigitar, setEmpenharAoDigitar] = useState(false)
+    const [activePendingId, setActivePendingId] = useState<number | null>(null)
 
     // Fechar dropdowns ao clicar fora
     useEffect(() => {
@@ -346,6 +350,7 @@ export default function RomaneioPage() {
                 client_id: selectedClientId,
                 customer_name: customerName,
                 customer_phone: customerPhone,
+                empenhar_estoque: empenharAoDigitar,
                 items: cartItems.map(item => ({
                     product_id: item.id,
                     name: item.name,
@@ -424,6 +429,11 @@ export default function RomaneioPage() {
             try {
                 await api.delete(`/pending/${pending.id}`)
                 setPendingRomaneios(p => p.filter(x => x.id !== pending.id))
+                // Se o rascunho carregado tinha empenho, sincronizamos o estado local
+                if (pending.empenhar_estoque) {
+                    setEmpenharAoDigitar(true)
+                    setActivePendingId(null) // Vai criar um novo no primeiro auto-save
+                }
             } catch (err) {
                 console.error('Erro ao remover rascunho ao retomar:', err)
             }
@@ -489,11 +499,31 @@ useEffect(() => {
                 setCustomerPhone(copyData.customerPhone || null)
                 setSelectedClientId(copyData.clientId || null)
                 toast.success('Dados do romaneio retomados!')
+                sessionStorage.removeItem('copy_romaneio_data')
+                return // Prioridade para dados copiados
             }
         } catch (err) {
             console.error('Erro ao parsear dados copiados:', err)
-        } finally {
-            sessionStorage.removeItem('copy_romaneio_data')
+        }
+    }
+
+    // Se não houver dados copiados, tenta recuperar do localStorage
+    const localDraftRaw = localStorage.getItem('romaneio_local_draft')
+    if (localDraftRaw) {
+        try {
+            const draft = JSON.parse(localDraftRaw)
+            // Só recupera se o carrinho atual estiver vazio para não sobrescrever
+            if (cartItems.length === 0 && draft.cartItems && draft.cartItems.length > 0) {
+                setCartItems(draft.cartItems)
+                setCustomerName(draft.customerName || '')
+                setCustomerPhone(draft.customerPhone || null)
+                setSelectedClientId(draft.selectedClientId || null)
+                setEmpenharAoDigitar(draft.empenharAoDigitar || false)
+                setDiscountPercentage(draft.discountPercentage || 0)
+                toast.success('Rascunho recuperado automaticamente!', { icon: '🛡️' })
+            }
+        } catch (err) {
+            console.error('Erro ao recuperar rascunho local:', err)
         }
     }
 }, [])
@@ -516,6 +546,76 @@ useEffect(() => {
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
 }, [cartItems])
+
+
+// Lógica de Auto-Save para Empenho
+useEffect(() => {
+    if (!empenharAoDigitar || cartItems.length === 0) {
+        if (activePendingId && !empenharAoDigitar) {
+            // Se desativou o toggle, limpamos o ID ativo para não sobrescrever rascunhos que não devem mais empenhar
+            setActivePendingId(null);
+        }
+        return;
+    }
+
+    const timer = setTimeout(async () => {
+        try {
+            const payload = {
+                client_id: selectedClientId,
+                customer_name: customerName || 'Rascunho Automático',
+                customer_phone: customerPhone,
+                empenhar_estoque: true,
+                items: cartItems.map(item => ({
+                    product_id: item.id,
+                    name: item.name,
+                    barcode: item.barcode,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    price: item.price,
+                    image: item.image,
+                    color: item.color,
+                    size: item.size
+                }))
+            };
+
+            if (activePendingId) {
+                await api.put(`/pending/${activePendingId}`, payload);
+            } else {
+                const res = await api.post('/pending/', payload);
+                setActivePendingId(res.data.id);
+                fetchPendingRomaneios();
+            }
+        } catch (err) {
+            console.error('Erro no auto-save de empenho:', err);
+        }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+}, [cartItems, customerName, empenharAoDigitar, selectedClientId, customerPhone]);
+
+
+// Lógica de Persistência Local (localStorage) para evitar perda de dados por refresh
+useEffect(() => {
+    if (cartItems.length === 0 && !customerName && !customerPhone && !selectedClientId) {
+        localStorage.removeItem('romaneio_local_draft');
+        return;
+    }
+
+    const timer = setTimeout(() => {
+        const draftData = {
+            cartItems,
+            customerName,
+            customerPhone,
+            selectedClientId,
+            empenharAoDigitar,
+            discountPercentage,
+            timestamp: Date.now()
+        };
+        localStorage.setItem('romaneio_local_draft', JSON.stringify(draftData));
+    }, 1000);
+
+    return () => clearTimeout(timer);
+}, [cartItems, customerName, customerPhone, selectedClientId, empenharAoDigitar, discountPercentage]);
 
 
 const addToCart = (product: any, quantityOverride?: number) => {
@@ -667,6 +767,16 @@ const handleFinalizeRomaneio = async () => {
 const executeFinalize = async () => {
     setSubmitting(true)
     try {
+        // Se houver empenho ativo, deletamos o rascunho para liberar o estoque antes da movimentação final
+        if (activePendingId) {
+            try {
+                await api.delete(`/pending/${activePendingId}`);
+                setActivePendingId(null);
+            } catch (err) {
+                console.error('Erro ao limpar rascunho antes de finalizar:', err);
+            }
+        }
+
         const romaneioBatchId = `ROM-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
         const currentSubtotal = cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
         const currentDiscountAmount = currentSubtotal * (discountPercentage / 100);
@@ -707,6 +817,9 @@ const resetCart = () => {
     setShowExportModal(false)
     setBarcodeInput('')
     setDiscountPercentage(0)
+    setActivePendingId(null)
+    setEmpenharAoDigitar(false)
+    localStorage.removeItem('romaneio_local_draft')
 }
 
 const romaneioSubtotal = cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
@@ -771,7 +884,28 @@ return (
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px] gap-6">
                 <div className="flex flex-col gap-6">
                     <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                        <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Plus className="w-4 h-4 text-blue-600" /> Montar Romaneio</h2>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Plus className="w-4 h-4 text-blue-600" /> Montar Romaneio</h2>
+                            <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 shadow-inner">
+                                <div className="group relative flex items-center">
+                                    <HelpCircle className="w-3.5 h-3.5 text-slate-300 hover:text-blue-500 transition-colors cursor-help" />
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-white text-[10px] leading-relaxed rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100] shadow-2xl text-center">
+                                        <p className="font-bold mb-1 text-blue-300">Reserva em Tempo Real</p>
+                                        Ao ativar, o estoque é reduzido imediatamente ao adicionar itens. Se cancelar, o estoque volta.
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800"></div>
+                                    </div>
+                                </div>
+                                <span className={`text-[10px] font-black uppercase tracking-wider ${empenharAoDigitar ? 'text-blue-600' : 'text-slate-400'}`}>
+                                    {empenharAoDigitar ? 'Empenho Ativo' : 'Empenho Desativado'}
+                                </span>
+                                <button
+                                    onClick={() => setEmpenharAoDigitar(!empenharAoDigitar)}
+                                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${empenharAoDigitar ? 'bg-blue-600' : 'bg-gray-200'}`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${empenharAoDigitar ? 'translate-x-4' : 'translate-x-0'}`} />
+                                </button>
+                            </div>
+                        </div>
                         <div className="space-y-4">
                             <div ref={clientSearchContainerRef} className="relative">
                                 <label className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 block">Cliente</label>

@@ -31,6 +31,7 @@ class InventoryMovement(Base):
     product_size_snapshot = Column(String, nullable=True)
     discount_snapshot = Column(Float, nullable=True, default=0.0)
     romaneio_id = Column(String, nullable=True, index=True)
+    pending_romaneio_id = Column(Integer, ForeignKey("pending_romaneios.id", ondelete="CASCADE"), nullable=True, index=True)
 
     product = relationship("Product", back_populates="movements")
     client = relationship("Client")

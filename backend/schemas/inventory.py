@@ -18,6 +18,7 @@ class InventoryMovementBase(BaseModel):
     discount_snapshot: Optional[float] = Field(None, ge=0)
     romaneio_id: Optional[str] = Field(None, max_length=100)
     client_id: Optional[int] = None
+    pending_romaneio_id: Optional[int] = None
 
 
 class InventoryMovementCreate(InventoryMovementBase):

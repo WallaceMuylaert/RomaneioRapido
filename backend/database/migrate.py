@@ -189,10 +189,10 @@ def run_migrations():
         User,
         Category,
         Product,
+        PendingRomaneio,
         InventoryMovement,
         Client,
-        ApiKey,
-        PendingRomaneio
+        ApiKey
     ]
 
     for model in models:
@@ -220,5 +220,7 @@ if __name__ == "__main__":
     try:
         run_migrations()
     except Exception as e:
+        import traceback
         print(f"\n❌ FATAL: Error during migration: {e}")
+        traceback.print_exc()
         sys.exit(1)
