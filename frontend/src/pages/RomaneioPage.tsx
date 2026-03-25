@@ -333,6 +333,30 @@ export default function RomaneioPage() {
         }
     }
 
+    const handleCancelRomaneio = () => {
+        setConfirmConfig({
+            isOpen: true,
+            title: 'Cancelar Romaneio?',
+            message: 'Todo o progresso será perdido e o estoque empenhado será devolvido. Continuar?',
+            type: 'danger',
+            confirmText: 'Sim, Cancelar',
+            cancelText: 'Voltar',
+            onConfirm: async () => {
+                if (activePendingId) {
+                    try {
+                        await api.delete(`/pending/${activePendingId}`)
+                        setActivePendingId(null)
+                    } catch (err) {
+                        console.error('Erro ao deletar rascunho no cancelamento:', err);
+                    }
+                }
+                resetCart();
+                toast.success('Romaneio cancelado com sucesso!');
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+            }
+        });
+    }
+
     const handleSavePending = async () => {
         if (cartItems.length === 0) {
             toast.error('Adicione itens ao romaneio primeiro')
@@ -1102,6 +1126,15 @@ return (
                                     </>
                                 )}
                             </button>
+                            {cartItems.length > 0 && (
+                                <button
+                                    onClick={handleCancelRomaneio}
+                                    className="w-full h-12 bg-red-50 hover:bg-red-100/80 text-red-600 font-bold rounded-xl border border-red-200 transition-all flex items-center justify-center gap-2 mt-2 shadow-sm"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    Cancelar Romaneio
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

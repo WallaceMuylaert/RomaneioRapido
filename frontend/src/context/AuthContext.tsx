@@ -42,6 +42,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setToken(null)
                 })
                 .finally(() => setIsLoading(false))
+
+            // Auto-Refresh: Renova o token a cada 1 hora silenciosamente
+            const interval = setInterval(async () => {
+                try {
+                    const res = await api.post('/auth/refresh')
+                    if (res.data?.access_token) {
+                        localStorage.setItem('token', res.data.access_token)
+                        setToken(res.data.access_token)
+                    }
+                } catch (err) {
+                    console.error('Falha na renovação silenciosa do token', err)
+                }
+            }, 60 * 60 * 1000)
+
+            return () => clearInterval(interval)
         } else {
             setIsLoading(false)
         }
