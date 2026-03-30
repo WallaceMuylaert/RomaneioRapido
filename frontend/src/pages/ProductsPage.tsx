@@ -330,9 +330,9 @@ export default function ProductsPage() {
             setForm(prev => ({ ...prev, category_id: String(newCat.id) }))
             setIsCreatingCategory(false)
             setNewCategoryName('')
-            toast.success('Categoria criada!')
+            toast.success('Categoria criada!', { id: 'product-success' })
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao criar categoria')
+            toast.error(err.response?.data?.detail || 'Erro ao criar categoria', { id: 'product-error' })
         } finally {
             setCreatingCategoryLoader(false)
         }
@@ -366,9 +366,9 @@ export default function ProductsPage() {
 
             setModalOpen(false)
             fetchProducts()
-            toast.success('Produto salvo com sucesso!')
+            toast.success('Produto salvo com sucesso!', { id: 'product-success' })
         } catch (err: any) {
-            toast.error(translateError(err.response?.data?.detail) || 'Erro ao salvar produto')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao salvar produto', { id: 'product-error' })
         } finally {
             setSaving(false)
         }
@@ -378,10 +378,10 @@ export default function ProductsPage() {
         try {
             await api.delete(`/products/${id}`)
             setDeleteConfirm(null)
-            toast.success('Produto excluído com sucesso')
+            toast.success('Produto excluído com sucesso', { id: 'product-success' })
             fetchProducts()
         } catch (err: any) {
-            toast.error(err.response?.data?.detail || 'Erro ao deletar produto')
+            toast.error(err.response?.data?.detail || 'Erro ao deletar produto', { id: 'product-error' })
             console.error('Erro ao deletar produto:', err)
         }
     }

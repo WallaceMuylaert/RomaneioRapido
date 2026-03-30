@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
@@ -10,7 +11,7 @@ import RomaneioPage from './pages/RomaneioPage'
 import ProfilePage from './pages/ProfilePage'
 import ClientsPage from './pages/ClientsPage'
 import AppLayout from './components/AppLayout'
-import { Toaster } from 'react-hot-toast'
+import { useToasterStore, toast, Toaster } from 'react-hot-toast'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import MovementsPage from './pages/MovementsPage'
@@ -168,9 +169,24 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
+  const { toasts } = useToasterStore();
+
+  useEffect(() => {
+    toasts
+      .filter((t) => t.visible)
+      .filter((_, i) => i >= 2)
+      .forEach((t) => toast.dismiss(t.id));
+  }, [toasts]);
+
   return (
     <>
-      <Toaster position="top-right" />
+      <Toaster 
+        position="top-right" 
+        gutter={8}
+        toastOptions={{
+          duration: 3000,
+        }}
+      />
       <RouterProvider router={router} />
     </>
   )

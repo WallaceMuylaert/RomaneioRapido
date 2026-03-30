@@ -77,9 +77,9 @@ export default function CategoriesPage() {
             }
             setModalOpen(false)
             fetchCategories()
-            toast.success('Categoria salva com sucesso!')
+            toast.success('Categoria salva com sucesso!', { id: 'category-success' })
         } catch (err: any) {
-            toast.error(translateError(err.response?.data?.detail) || 'Erro ao salvar categoria')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao salvar categoria', { id: 'category-error' })
         } finally {
             setSaving(false)
         }
@@ -116,10 +116,10 @@ export default function CategoriesPage() {
             setIsReordering(false)
             setReorderList([])
             fetchCategories()
-            toast.success('Nova ordem salva com sucesso!')
+            toast.success('Nova ordem salva com sucesso!', { id: 'category-reorder-success' })
         } catch (err) {
             console.error('Erro ao salvar ordem:', err)
-            toast.error('Erro ao salvar a nova ordem')
+            toast.error('Erro ao salvar a nova ordem', { id: 'category-error' })
         } finally {
             setSavingOrder(false)
         }
@@ -129,7 +129,7 @@ export default function CategoriesPage() {
         if (reorderList.length < 2) return
         const sorted = [...reorderList].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
         setReorderList(sorted)
-        toast.success('Categorias ordenadas de A-Z (clique em Salvar para confirmar)')
+        toast.success('Categorias ordenadas de A-Z (clique em Salvar para confirmar)', { id: 'category-success' })
     }
 
     // Drag and Drop handlers

@@ -226,7 +226,7 @@ export default function ProfilePage() {
 
     const handleCreateApiKey = async () => {
         if (!apiKeyName.trim()) {
-            toast.error('Informe um nome para a chave.')
+            toast.error('Informe um nome para a chave.', { id: 'api-key-toast' })
             return
         }
         setIsCreatingApiKey(true)
@@ -236,9 +236,9 @@ export default function ProfilePage() {
             setApiKeyName('')
             setKeyCopied(false)
             fetchApiKeys()
-            toast.success('Chave de API criada com sucesso!')
+            toast.success('Chave de API criada com sucesso!', { id: 'api-key-toast' })
         } catch (err: any) {
-            toast.error(translateError(err.response?.data?.detail) || 'Erro ao criar chave de API')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao criar chave de API', { id: 'api-key-toast' })
         } finally {
             setIsCreatingApiKey(false)
         }
@@ -248,11 +248,11 @@ export default function ProfilePage() {
         setRevokingKeyId(keyId)
         try {
             await api.delete(`/api-keys/${keyId}`)
-            toast.success('Chave revogada com sucesso.')
+            toast.success('Chave revogada com sucesso.', { id: 'api-key-toast' })
             setConfirmRevokeId(null)
             fetchApiKeys()
         } catch (err: any) {
-            toast.error(translateError(err.response?.data?.detail) || 'Erro ao revogar chave')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao revogar chave', { id: 'api-key-toast' })
         } finally {
             setRevokingKeyId(null)
         }
@@ -262,10 +262,10 @@ export default function ProfilePage() {
         try {
             await navigator.clipboard.writeText(key)
             setKeyCopied(true)
-            toast.success('Chave copiada!')
+            toast.success('Chave copiada!', { id: 'api-key-toast' })
             setTimeout(() => setKeyCopied(false), 3000)
         } catch {
-            toast.error('Falha ao copiar.')
+            toast.error('Falha ao copiar.', { id: 'api-key-toast' })
         }
     }
 
@@ -309,7 +309,7 @@ export default function ProfilePage() {
         e.preventDefault()
 
         if (activeTab === 'security' && form.password && form.password !== form.confirm_password) {
-            toast.error('As senhas não coincidem.')
+            toast.error('As senhas não coincidem.', { id: 'profile-error' })
             return
         }
 
@@ -329,14 +329,14 @@ export default function ProfilePage() {
             }
 
             await api.put('/auth/me', payload)
-            toast.success('Perfil atualizado com sucesso!')
+            toast.success('Perfil atualizado com sucesso!', { id: 'profile-success' })
 
             setTimeout(() => {
                 window.location.reload()
             }, 1000)
 
         } catch (err: any) {
-            toast.error(translateError(err.response?.data?.detail) || 'Erro ao atualizar perfil')
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao atualizar perfil', { id: 'profile-error' })
         } finally {
             setSaving(false)
         }

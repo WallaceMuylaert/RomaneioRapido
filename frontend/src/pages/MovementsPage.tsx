@@ -186,7 +186,7 @@ export default function MovementsPage() {
             setReportData(res.data)
         } catch (err) {
             console.error('Erro ao buscar relatório:', err)
-            toast.error('Erro ao buscar dados do relatório.')
+            toast.error('Erro ao buscar dados do relatório.', { id: 'report-error' })
         } finally {
             setReportLoading(false)
         }
@@ -455,7 +455,7 @@ export default function MovementsPage() {
         }
 
         sessionStorage.setItem('copy_romaneio_data', JSON.stringify(copyData))
-        toast.success('Pedido copiado! Redirecionando...')
+        toast.success('Pedido copiado! Redirecionando...', { id: 'movement-success' })
         navigate('/romaneio')
     }
 
@@ -463,12 +463,12 @@ export default function MovementsPage() {
         setCancelling(true)
         try {
             await api.post(`/inventory/movements/${id}/cancel`)
-            toast.success('Movimentação cancelada com sucesso!')
+            toast.success('Movimentação cancelada com sucesso!', { id: 'movement-success' })
             fetchMovements()
             fetchReport()
         } catch (err) {
             console.error('Erro ao cancelar movimentação:', err)
-            toast.error('Erro ao cancelar movimentação.')
+            toast.error('Erro ao cancelar movimentação.', { id: 'movement-error' })
         } finally {
             setCancelling(false)
             setCancelModal({ isOpen: false, id: null })

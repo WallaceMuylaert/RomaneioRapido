@@ -113,10 +113,10 @@ export default function ClientsPage() {
             await api.delete(`/clients/${id}`)
             setDeleteConfirm(null)
             fetchClients()
-            toast.success('Cliente excluído com sucesso!')
+            toast.success('Cliente excluído com sucesso!', { id: 'client-success' })
         } catch (err) {
             console.error('Erro ao deletar cliente:', err)
-            toast.error('Erro ao excluir cliente')
+            toast.error('Erro ao excluir cliente', { id: 'client-error' })
         }
     }
 
@@ -132,7 +132,7 @@ export default function ClientsPage() {
                 setSelectedIds(allIds)
             } catch (err) {
                 console.error('Erro ao selecionar todos os clientes:', err)
-                toast.error('Erro ao selecionar todos')
+                toast.error('Erro ao selecionar todos', { id: 'client-error' })
             } finally {
                 setLoading(false)
             }
@@ -160,7 +160,7 @@ export default function ClientsPage() {
             }
 
             if (clientsToExport.length === 0) {
-                toast.error('Nenhum cliente selecionado')
+                toast.error('Nenhum cliente selecionado', { id: 'client-error' })
                 return
             }
 
@@ -311,7 +311,7 @@ export default function ClientsPage() {
 
         } catch (err) {
             console.error('Erro ao exportar clientes:', err)
-            toast.error('Erro ao gerar relatório')
+            toast.error('Erro ao gerar relatório', { id: 'client-error' })
         }
     }
 
