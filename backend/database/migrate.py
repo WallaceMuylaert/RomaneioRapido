@@ -114,6 +114,10 @@ def add_column_if_not_exists(table_name, column_name, column_type, nullable=True
                 print(f"  [⚡] Filling existing rows for 'discount_snapshot' with default (0)...")
                 conn.execute(text(f"UPDATE {table_name} SET discount_snapshot = 0 WHERE discount_snapshot IS NULL;"))
                 conn.commit()
+            elif column_name == 'is_cancelled':
+                print(f"  [⚡] Filling existing rows for 'is_cancelled' with default (False)...")
+                conn.execute(text(f"UPDATE {table_name} SET is_cancelled = False WHERE is_cancelled IS NULL;"))
+                conn.commit()
             
             return True
         return False
@@ -211,6 +215,16 @@ def run_migrations():
     except Exception as e:
         print(f"  ❌ Error initializing admin: {e}")
         # Not raising here as admin init often depends on fully migrated DB
+
+    # Fix para is_cancelled em movimentações existentes
+    with database.engine.connect() as conn:
+        try:
+            print("\n🔧 Fixing NULL values for 'is_cancelled' in inventory_movements...")
+            conn.execute(text("UPDATE inventory_movements SET is_cancelled = False WHERE is_cancelled IS NULL;"))
+            conn.commit()
+            print("  ✅ is_cancelled NULL fix completed")
+        except Exception as e:
+            print(f"  ⚠️ Warning fixing is_cancelled: {e}")
 
     print("\n" + "=" * 50)
     print("✅ Migration completed!")

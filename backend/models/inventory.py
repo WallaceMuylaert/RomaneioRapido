@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Enum
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Enum, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from backend.core.database import Base
@@ -21,6 +21,7 @@ class InventoryMovement(Base):
     notes = Column(String, nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     client_id = Column(Integer, ForeignKey("clients.id", ondelete="SET NULL"), nullable=True, index=True)
+    is_cancelled = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     product_name_snapshot = Column(String, nullable=True)
