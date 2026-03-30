@@ -15,7 +15,7 @@ class PendingRomaneio(Base):
     
     # Store the cart items as a JSON list
     items = Column(JSON, nullable=False, default=list)
-    empenhar_estoque = Column(Boolean, default=False)
+    empenhar_estoque = Column(Boolean, default=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

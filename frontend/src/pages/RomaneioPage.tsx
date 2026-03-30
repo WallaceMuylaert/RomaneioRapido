@@ -161,7 +161,7 @@ export default function RomaneioPage() {
     // Pedidos Pendentes (Separação)
     const [pendingRomaneios, setPendingRomaneios] = useState<PendingRomaneio[]>([])
     const [isSavingPending, setIsSavingPending] = useState(false)
-    const [empenharAoDigitar, setEmpenharAoDigitar] = useState(false)
+    const [empenharAoDigitar, setEmpenharAoDigitar] = useState(true)
     const [activePendingId, setActivePendingId] = useState<number | null>(null)
 
     // Fechar dropdowns ao clicar fora
@@ -542,7 +542,7 @@ useEffect(() => {
                 setCustomerName(draft.customerName || '')
                 setCustomerPhone(draft.customerPhone || null)
                 setSelectedClientId(draft.selectedClientId || null)
-                setEmpenharAoDigitar(draft.empenharAoDigitar || false)
+                setEmpenharAoDigitar(draft.empenharAoDigitar ?? true)
                 setDiscountPercentage(draft.discountPercentage || 0)
                 toast.success('Rascunho recuperado automaticamente!', { icon: '🛡️' })
             }
