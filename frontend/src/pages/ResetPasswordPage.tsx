@@ -19,7 +19,7 @@ export default function ResetPasswordPage() {
 
     useEffect(() => {
         if (!token) {
-            toast.error('Token de recuperação ausente.')
+            toast.error('Token de recuperação ausente.', { id: 'auth-toast' })
             navigate('/login')
         }
     }, [token, navigate])
@@ -28,12 +28,12 @@ export default function ResetPasswordPage() {
         e.preventDefault()
 
         if (password !== confirmPassword) {
-            toast.error('As senhas não coincidem.')
+            toast.error('As senhas não coincidem.', { id: 'auth-toast' })
             return
         }
 
         if (password.length < 6) {
-            toast.error('A senha deve ter pelo menos 6 caracteres.')
+            toast.error('A senha deve ter pelo menos 6 caracteres.', { id: 'auth-toast' })
             return
         }
 
@@ -45,11 +45,11 @@ export default function ResetPasswordPage() {
                 new_password: password
             })
             setIsSuccess(true)
-            toast.success('Senha redefinida com sucesso!')
+            toast.success('Senha redefinida com sucesso!', { id: 'auth-toast' })
             setTimeout(() => navigate('/login'), 3000)
         } catch (err: any) {
             const errorMsg = (err.response?.data?.detail || 'Erro ao redefinir senha. O link pode ter expirado.').replace('Value error, ', '')
-            toast.error(errorMsg)
+            toast.error(errorMsg, { id: 'auth-toast' })
         } finally {
             setIsLoading(false)
         }

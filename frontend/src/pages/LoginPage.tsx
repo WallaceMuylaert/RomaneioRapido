@@ -85,8 +85,7 @@ export default function LoginPage() {
                     email: email,
                     password: password
                 })
-
-                toast.success('Conta criada com sucesso!')
+                toast.success('Conta criada com sucesso!', { id: 'auth-toast' })
 
                 // Login automático após cadastro
                 await login(email, password)
@@ -116,13 +115,13 @@ export default function LoginPage() {
                     email: !isRegistering ? 'Email ou senha incorretos' : undefined,
                     password: !isRegistering ? ' ' : undefined // Espaço para manter o layout/cor
                 })
-                toast.error('Credenciais inválidas.')
+                toast.error('Credenciais inválidas.', { id: 'auth-toast' })
                 return
             }
 
             if (detail === "O email já está em uso.") {
                 setErrors({ email: detail })
-                toast.error(detail)
+                toast.error(detail, { id: 'auth-toast' })
             } else if (Array.isArray(detail)) {
                 const serverErrors: any = {}
                 detail.forEach((e: any) => {
@@ -134,7 +133,7 @@ export default function LoginPage() {
                     serverErrors[field] = msg
                 })
                 setErrors(serverErrors)
-                toast.error('Verifique os campos destacados.')
+                toast.error('Verifique os campos destacados.', { id: 'auth-toast' })
             } else {
                 let errorMessage = typeof detail === 'string' ? detail : (isRegistering ? 'Erro ao criar conta.' : 'Email ou senha incorretos.')
 
@@ -144,7 +143,7 @@ export default function LoginPage() {
                 }
 
                 setErrors({ general: errorMessage })
-                toast.error(errorMessage)
+                toast.error(errorMessage, { id: 'auth-toast' })
             }
         } finally {
             setIsLoading(false)

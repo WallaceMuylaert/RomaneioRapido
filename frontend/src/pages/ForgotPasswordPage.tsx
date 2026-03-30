@@ -18,9 +18,9 @@ export default function ForgotPasswordPage() {
         try {
             await api.post('/auth/forgot-password', { email })
             setIsSent(true)
-            toast.success('Se o email existir, enviaremos as instruções.')
+            toast.success('Se o email existir, enviaremos as instruções.', { id: 'auth-toast' })
         } catch (err: any) {
-            toast.error('Erro ao processar sua solicitação.')
+            toast.error('Erro ao processar sua solicitação.', { id: 'auth-toast' })
         } finally {
             setIsLoading(false)
         }

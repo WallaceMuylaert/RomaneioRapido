@@ -44,7 +44,7 @@ export default function SuperAdminPage() {
             setUsers(res.data)
         } catch (err) {
             console.error('Erro ao buscar usuários:', err)
-            toast.error('Erro ao carregar lista de usuários')
+            toast.error('Erro ao carregar lista de usuários', { id: 'admin-error' })
         } finally {
             setLoading(false)
         }
@@ -60,7 +60,7 @@ export default function SuperAdminPage() {
         setUpdatingUserId(selectedUser.id)
         try {
             await api.put(`/admin/users/${selectedUser.id}`, { [field]: value })
-            toast.success(`${field === 'password' ? 'Senha' : 'Usuário'} atualizado!`)
+            toast.success(`${field === 'password' ? 'Senha' : 'Usuário'} atualizado!`, { id: 'admin-success' })
             
             // Refresh data
             const updatedUsers = users.map(u => 
@@ -76,7 +76,7 @@ export default function SuperAdminPage() {
             if (typeof detail === 'string') errorMsg = detail
             else if (Array.isArray(detail)) errorMsg = detail.map((d: any) => d.msg || d.type).join(', ')
             else if (err.response?.data?.message) errorMsg = err.response.data.message
-            toast.error(errorMsg)
+            toast.error(errorMsg, { id: 'admin-error' })
         } finally {
             setUpdatingUserId(null)
         }

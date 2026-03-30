@@ -174,7 +174,7 @@ function App() {
   useEffect(() => {
     toasts
       .filter((t) => t.visible)
-      .filter((_, i) => i >= 2)
+      .slice(0, -2) // Mantém apenas os 2 últimos (mais recentes)
       .forEach((t) => toast.dismiss(t.id));
   }, [toasts]);
 
