@@ -105,3 +105,24 @@ def get_daily_reports(
     except Exception as e:
         logger.exception("Erro crítico ao gerar relatório diário")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@router.post("/movements/{movement_id}/cancel", response_model=InventoryMovementResponse)
+@limiter.limit("30/minute")
+def cancel_movement(
+    request: Request,
+    movement_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        db_movement = crud.cancel_movement(db, movement_id, user_id=current_user.id)
+        if not db_movement:
+            raise HTTPException(status_code=404, detail="Movimentação não encontrada")
+        logger.info(f"Usuário {current_user.email} cancelou movimentação ID={movement_id}")
+        return db_movement
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.exception("Erro crítico ao cancelar movimentação")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")

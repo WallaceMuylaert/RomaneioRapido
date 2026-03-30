@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Optional, Any, List
 from datetime import datetime
 from backend.models.inventory import MovementType
@@ -35,12 +35,20 @@ class ClientInfo(BaseModel):
 
 class InventoryMovementResponse(InventoryMovementBase):
     id: int
+    is_cancelled: bool = False
     created_by: Optional[int] = None
     created_at: Optional[datetime] = None
     product_name: Optional[str] = None
     product_image: Optional[str] = None
     client: Optional[ClientInfo] = None
     product_price: Optional[float] = None
+
+    @field_validator('is_cancelled', mode='before')
+    @classmethod
+    def validate_is_cancelled(cls, v):
+        if v is None:
+            return False
+        return v
 
     @property
     def product_image(self) -> Optional[str]:

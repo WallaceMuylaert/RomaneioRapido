@@ -126,7 +126,8 @@ def get_daily_reports(db: Session, user_id: int, start_date=None, end_date=None,
     from datetime import datetime, time
     
     query = db.query(InventoryMovement).filter(
-        InventoryMovement.created_by == user_id
+        InventoryMovement.created_by == user_id,
+        InventoryMovement.is_cancelled == False
     )
     
     if movement_type:
@@ -165,3 +166,32 @@ def get_daily_reports(db: Session, user_id: int, start_date=None, end_date=None,
         "start_date": start_date,
         "end_date": end_date
     }
+
+def cancel_movement(db: Session, movement_id: int, user_id: int):
+    # Buscar a movimentação
+    movement = db.query(InventoryMovement).filter(
+        InventoryMovement.id == movement_id,
+        InventoryMovement.created_by == user_id
+    ).first()
+    
+    if not movement:
+        return None
+        
+    if movement.is_cancelled:
+        return movement
+        
+    # Buscar o produto para reverter o estoque
+    if movement.product_id:
+        product = db.query(Product).filter(Product.id == movement.product_id).first()
+        if product:
+            if movement.movement_type == MovementType.IN:
+                product.stock_quantity -= movement.quantity
+            elif movement.movement_type == MovementType.OUT:
+                product.stock_quantity += movement.quantity
+                
+    # Marcar como cancelado
+    movement.is_cancelled = True
+    
+    db.commit()
+    db.refresh(movement)
+    return movement

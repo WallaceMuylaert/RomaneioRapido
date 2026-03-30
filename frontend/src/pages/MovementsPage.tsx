@@ -16,10 +16,13 @@ import {
     Download,
     BarChart3,
     ArrowRight,
-    ClipboardList
+    ClipboardList,
+    XCircle,
+    AlertCircle
 } from 'lucide-react'
 import MovementDetailsModal from '../components/MovementDetailsModal'
 import RomaneioExportModal from '../components/RomaneioExportModal'
+import ConfirmModal from '../components/ConfirmModal'
 import type { CartItem } from '../components/RomaneioExportModal'
 import { format, startOfMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -54,6 +57,7 @@ interface Movement {
         name: string
         phone: string | null
     }
+    is_cancelled?: boolean
 }
 
 export default function MovementsPage() {
@@ -71,11 +75,13 @@ export default function MovementsPage() {
     const [exportingMovement, setExportingMovement] = useState<{ clientId: number | null, customerName: string, createdAt: string, phone: string | null, image: string | null, items: CartItem[], discount?: number } | null>(null)
     const [openMenuId, setOpenMenuId] = useState<number | null>(null)
     const [logoBase64, setLogoBase64] = useState<string>('')
+    const [cancelModal, setCancelModal] = useState<{ isOpen: boolean, id: number | null }>({ isOpen: false, id: null })
+    const [cancelling, setCancelling] = useState(false)
 
     useEffect(() => {
         getBase64FromUrl(logoImg).then(setLogoBase64).catch(console.error)
     }, [])
-    
+
     // Helper para obter o preço efetivo (snapshot ou preço atual do produto)
     const getEffectivePrice = (item: any) => item.unit_price_snapshot ?? item.product_price ?? 0
 
@@ -110,6 +116,8 @@ export default function MovementsPage() {
 
         movements.forEach(m => {
             const effectivePrice = getEffectivePrice(m)
+            const itemValue = m.is_cancelled ? 0 : (m.quantity * effectivePrice)
+
             if (m.romaneio_id) {
                 if (!groups[m.romaneio_id]) {
                     let cName = ""
@@ -125,11 +133,12 @@ export default function MovementsPage() {
                         customerPhone: m.client?.phone || null,
                         items: [],
                         movement_type: m.movement_type,
-                        totalValue: 0
+                        totalValue: 0,
+                        is_cancelled: m.is_cancelled
                     }
                 }
                 groups[m.romaneio_id].items.push(m)
-                groups[m.romaneio_id].totalValue += (m.quantity * effectivePrice)
+                groups[m.romaneio_id].totalValue += itemValue
 
                 if (m.client || m.client_id) {
                     groups[m.romaneio_id].customerName = m.client?.name || groups[m.romaneio_id].customerName;
@@ -139,7 +148,7 @@ export default function MovementsPage() {
             } else {
                 singles.push({
                     ...m,
-                    totalValue: (m.quantity * effectivePrice)
+                    totalValue: itemValue
                 })
             }
         })
@@ -151,14 +160,14 @@ export default function MovementsPage() {
             ...singles
                 .filter(s => s.movement_type === 'OUT')
                 .map(s => ({
-                ...s,
-                isGroup: false,
-                id: s.id,
-                clientId: s.client_id || s.client?.id || null,
-                items: [s],
-                customerName: s.notes && s.notes.includes("Romaneio: ") ? s.notes.replace("Romaneio: ", "").trim() : (s.notes || ""),
-                totalValue: s.totalValue
-            }))
+                    ...s,
+                    isGroup: false,
+                    id: s.id,
+                    clientId: s.client_id || s.client?.id || null,
+                    items: [s],
+                    customerName: s.notes && s.notes.includes("Romaneio: ") ? s.notes.replace("Romaneio: ", "").trim() : (s.notes || ""),
+                    totalValue: s.totalValue
+                }))
         ]
 
         return result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -402,6 +411,7 @@ export default function MovementsPage() {
                                 </td>
                                 <td class="row-val">
                                     ${formatCurrency(g.totalValue)}
+                                    ${g.is_cancelled ? '<div style="font-size: 9px; color: #ef4444; font-weight: 900; margin-top: 4px;">CANCELADO</div>' : ''}
                                 </td>
                             </tr>
                         `).join('')}
@@ -449,6 +459,22 @@ export default function MovementsPage() {
         navigate('/romaneio')
     }
 
+    const handleCancelMovement = async (id: number) => {
+        setCancelling(true)
+        try {
+            await api.post(`/inventory/movements/${id}/cancel`)
+            toast.success('Movimentação cancelada com sucesso!')
+            fetchMovements()
+            fetchReport()
+        } catch (err) {
+            console.error('Erro ao cancelar movimentação:', err)
+            toast.error('Erro ao cancelar movimentação.')
+        } finally {
+            setCancelling(false)
+            setCancelModal({ isOpen: false, id: null })
+        }
+    }
+
     const fetchMovements = async () => {
         setLoading(true)
         try {
@@ -475,8 +501,18 @@ export default function MovementsPage() {
         fetchMovements()
     }, [page, debouncedSearch, typeFilter, reportPeriod])
 
-    const getTypeStyles = (type: string) => {
-        switch (type) {
+    const getTypeStyles = (m: Movement) => {
+        if (m.is_cancelled) {
+            return {
+                bg: 'bg-slate-100',
+                text: 'text-slate-400',
+                border: 'border-slate-200',
+                icon: <XCircle className="w-4 h-4" />,
+                label: 'Cancelado'
+            }
+        }
+
+        switch (m.movement_type) {
             case 'IN':
                 return {
                     bg: 'bg-emerald-50',
@@ -707,18 +743,19 @@ export default function MovementsPage() {
                                     </tr>
                                 ) : (
                                     (viewMode === 'romaneios' ? groupedMovementsForReport : movements).map((m) => {
-                                        const styles = getTypeStyles(m.movement_type)
+                                        const styles = getTypeStyles(m)
                                         const isGroup = 'isGroup' in m && m.isGroup;
+                                        const cancelled = m.is_cancelled;
 
                                         return (
-                                            <tr key={isGroup ? `group-${m.id}` : m.id} className="hover:bg-slate-50/50 transition-colors group">
+                                            <tr key={isGroup ? `group-${m.id}` : m.id} className={`hover:bg-slate-50/50 transition-colors group ${cancelled ? 'opacity-60 bg-slate-50/30' : ''}`}>
                                                 <td className="px-8 py-5">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
                                                             <Calendar className="w-4 h-4" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-bold text-slate-700">
+                                                            <p className={`text-sm font-bold ${cancelled ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
                                                                 {format(new Date(m.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                                                             </p>
                                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -744,7 +781,7 @@ export default function MovementsPage() {
                                                             ))}
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-bold text-slate-800 line-clamp-1">
+                                                            <p className={`text-sm font-bold line-clamp-1 ${cancelled ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-800'}`}>
                                                                 {isGroup ? ((m as any).customerName || 'Romaneio Agrupado') : m.product_name}
                                                             </p>
                                                             <p className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-tighter">
@@ -762,7 +799,7 @@ export default function MovementsPage() {
                                                 <td className="px-8 py-5 text-right">
                                                     <div className="flex flex-col items-end">
                                                         <div className="flex items-baseline justify-end gap-1">
-                                                            <span className={`font-black text-sm ${m.movement_type === 'OUT' ? 'text-rose-600' : m.movement_type === 'IN' ? 'text-emerald-600' : 'text-slate-900'}`}>
+                                                            <span className={`font-black text-sm ${cancelled ? 'text-slate-400 line-through' : (m.movement_type === 'OUT' ? 'text-rose-600' : m.movement_type === 'IN' ? 'text-emerald-600' : 'text-slate-900')}`}>
                                                                 {m.movement_type === 'OUT' ? '-' : m.movement_type === 'IN' ? '+' : ''}
                                                                 {isGroup ? (m as any).items.length : (m.quantity % 1 === 0 ? m.quantity : m.quantity.toFixed(2))}
                                                             </span>
@@ -894,6 +931,21 @@ export default function MovementsPage() {
                                                                         </div>
                                                                         <span>Imprimir / WhatsApp</span>
                                                                     </button>
+
+                                                                    {!cancelled && !isGroup && (
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setCancelModal({ isOpen: true, id: m.id })
+                                                                                setOpenMenuId(null)
+                                                                            }}
+                                                                            className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-slate-700 hover:bg-rose-50 hover:text-rose-600 transition-all group"
+                                                                        >
+                                                                            <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-500 group-hover:bg-rose-600 group-hover:text-white transition-all shadow-sm">
+                                                                                <AlertCircle className="w-4 h-4" />
+                                                                            </div>
+                                                                            <span>Cancelar Lançamento</span>
+                                                                        </button>
+                                                                    )}
                                                                 </div>
                                                             </>
                                                         )}
@@ -996,6 +1048,18 @@ export default function MovementsPage() {
                     onClose={() => setExportingMovement(null)}
                 />
             )}
+
+            <ConfirmModal
+                isOpen={cancelModal.isOpen}
+                onClose={() => setCancelModal({ isOpen: false, id: null })}
+                onConfirm={() => cancelModal.id && handleCancelMovement(cancelModal.id)}
+                title="Cancelar Movimentação?"
+                message="Deseja realmente cancelar esta movimentação? O saldo do produto será revertido automaticamente e este registro ficará marcado como cancelado no histórico."
+                confirmText="Sim, Cancelar"
+                cancelText="Não, Voltar"
+                type="danger"
+                loading={cancelling}
+            />
         </div>
     )
 }
