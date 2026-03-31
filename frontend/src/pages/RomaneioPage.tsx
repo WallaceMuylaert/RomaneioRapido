@@ -571,8 +571,9 @@ export default function RomaneioPage() {
 
     // Lógica de Auto-Save para Empenho
     useEffect(() => {
-        if (!empenharAoDigitar || cartItems.length === 0) {
-            if (activePendingId && !empenharAoDigitar) {
+        // Se estiver finalizando, ou se o empenho estiver desativado, ou carrinho vazio: sair
+        if (submitting || !empenharAoDigitar || cartItems.length === 0) {
+            if (activePendingId && !empenharAoDigitar && !submitting) {
                 // Se desativou o toggle, limpamos o ID ativo para não sobrescrever rascunhos que não devem mais empenhar
                 setActivePendingId(null);
             }
@@ -612,7 +613,7 @@ export default function RomaneioPage() {
         }, 1500);
 
         return () => clearTimeout(timer);
-    }, [cartItems, customerName, empenharAoDigitar, selectedClientId, customerPhone]);
+    }, [cartItems, customerName, empenharAoDigitar, selectedClientId, customerPhone, submitting, activePendingId]);
 
 
     // Lógica de Persistência Local (localStorage) para evitar perda de dados por refresh
