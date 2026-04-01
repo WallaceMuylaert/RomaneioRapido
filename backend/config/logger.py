@@ -51,6 +51,7 @@ class SafeDailyRotatingFileHandler(TimedRotatingFileHandler):
             self._switch_if_needed()
             with portalocker.Lock(self.lock_file, 'a', timeout=10):
                 super().emit(record)
+                self.flush()  # Garante que os dados saiam do buffer do Python para o disco antes de liberar o lock
         except Exception:
             self.handleError(record)
 
