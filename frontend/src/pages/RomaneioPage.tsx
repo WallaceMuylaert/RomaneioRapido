@@ -29,6 +29,7 @@ import ClientModal from '../components/ClientModal'
 import ConfirmModal from '../components/ConfirmModal'
 import DiscountCalculatorModal from '../components/DiscountCalculatorModal'
 import { maskCurrency, unmaskCurrency } from '../utils/masks'
+import { soundEffects } from '../utils/sounds'
 
 interface Product {
     id: number
@@ -652,6 +653,7 @@ export default function RomaneioPage() {
                 addToCart(productInfo)
                 setCameraOpen(false)
                 setScanStatus('success')
+                soundEffects.playScan()
                 toast.success(`${productInfo.name} adicionado!`, {
                     id: 'barcode-scan',
                     icon: '✅',
@@ -669,6 +671,7 @@ export default function RomaneioPage() {
                 addToCart(items[0])
                 setCameraOpen(false)
                 setScanStatus('success')
+                soundEffects.playScan()
                 toast.success(`${items[0].name} adicionado!`, {
                     id: 'barcode-scan',
                     icon: '✅',
@@ -757,6 +760,7 @@ export default function RomaneioPage() {
                 })
             }
             setShowExportModal(true)
+            soundEffects.playSuccess()
             toast.success('Romaneio registrado com sucesso!', { id: 'finalize-romaneio' })
             fetchStockLevels()
             fetchPendingRomaneios() // Atualiza a lista de separações para garantir que o rascunho sumiu
