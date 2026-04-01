@@ -370,7 +370,7 @@ export default function RomaneioPage() {
 
         setIsSavingPending(true)
         try {
-            await api.post('/pending/', {
+            const payload = {
                 client_id: selectedClientId,
                 customer_name: customerName,
                 customer_phone: customerPhone,
@@ -386,8 +386,17 @@ export default function RomaneioPage() {
                     color: item.color,
                     size: item.size
                 }))
-            })
-            toast.success('Pedido salvo em separação!', { id: 'save-pending' })
+            };
+
+            if (activePendingId) {
+                await api.put(`/pending/${activePendingId}`, payload);
+                toast.success('Separação atualizada!', { id: 'save-pending' });
+            } else {
+                const res = await api.post('/pending/', payload);
+                setActivePendingId(res.data.id);
+                toast.success('Pedido salvo em separação!', { id: 'save-pending' });
+            }
+
             resetCart()
             fetchPendingRomaneios()
             setActiveTab('separacao')
@@ -399,37 +408,7 @@ export default function RomaneioPage() {
     }
 
     const handleBlockerSave = async () => {
-        if (!customerName || !customerName.trim()) {
-            toast.error('Informe o nome do cliente antes de salvar', { id: 'romaneio-error' })
-            return
-        }
-
-        setIsSavingPending(true)
-        try {
-            await api.post('/pending/', {
-                client_id: selectedClientId,
-                customer_name: customerName,
-                customer_phone: customerPhone,
-                items: cartItems.map(item => ({
-                    product_id: item.id,
-                    name: item.name,
-                    barcode: item.barcode,
-                    quantity: item.quantity,
-                    unit: item.unit,
-                    price: item.price,
-                    image: item.image,
-                    color: item.color,
-                    size: item.size
-                }))
-            })
-            toast.success('Pedido salvo em separação!', { id: 'save-pending' })
-            blocker.proceed?.()
-        } catch (err: any) {
-            toast.error('Erro ao salvar rascunho. Saindo sem salvar...', { id: 'romaneio-error' })
-            blocker.proceed?.()
-        } finally {
-            setIsSavingPending(false)
-        }
+        blocker.proceed?.();
     }
 
     const handleResumePending = async (pending: PendingRomaneio) => {
@@ -569,51 +548,6 @@ export default function RomaneioPage() {
     }, [cartItems])
 
 
-    // Lógica de Auto-Save para Empenho
-    useEffect(() => {
-        // Se estiver finalizando, ou se o empenho estiver desativado, ou carrinho vazio: sair
-        if (submitting || !empenharAoDigitar || cartItems.length === 0) {
-            if (activePendingId && !empenharAoDigitar && !submitting) {
-                // Se desativou o toggle, limpamos o ID ativo para não sobrescrever rascunhos que não devem mais empenhar
-                setActivePendingId(null);
-            }
-            return;
-        }
-
-        const timer = setTimeout(async () => {
-            try {
-                const payload = {
-                    client_id: selectedClientId,
-                    customer_name: customerName || 'Rascunho Automático',
-                    customer_phone: customerPhone,
-                    empenhar_estoque: true,
-                    items: cartItems.map(item => ({
-                        product_id: item.id,
-                        name: item.name,
-                        barcode: item.barcode,
-                        quantity: item.quantity,
-                        unit: item.unit,
-                        price: item.price,
-                        image: item.image,
-                        color: item.color,
-                        size: item.size
-                    }))
-                };
-
-                if (activePendingId) {
-                    await api.put(`/pending/${activePendingId}`, payload);
-                } else {
-                    const res = await api.post('/pending/', payload);
-                    setActivePendingId(res.data.id);
-                    fetchPendingRomaneios();
-                }
-            } catch (err) {
-                console.error('Erro no auto-save de empenho:', err);
-            }
-        }, 1500);
-
-        return () => clearTimeout(timer);
-    }, [cartItems, customerName, empenharAoDigitar, selectedClientId, customerPhone, submitting, activePendingId]);
 
 
     // Lógica de Persistência Local (localStorage) para evitar perda de dados por refresh
