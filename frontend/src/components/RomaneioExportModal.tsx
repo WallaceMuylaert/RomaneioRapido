@@ -583,10 +583,11 @@ export default function RomaneioExportModal({
     }
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+        <div className="fixed inset-0 z-[100] overflow-y-auto outline-none focus:outline-none">
+            <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
 
-            <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
                 <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
                     <div>
                         <h2 className="text-lg font-bold text-gray-900">
@@ -711,13 +712,14 @@ export default function RomaneioExportModal({
                 </div>
             </div>
 
-            <AlertModal
-                isOpen={alertConfig.isOpen}
-                onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
-                title={alertConfig.title}
-                message={alertConfig.message}
-                type={alertConfig.type}
-            />
-        </div >
+                <AlertModal
+                    isOpen={alertConfig.isOpen}
+                    onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+                    title={alertConfig.title}
+                    message={alertConfig.message}
+                    type={alertConfig.type}
+                />
+            </div>
+        </div>
     )
 }

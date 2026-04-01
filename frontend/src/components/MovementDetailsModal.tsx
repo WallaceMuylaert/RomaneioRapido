@@ -20,10 +20,11 @@ export default function MovementDetailsModal({ clientId, customerName, items, cr
     }
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+        <div className="fixed inset-0 z-[100] overflow-y-auto outline-none focus:outline-none">
+            <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
 
-            <div className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+                <div className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
                 {/* Header */}
                 <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-white">
                     <div>
@@ -91,6 +92,7 @@ export default function MovementDetailsModal({ clientId, customerName, items, cr
                         Exportar ou Imprimir
                         <ArrowRight className="w-4 h-4" />
                     </button>
+                </div>
                 </div>
             </div>
         </div>

@@ -100,13 +100,14 @@ export default function UserManagementModal({
     }
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div 
-                className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" 
-                onClick={onClose} 
-            />
-            
-            <div className="bg-white rounded-[2.5rem] w-full max-w-2xl relative z-10 shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-[100] overflow-y-auto outline-none focus:outline-none">
+            <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+                <div 
+                    className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" 
+                    onClick={onClose} 
+                />
+                
+                <div className="bg-white rounded-[2.5rem] w-full max-w-2xl relative z-10 shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
                 {/* HEADER */}
                 <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -339,5 +340,6 @@ export default function UserManagementModal({
                 </div>
             </div>
         </div>
+    </div>
     )
 }

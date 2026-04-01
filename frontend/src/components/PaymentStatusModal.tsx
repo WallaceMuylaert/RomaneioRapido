@@ -55,7 +55,7 @@ export default function PaymentStatusModal({ status, isOpen, onClose, planName =
                 ))}
             </div>
 
-            <div className="flex min-h-full items-center justify-center p-4 py-12 pointer-events-none">
+            <div className="flex min-h-full items-center justify-center p-4 sm:p-6 sm:py-12 pointer-events-none">
                 <div
                     onClick={(e) => e.stopPropagation()}
                     className={`relative w-full max-w-lg bg-white rounded-3xl sm:rounded-[2.5rem] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] overflow-hidden transition-all duration-700 transform pointer-events-auto ${animate ? 'scale-100 translate-y-0 opacity-100' : 'scale-90 translate-y-10 opacity-0'}`}
