@@ -223,7 +223,7 @@ export default function AppLayout() {
                     <div className="w-10"></div> {/* Spacer for symmetry */}
                 </header>
 
-                <main className="flex-1 p-4 md:p-8 lg:p-10 animate-slide-up">
+                <main className="flex-1 p-4 md:p-8 lg:p-10">
                     {/* Bloqueio estrito de renderização de conteúdo se as condições de lock forem atendidas */}
                     {isLockEnabled && window.location.pathname !== '/perfil' ? (
                         <div className="h-full flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in zoom-in-95 duration-500">

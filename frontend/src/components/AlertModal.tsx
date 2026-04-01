@@ -43,12 +43,13 @@ export default function AlertModal({
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 animate-in fade-in duration-300">
-            {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"
-                onClick={onClose}
-            />
+        <div className="fixed inset-0 z-[1000] overflow-y-auto outline-none focus:outline-none">
+            <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+                {/* Backdrop */}
+                <div
+                    className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+                    onClick={onClose}
+                />
 
             {/* Modal Container */}
             <div className="relative bg-white/90 backdrop-blur-xl border border-white/20 rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
@@ -80,6 +81,7 @@ export default function AlertModal({
                     >
                         {confirmText}
                     </button>
+                </div>
                 </div>
             </div>
         </div>
