@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate, useLocation, isRouteErrorResponse, useRouteError } from 'react-router-dom';
 import { AlertTriangle, Home, ArrowLeft } from 'lucide-react';
 
@@ -22,6 +23,13 @@ export default function ErrorPage({ code }: ErrorPageProps) {
     const navigate = useNavigate();
     const location = useLocation();
     const routeError = useRouteError();
+
+    useEffect(() => {
+        // Clear browser data to ensure a clean state when an error occurs
+        localStorage.clear();
+        sessionStorage.clear();
+        console.warn('Cache do navegador limpo automaticamente na tela de erro.');
+    }, []);
 
     // Try to determine the code from props, route error, or query params
     let finalCode = code || 500;
