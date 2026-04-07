@@ -18,17 +18,28 @@ router = APIRouter(prefix="/auth")
 @router.post("/login", response_model=Token)
 @limiter.limit("15/minute")
 def login(request: Request, login_data: LoginRequest, db: Session = Depends(get_db)):
+    # Extrair contexto de rede
+    forwarded = request.headers.get("x-forwarded-for", "")
+    client_ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
+    user_agent = (request.headers.get("user-agent") or "-")[:120]
+
     try:
         user = get_user_by_email(db, login_data.email)
         if not user or not verify_password(login_data.password, user.hashed_password):
-            logger.warning(f"Falha de login: credenciais inválidas para o email {login_data.email}")
+            logger.warning(
+                f"Falha de login: credenciais inválidas para {login_data.email} "
+                f"| IP: {client_ip} | UA: {user_agent}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Email ou senha incorretos",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         if not user.is_active:
-            logger.warning(f"Falha de login: usuário inativo {login_data.email}")
+            logger.warning(
+                f"Falha de login: usuário inativo {login_data.email} "
+                f"| IP: {client_ip} | UA: {user_agent}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Usuário desativado"
@@ -37,12 +48,19 @@ def login(request: Request, login_data: LoginRequest, db: Session = Depends(get_
         access_token = create_access_token(
             data={"sub": user.email}, expires_delta=access_token_expires
         )
-        logger.info(f"Login bem-sucedido: usuário {user.email}")
+        logger.info(
+            f"Login bem-sucedido: {user.email} (id={user.id}) "
+            f"| IP: {client_ip} | UA: {user_agent} "
+            f"| Token expira em {settings.ACCESS_TOKEN_EXPIRE_MINUTES}min"
+        )
         return {"access_token": access_token, "token_type": "bearer"}
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"Erro inesperado no login para {login_data.email}: {e}")
+        logger.exception(
+            f"Erro inesperado no login para {login_data.email} "
+            f"| IP: {client_ip} | UA: {user_agent} | Error: {e}"
+        )
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -56,8 +74,10 @@ def get_me(request: Request, current_user: User = Depends(get_current_user)):
         user_data.trial_expired = is_trial_expired(current_user)
         user_data.trial_days_remaining = get_trial_days_remaining(current_user)
         return user_data
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.exception("Erro ao buscar dados do usuário")
+        logger.exception(f"Erro ao buscar dados do usuário {current_user.email}: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 

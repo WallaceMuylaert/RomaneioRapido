@@ -17,6 +17,12 @@ def _validate_password_strength(value: str) -> str:
         raise ValueError("A senha deve conter pelo menos um número.")
     return value
 
+def _normalize_email(v: str) -> str:
+    """Trims and lowercases the email to ensure consistency."""
+    if v is None:
+        return v
+    return v.strip().lower()
+
 
 class Token(BaseModel):
     access_token: str
@@ -27,6 +33,11 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=1, max_length=256)
 
+    @field_validator("email")
+    @classmethod
+    def email_normalization(cls, v: str) -> str:
+        return _normalize_email(v)
+
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -35,6 +46,11 @@ class UserBase(BaseModel):
     store_name: Optional[str] = Field(None, max_length=150)
     photo_base64: Optional[str] = Field(None, max_length=_MAX_BASE64_BYTES)
     pix_key: Optional[str] = Field(None, max_length=100)
+
+    @field_validator("email")
+    @classmethod
+    def email_normalization(cls, v: str) -> str:
+        return _normalize_email(v)
 
 
 class UserCreate(UserBase):
@@ -58,6 +74,13 @@ class UserUpdate(BaseModel):
     trial_days: Optional[int] = Field(None, ge=1, le=365)
     is_active: Optional[bool] = None
     is_admin: Optional[bool] = None
+
+    @field_validator("email")
+    @classmethod
+    def email_normalization(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return _normalize_email(v)
 
     @field_validator("password")
     @classmethod
@@ -83,6 +106,11 @@ class UserResponse(UserBase):
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
+
+    @field_validator("email")
+    @classmethod
+    def email_normalization(cls, v: str) -> str:
+        return _normalize_email(v)
 
 
 class ResetPasswordRequest(BaseModel):

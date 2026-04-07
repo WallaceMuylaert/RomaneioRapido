@@ -1,5 +1,6 @@
 import os
 import time
+import traceback
 import warnings
 from contextlib import asynccontextmanager
 
@@ -110,12 +111,72 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "X-API-Key", "Accept"],
 )
 
+def _get_client_ip(request: Request) -> str:
+    """Extrai o IP real do cliente, inclusive atrás de proxy reverso."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    real_ip = request.headers.get("x-real-ip")
+    if real_ip:
+        return real_ip.strip()
+    return request.client.host if request.client else "unknown"
+
+def _get_user_from_token(request: Request) -> str:
+    """Tenta extrair o email do usuário do token JWT (sem validação pesada)."""
+    try:
+        auth = request.headers.get("authorization", "")
+        if auth.startswith("Bearer "):
+            from jose import jwt as _jwt
+            payload = _jwt.decode(
+                auth[7:],
+                settings.SECRET_KEY,
+                algorithms=[settings.ALGORITHM],
+                options={"verify_exp": False},  # só pra log, não valida expiração
+            )
+            return payload.get("sub", "anon")
+    except Exception:
+        return "invalid_token"
+    return "anon"
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
-    response = await call_next(request)
+    client_ip = _get_client_ip(request)
+    user_agent = request.headers.get("user-agent", "-")[:120]
+    user_email = _get_user_from_token(request)
+    path = request.url.path
+    method = request.method
+
+    # Não logar healthcheck para não poluir
+    if path == "/health":
+        return await call_next(request)
+
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        process_time = time.time() - start_time
+        logger.error(
+            f"{method} {path} - Status: 500 (UNHANDLED) - Time: {process_time:.4f}s "
+            f"| IP: {client_ip} | User: {user_email} | UA: {user_agent} "
+            f"| Error: {type(exc).__name__}: {exc}"
+        )
+        raise
+
     process_time = time.time() - start_time
-    logger.info(f"{request.method} {request.url.path} - Status: {response.status_code} - Time: {process_time:.4f}s")
+    status_code = response.status_code
+
+    log_msg = (
+        f"{method} {path} - Status: {status_code} - Time: {process_time:.4f}s "
+        f"| IP: {client_ip} | User: {user_email}"
+    )
+
+    if status_code >= 500:
+        logger.error(f"{log_msg} | UA: {user_agent}")
+    elif status_code >= 400:
+        logger.warning(f"{log_msg} | UA: {user_agent}")
+    else:
+        logger.info(log_msg)
+
     return response
 
 @app.get("/health", tags=["Health"])

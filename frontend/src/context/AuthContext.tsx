@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
-        if (token) {
+        if (token && !user) {
             api.get('/auth/me')
                 .then((res) => setUser(res.data))
                 .catch(() => {

@@ -76,23 +76,24 @@ export default function LoginPage() {
         if (!validateForm()) return
 
         setIsLoading(true)
+        const normalizedEmail = email.trim().toLowerCase()
 
         try {
             if (isRegistering) {
                 // Fluxo de Cadastro
                 await api.post('/users/', {
                     full_name: fullName,
-                    email: email,
+                    email: normalizedEmail,
                     password: password
                 })
                 toast.success('Conta criada com sucesso!', { id: 'auth-toast' })
 
                 // Login automático após cadastro
-                await login(email, password)
+                await login(normalizedEmail, password)
                 navigate('/dashboard')
             } else {
                 // Fluxo de Login
-                await login(email, password)
+                await login(normalizedEmail, password)
                 navigate('/dashboard')
             }
         } catch (err: any) {
