@@ -119,6 +119,54 @@ def get_stock_levels(db: Session, user_id: int):
             "is_low_stock": product.stock_quantity < product.min_stock
         })
     return levels
+
+
+def get_dashboard_summary(db: Session, user_id: int):
+    """Retorna apenas contagens para o Dashboard — nenhum dado pesado."""
+    from sqlalchemy import func as sql_func
+    from datetime import datetime, time, timedelta, timezone
+
+    # Total de produtos ativos
+    total_products = db.query(sql_func.count(Product.id)).filter(
+        Product.is_active == True,
+        Product.user_id == user_id
+    ).scalar() or 0
+
+    # Movimentações de hoje (contagem de romaneios únicos + movimentações avulsas)
+    # Cálculo baseado no horário de Brasília (UTC-3)
+    now_utc = datetime.now(timezone.utc)
+    today_brasilia = (now_utc - timedelta(hours=3)).date()
+    start_of_day_utc = datetime.combine(today_brasilia, time.min) + timedelta(hours=3)
+    end_of_day_utc = datetime.combine(today_brasilia, time.max) + timedelta(hours=3)
+
+    today_movements = db.query(InventoryMovement).filter(
+        InventoryMovement.created_by == user_id,
+        InventoryMovement.created_at >= start_of_day_utc,
+        InventoryMovement.created_at <= end_of_day_utc,
+    ).all()
+
+    seen_romaneios = set()
+    today_count = 0
+    for m in today_movements:
+        if m.romaneio_id:
+            if m.romaneio_id not in seen_romaneios:
+                seen_romaneios.add(m.romaneio_id)
+                today_count += 1
+        else:
+            today_count += 1
+
+    # Produtos com estoque baixo
+    low_stock_count = db.query(sql_func.count(Product.id)).filter(
+        Product.is_active == True,
+        Product.user_id == user_id,
+        Product.stock_quantity < Product.min_stock
+    ).scalar() or 0
+
+    return {
+        "total_products": total_products,
+        "today_movements": today_count,
+        "low_stock_count": low_stock_count,
+    }
     
     
 def get_daily_reports(db: Session, user_id: int, start_date=None, end_date=None, movement_type: MovementType = None):

@@ -84,6 +84,21 @@ def get_stock_levels(request: Request, db: Session = Depends(get_db), current_us
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
+@router.get("/dashboard-summary")
+@limiter.limit("120/minute")
+def dashboard_summary(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Endpoint leve para o Dashboard — retorna apenas contagens, sem dados pesados."""
+    try:
+        return crud.get_dashboard_summary(db, user_id=current_user.id)
+    except Exception as e:
+        logger.exception("Erro ao buscar resumo do dashboard")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+
 @router.get("/reports/daily")
 @limiter.limit("30/minute")
 def get_daily_reports(

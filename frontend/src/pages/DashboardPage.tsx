@@ -20,43 +20,13 @@ export default function DashboardPage() {
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const [productsRes, movementsRes, stockLevelsRes] = await Promise.all([
-                    api.get('/products/', { params: { per_page: 100 } }),
-                    api.get('/inventory/movements'),
-                    api.get('/inventory/stock-levels'),
-                ])
-
-                const dbProducts = productsRes.data.items || productsRes.data
-                const numProducts = productsRes.data.total || dbProducts.length
-
-                const allMovements = movementsRes.data.items || (Array.isArray(movementsRes.data) ? movementsRes.data : [])
-                const todayStr = new Date().toISOString().split('T')[0]
-                const filteredMovs = allMovements.filter((m: any) => m.created_at && m.created_at.startsWith(todayStr))
-
-                const seenRomaneios = new Set()
-                let todayCount = 0
-
-                filteredMovs.forEach((m: any) => {
-                    if (m.romaneio_id) {
-                        if (!seenRomaneios.has(m.romaneio_id)) {
-                            seenRomaneios.add(m.romaneio_id)
-                            todayCount++
-                        }
-                    } else {
-                        todayCount++
-                    }
-                })
-
-                const lowStockList = stockLevelsRes.data || []
-                const lowStockFiltered = lowStockList.filter((s: any) => s.is_low_stock)
-
+                const res = await api.get('/inventory/dashboard-summary')
+                const data = res.data
                 setStats({
-                    totalProducts: numProducts,
-                    todayMovements: todayCount,
-                    lowStockCount: lowStockFiltered.length,
+                    totalProducts: data.total_products,
+                    todayMovements: data.today_movements,
+                    lowStockCount: data.low_stock_count,
                 })
-
-                // Get all products sorted by most recent for filtering
             } catch (err) {
                 console.error('Erro ao buscar dados do dashboard:', err)
             } finally {

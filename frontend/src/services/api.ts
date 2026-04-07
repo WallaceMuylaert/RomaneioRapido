@@ -34,8 +34,12 @@ api.interceptors.response.use(
         }
 
         if (error.response?.status === 401 && !isLoginRequest && !isLoginPage) {
-            localStorage.removeItem('token')
-            window.location.href = '/login'
+            // Não redirecionar para login se já estiver na página de erro (evita loop 502 -> 401 -> login)
+            const isErrorPage = window.location.pathname === '/error'
+            if (!isErrorPage) {
+                localStorage.removeItem('token')
+                window.location.href = '/login'
+            }
         }
         return Promise.reject(error)
     }
