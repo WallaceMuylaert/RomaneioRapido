@@ -85,6 +85,7 @@ interface PendingRomaneio {
     customer_phone: string | null
     items: PendingItem[]
     empenhar_estoque: boolean
+    discount_percentage: number
     created_at: string
     updated_at: string
 }
@@ -164,6 +165,9 @@ export default function RomaneioPage() {
     const [isSavingPending, setIsSavingPending] = useState(false)
     const [empenharAoDigitar, setEmpenharAoDigitar] = useState(true)
     const [activePendingId, setActivePendingId] = useState<number | null>(null)
+    const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const isAutoSavingRef = useRef(false)
+    const hasInitializedRef = useRef(false)
 
     // Fechar dropdowns ao clicar fora
     useEffect(() => {
@@ -376,6 +380,7 @@ export default function RomaneioPage() {
                 customer_name: customerName,
                 customer_phone: customerPhone,
                 empenhar_estoque: empenharAoDigitar,
+                discount_percentage: discountPercentage,
                 items: cartItems.map(item => ({
                     product_id: item.id,
                     name: item.name,
@@ -429,6 +434,7 @@ export default function RomaneioPage() {
             setCustomerName(pending.customer_name || '')
             setCustomerPhone(pending.customer_phone)
             setSelectedClientId(pending.client_id)
+            setDiscountPercentage(pending.discount_percentage || 0)
 
             try {
                 // Ao retomar, não deletamos imediatamente. Mantemos o ID ativo para que o auto-save sobrescreva o mesmo registro.
@@ -484,7 +490,6 @@ export default function RomaneioPage() {
 
     useEffect(() => {
         fetchStockLevels()
-        fetchPendingRomaneios()
 
         // Verificar se há dados copiados de outro lugar
         const copyDataRaw = sessionStorage.getItem('copy_romaneio_data')
@@ -501,6 +506,8 @@ export default function RomaneioPage() {
                     setSelectedClientId(copyData.clientId || null)
                     toast.success('Dados do romaneio retomados!', { id: 'romaneio-resume' })
                     sessionStorage.removeItem('copy_romaneio_data')
+                    hasInitializedRef.current = true
+                    fetchPendingRomaneios()
                     return // Prioridade para dados copiados
                 }
             } catch (err) {
@@ -508,25 +515,43 @@ export default function RomaneioPage() {
             }
         }
 
-        // Se não houver dados copiados, tenta recuperar do localStorage
-        const localDraftRaw = localStorage.getItem('romaneio_local_draft')
-        if (localDraftRaw) {
+        // Recuperar rascunho ativo do banco de dados
+        const initFromDb = async () => {
             try {
-                const draft = JSON.parse(localDraftRaw)
-                // Só recupera se o carrinho atual estiver vazio para não sobrescrever
-                if (cartItems.length === 0 && draft.cartItems && draft.cartItems.length > 0) {
-                    setCartItems(draft.cartItems)
-                    setCustomerName(draft.customerName || '')
-                    setCustomerPhone(draft.customerPhone || null)
-                    setSelectedClientId(draft.selectedClientId || null)
-                    setEmpenharAoDigitar(draft.empenharAoDigitar ?? true)
-                    setDiscountPercentage(draft.discountPercentage || 0)
-                    toast.success('Rascunho recuperado automaticamente!', { icon: '🛡️', id: 'romaneio-local-draft' })
+                const res = await api.get('/pending/')
+                const pendings: PendingRomaneio[] = res.data
+                setPendingRomaneios(pendings)
+
+                // Se houver apenas 1 rascunho e o carrinho estiver vazio, retoma automaticamente
+                if (pendings.length === 1 && cartItems.length === 0) {
+                    const draft = pendings[0]
+                    setCartItems(draft.items.map(item => ({
+                        selectedKey: `${item.product_id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                        id: item.product_id,
+                        name: item.name,
+                        barcode: item.barcode,
+                        quantity: item.quantity,
+                        unit: item.unit,
+                        price: item.price,
+                        image: item.image,
+                        color: item.color,
+                        size: item.size
+                    })))
+                    setCustomerName(draft.customer_name || '')
+                    setCustomerPhone(draft.customer_phone)
+                    setSelectedClientId(draft.client_id)
+                    setEmpenharAoDigitar(!!draft.empenhar_estoque)
+                    setDiscountPercentage(draft.discount_percentage || 0)
+                    setActivePendingId(draft.id)
+                    toast.success('Rascunho recuperado do servidor!', { icon: '🛡️', id: 'romaneio-db-draft' })
                 }
             } catch (err) {
-                console.error('Erro ao recuperar rascunho local:', err)
+                console.error('Erro ao buscar rascunhos:', err)
+            } finally {
+                hasInitializedRef.current = true
             }
         }
+        initFromDb()
     }, [])
 
     useEffect(() => {
@@ -551,27 +576,60 @@ export default function RomaneioPage() {
 
 
 
-    // Lógica de Persistência Local (localStorage) para evitar perda de dados por refresh
+    // Auto-save no banco de dados com debounce de 3s
     useEffect(() => {
-        if (cartItems.length === 0 && !customerName && !customerPhone && !selectedClientId) {
-            localStorage.removeItem('romaneio_local_draft');
-            return;
+        if (!hasInitializedRef.current) return;
+
+        // Limpar timer anterior
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
         }
 
-        const timer = setTimeout(() => {
-            const draftData = {
-                cartItems,
-                customerName,
-                customerPhone,
-                selectedClientId,
-                empenharAoDigitar,
-                discountPercentage,
-                timestamp: Date.now()
-            };
-            localStorage.setItem('romaneio_local_draft', JSON.stringify(draftData));
-        }, 1000);
+        // Se carrinho estiver vazio, não faz auto-save
+        if (cartItems.length === 0) return;
 
-        return () => clearTimeout(timer);
+        autoSaveTimerRef.current = setTimeout(async () => {
+            if (isAutoSavingRef.current) return;
+            isAutoSavingRef.current = true;
+
+            try {
+                const payload = {
+                    client_id: selectedClientId,
+                    customer_name: customerName || 'Rascunho Auto-Save',
+                    customer_phone: customerPhone,
+                    empenhar_estoque: empenharAoDigitar,
+                    discount_percentage: discountPercentage,
+                    items: cartItems.map(item => ({
+                        product_id: item.id,
+                        name: item.name,
+                        barcode: item.barcode,
+                        quantity: item.quantity,
+                        unit: item.unit,
+                        price: item.price,
+                        image: item.image,
+                        color: item.color,
+                        size: item.size
+                    }))
+                };
+
+                if (activePendingId) {
+                    await api.put(`/pending/${activePendingId}`, payload);
+                } else {
+                    const res = await api.post('/pending/', payload);
+                    setActivePendingId(res.data.id);
+                }
+            } catch (err) {
+                console.error('Erro no auto-save:', err);
+            } finally {
+                isAutoSavingRef.current = false;
+            }
+        }, 3000);
+
+        return () => {
+            if (autoSaveTimerRef.current) {
+                clearTimeout(autoSaveTimerRef.current);
+            }
+        };
     }, [cartItems, customerName, customerPhone, selectedClientId, empenharAoDigitar, discountPercentage]);
 
 
@@ -772,6 +830,11 @@ export default function RomaneioPage() {
     }
 
     const resetCart = () => {
+        // Cancelar qualquer auto-save pendente antes de resetar
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+            autoSaveTimerRef.current = null;
+        }
         setCartItems([])
         setCustomerName('')
         setCustomerPhone(null)
@@ -781,7 +844,6 @@ export default function RomaneioPage() {
         setDiscountPercentage(0)
         setActivePendingId(null)
         setEmpenharAoDigitar(false)
-        localStorage.removeItem('romaneio_local_draft')
     }
 
     const romaneioSubtotal = cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);

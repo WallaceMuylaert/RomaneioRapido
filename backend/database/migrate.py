@@ -118,6 +118,10 @@ def add_column_if_not_exists(table_name, column_name, column_type, nullable=True
                 print(f"  [⚡] Filling existing rows for 'is_cancelled' with default (False)...")
                 conn.execute(text(f"UPDATE {table_name} SET is_cancelled = False WHERE is_cancelled IS NULL;"))
                 conn.commit()
+            elif column_name == 'discount_percentage':
+                print(f"  [⚡] Filling existing rows for 'discount_percentage' with default (0.0)...")
+                conn.execute(text(f"UPDATE {table_name} SET discount_percentage = 0.0 WHERE discount_percentage IS NULL;"))
+                conn.commit()
             
             return True
         return False
