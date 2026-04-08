@@ -43,6 +43,10 @@
   .nav-link-active {
     @apply bg-brand-50 text-brand-700 ring-1 ring-brand-100/50;
   }
+
+  .grabbing {
+    cursor: grabbing !important;
+  }
 }
 
 /* Limpeza do html5-qrcode */
