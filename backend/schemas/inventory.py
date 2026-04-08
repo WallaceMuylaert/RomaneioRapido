@@ -72,3 +72,10 @@ class StockLevel(BaseModel):
     size: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class StockLevelPaginatedResponse(BaseModel):
+    items: List[StockLevel]
+    total: int
+    page: int
+    per_page: int

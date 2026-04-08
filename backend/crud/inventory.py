@@ -101,9 +101,42 @@ def get_movements(
     return items, total
 
 
-def get_stock_levels(db: Session, user_id: int):
-    """Retorna níveis de estoque simplificados para validação rápida e listagem."""
-    products = db.query(Product).filter(Product.is_active == True, Product.user_id == user_id).all()
+def get_stock_levels(
+    db: Session, 
+    user_id: int,
+    skip: int = 0,
+    limit: int = 20,
+    search: str = None,
+    sort_by: str = "product_name",
+    order: str = "asc"
+):
+    """Retorna níveis de estoque simplificados com paginação, busca e ordenação."""
+    query = db.query(Product).filter(Product.is_active == True, Product.user_id == user_id)
+    
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            (Product.name.ilike(search_filter)) |
+            (Product.barcode.ilike(search_filter)) |
+            (Product.sku.ilike(search_filter))
+        )
+    
+    # Mapeamento de campos de ordenação do frontend para o modelo
+    sort_map = {
+        "product_name": Product.name,
+        "stock_quantity": Product.stock_quantity,
+        "price": Product.price
+    }
+    
+    sort_field = sort_map.get(sort_by, Product.name)
+    if order == "desc":
+        query = query.order_by(sort_field.desc())
+    else:
+        query = query.order_by(sort_field.asc())
+        
+    total = query.count()
+    products = query.offset(skip).limit(limit).all()
+    
     levels = []
     for product in products:
         levels.append({
@@ -118,7 +151,7 @@ def get_stock_levels(db: Session, user_id: int):
             "price": product.price,
             "is_low_stock": product.stock_quantity < product.min_stock
         })
-    return levels
+    return levels, total
 
 
 def get_dashboard_summary(db: Session, user_id: int):
