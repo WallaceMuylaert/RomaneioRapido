@@ -413,7 +413,35 @@ export default function RomaneioPage() {
     }
 
     const handleBlockerSave = async () => {
+        // Interromper qualquer auto-save agendado para rodar o manual agora
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+            autoSaveTimerRef.current = null;
+        }
+
+        await handleSavePending();
         blocker.proceed?.();
+    }
+
+    const handleDiscardAndExit = async () => {
+        // Interromper auto-save
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+            autoSaveTimerRef.current = null;
+        }
+
+        try {
+            // Se houver rascunho salvo no banco, deletamos para descarte real
+            if (activePendingId) {
+                await api.delete(`/pending/${activePendingId}`);
+            }
+            resetCart();
+            blocker.proceed?.();
+        } catch (err) {
+            console.error('Erro ao descartar rascunho na saída:', err);
+            // Procede de qualquer forma para não travar o usuário
+            blocker.proceed?.();
+        }
     }
 
     const handleResumePending = async (pending: PendingRomaneio) => {
@@ -532,30 +560,6 @@ export default function RomaneioPage() {
                 const res = await api.get('/pending/')
                 const pendings: PendingRomaneio[] = res.data
                 setPendingRomaneios(pendings)
-
-                // Se houver apenas 1 rascunho e o carrinho estiver vazio, retoma automaticamente
-                if (pendings.length === 1 && cartItems.length === 0) {
-                    const draft = pendings[0]
-                    setCartItems(draft.items.map(item => ({
-                        selectedKey: `${item.product_id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                        id: item.product_id,
-                        name: item.name,
-                        barcode: item.barcode,
-                        quantity: item.quantity,
-                        unit: item.unit,
-                        price: item.price,
-                        image: item.image,
-                        color: item.color,
-                        size: item.size
-                    })))
-                    setCustomerName(draft.customer_name || '')
-                    setCustomerPhone(draft.customer_phone)
-                    setSelectedClientId(draft.client_id)
-                    setEmpenharAoDigitar(!!draft.empenhar_estoque)
-                    setDiscountPercentage(draft.discount_percentage || 0)
-                    setActivePendingId(draft.id)
-                    toast.success('Rascunho recuperado do servidor!', { icon: '🛡️', id: 'romaneio-db-draft' })
-                }
             } catch (err) {
                 console.error('Erro ao buscar rascunhos:', err)
             } finally {
@@ -1400,7 +1404,7 @@ export default function RomaneioPage() {
                                 Salvar e Sair
                             </button>
                             <div className="grid grid-cols-2 gap-3">
-                                <button onClick={() => blocker.proceed()} className="h-12 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-black text-xs active:scale-95 transition-all">Sair sem salvar</button>
+                                <button onClick={handleDiscardAndExit} className="h-12 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-black text-xs active:scale-95 transition-all">Sair sem salvar</button>
                                 <button onClick={() => blocker.reset()} className="h-12 bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-xl font-black text-xs active:scale-95 transition-all">Voltar</button>
                             </div>
                         </div>
