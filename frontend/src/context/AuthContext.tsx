@@ -37,9 +37,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (token && !user) {
             api.get('/auth/me')
                 .then((res) => setUser(res.data))
-                .catch(() => {
-                    localStorage.removeItem('token')
-                    setToken(null)
+                .catch((err) => {
+                    if (err.response?.status === 401) {
+                        console.error('[Auth] Token inválido ou expirado. Limpando sessão.');
+                        localStorage.removeItem('token')
+                        setToken(null)
+                    } else {
+                        console.warn('[Auth] Erro ao validar usuário (infraestrutura). Mantendo token.', err.response?.status || err.code);
+                    }
                 })
                 .finally(() => setIsLoading(false))
 

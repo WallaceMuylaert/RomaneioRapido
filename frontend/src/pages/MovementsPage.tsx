@@ -774,11 +774,9 @@ export default function MovementsPage() {
                                                                         {(m as any).customerName ? (m as any).customerName.split(' ').map((n: any) => n[0]).join('').slice(0, 2).toUpperCase() : 'RT'}
                                                                     </span>
                                                                 </div>
-                                                            ) : (m.product_image ? (
-                                                                <img src={m.product_image} alt={m.product_name} className="w-full h-full object-cover" />
                                                             ) : (
                                                                 <Package className="w-5 h-5 text-slate-300" />
-                                                            ))}
+                                                            )}
                                                         </div>
                                                         <div>
                                                             <p className={`text-sm font-bold line-clamp-1 ${cancelled ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-800'}`}>

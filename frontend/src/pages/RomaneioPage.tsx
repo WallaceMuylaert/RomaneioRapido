@@ -59,7 +59,6 @@ interface StockLevel {
     min_stock: number
     unit: string
     price: number
-    image_base64: string | null
     is_low_stock: boolean
     color?: string | null
     size?: string | null
@@ -475,9 +474,21 @@ export default function RomaneioPage() {
             confirmText: 'Excluir',
             cancelText: 'Cancelar',
             onConfirm: async () => {
+                // Cancelar auto-save imediatamente para evitar recriação fantasma
+                if (autoSaveTimerRef.current) {
+                    clearTimeout(autoSaveTimerRef.current);
+                    autoSaveTimerRef.current = null;
+                }
+
                 try {
                     await api.delete(`/pending/${id}`)
                     setPendingRomaneios(p => p.filter(x => x.id !== id))
+                    
+                    // Se o rascunho deletado for o ativo, limpa o carrinho
+                    if (id === activePendingId) {
+                        resetCart();
+                    }
+                    
                     toast.success('Rascunho excluído', { id: 'delete-pending' })
                 } catch (err) {
                     toast.error('Erro ao excluir rascunho', { id: 'romaneio-error' })
@@ -843,7 +854,8 @@ export default function RomaneioPage() {
         setBarcodeInput('')
         setDiscountPercentage(0)
         setActivePendingId(null)
-        setEmpenharAoDigitar(false)
+        setEmpenharAoDigitar(true) // Reset para o padrão seguro
+        isAutoSavingRef.current = false;
     }
 
     const romaneioSubtotal = cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
