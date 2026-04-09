@@ -580,13 +580,21 @@ export default function LandingPage() {
                                 </p>
                             </div>
 
-                            <div className="flex gap-12">
+                            <div className="flex flex-wrap gap-12">
                                 <div>
                                     <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Navegação</h4>
                                     <ul className="space-y-2 text-xs text-gray-400">
                                         <li><a href="#solucao" className="hover:text-gray-700 transition-colors">Solução</a></li>
                                         <li><a href="#recursos" className="hover:text-gray-700 transition-colors">Recursos</a></li>
                                         <li><button onClick={() => navigate('/login')} className="hover:text-gray-700 transition-colors">Entrar</button></li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Termos e Políticas</h4>
+                                    <ul className="space-y-2 text-xs text-gray-400">
+                                        <li><button onClick={() => navigate('/termos')} className="hover:text-gray-700 transition-colors">Termos de Uso</button></li>
+                                        <li><button onClick={() => navigate('/privacidade')} className="hover:text-gray-700 transition-colors">Política de Privacidade</button></li>
+                                        <li><button onClick={() => navigate('/cookies')} className="hover:text-gray-700 transition-colors">Cookies</button></li>
                                     </ul>
                                 </div>
                                 <div>

@@ -18,6 +18,9 @@ import MovementsPage from './pages/MovementsPage'
 import SuperAdminPage from './pages/SuperAdminPage'
 import ErrorPage from './pages/ErrorPage'
 import OnboardingPage from './pages/OnboardingPage'
+import TermsPage from './pages/TermsPage'
+import PrivacyPage from './pages/PrivacyPage'
+import CookiesPage from './pages/CookiesPage'
 import './index.css'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -157,6 +160,18 @@ const router = createBrowserRouter([
         <OnboardingPage />
       </PrivateRoute>
     ),
+  },
+  {
+    path: "/termos",
+    element: <TermsPage />,
+  },
+  {
+    path: "/privacidade",
+    element: <PrivacyPage />,
+  },
+  {
+    path: "/cookies",
+    element: <CookiesPage />,
   },
   {
     path: "/error",
