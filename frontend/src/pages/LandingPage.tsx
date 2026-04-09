@@ -593,7 +593,7 @@ export default function LandingPage() {
                                     <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Contato</h4>
                                     <div className="flex items-center gap-2 text-xs text-gray-400">
                                         <Mail className="w-3.5 h-3.5" />
-                                        <span>contato@romaneiorapido.com.br</span>
+                                        <span>romaneiorapido@gmail.com</span>
                                     </div>
                                 </div>
                             </div>

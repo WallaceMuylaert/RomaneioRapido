@@ -27,29 +27,33 @@ export default function ForgotPasswordPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50/30 p-6">
+        <div className="min-h-screen relative flex items-center justify-center bg-slate-900 overflow-hidden font-sans p-6 selection:bg-brand-500/30">
             {isLoading && <LoadingOverlay message="Processando solicitação..." />}
 
-            <div className="w-full max-w-sm animate-slide-up">
+            {/* Glowing Blobs */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-600/30 rounded-full blur-[120px] -mr-40 -mt-40 animate-pulse duration-10000" />
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[120px] -ml-40 -mb-40 animate-pulse duration-7000" />
+
+            <div className="w-full max-w-md relative z-10 bg-white rounded-[2rem] p-8 sm:p-10 shadow-2xl shadow-brand-900/50 animate-slide-up border border-white/10">
                 <button
                     onClick={() => navigate('/login')}
-                    className="flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-all text-xs font-bold mb-8 group"
+                    className="flex items-center gap-2 text-slate-400 hover:text-brand-600 transition-all text-xs font-bold mb-8 group"
                 >
                     <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                     <span>Voltar para o login</span>
                 </button>
 
                 <div className="text-center mb-10">
-                    <div className="w-16 h-16 bg-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-brand-500/20">
+                    <div className="w-16 h-16 bg-gradient-to-tr from-brand-600 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-brand-500/30 transform hover:scale-105 transition-all">
                         <Package className="w-8 h-8 text-white" />
                     </div>
                     <h2 className="text-3xl font-black text-slate-900 tracking-tighter mb-3">
-                        Recupere sua senha.
+                        Recupere o acesso.
                     </h2>
-                    <p className="text-slate-500 font-semibold italic text-sm">
+                    <p className="text-slate-500 font-medium text-sm">
                         {isSent
                             ? 'Verifique sua caixa de entrada para continuar.'
-                            : 'Insira seu e-mail para receber um link de recuperação.'}
+                            : 'Insira seu e-mail para receber um link mágico de recuperação.'}
                     </p>
                 </div>
 
@@ -57,9 +61,9 @@ export default function ForgotPasswordPage() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
                             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Endereço de Email</label>
-                            <div className="relative">
+                            <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                    <Mail className="h-4 w-4 text-slate-400" />
+                                    <Mail className="h-4 w-4 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
                                 </div>
                                 <input
                                     type="email"
@@ -67,7 +71,7 @@ export default function ForgotPasswordPage() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="exemplo@email.com"
                                     required
-                                    className="w-full h-14 pl-12 pr-6 bg-white border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-brand-500/5 focus:border-brand-500 transition-all font-bold text-sm shadow-sm"
+                                    className="w-full h-14 pl-12 pr-6 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 focus:bg-white transition-all font-bold text-sm shadow-sm"
                                 />
                             </div>
                         </div>
@@ -75,29 +79,32 @@ export default function ForgotPasswordPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full h-16 bg-brand-600 text-white font-black rounded-2xl shadow-xl shadow-brand-500/20 hover:bg-brand-700 hover:shadow-brand-500/30 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-4 text-sm tracking-tight"
+                            className="w-full h-16 bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-brand-500/20 hover:shadow-brand-500/40 hover:-translate-y-0.5 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-sm tracking-tight"
                         >
                             {isLoading ? (
                                 <>
-                                    <Loader2 className="w-6 h-6 animate-spin" />
-                                    <span>Processando...</span>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <span>Enviando link...</span>
                                 </>
                             ) : (
                                 <>
-                                    <Send className="w-5 h-5" />
-                                    <span>Enviar Link de Recuperação</span>
+                                    <Send className="w-4 h-4" />
+                                    <span>Enviar Link Rápido</span>
                                 </>
                             )}
                         </button>
                     </form>
                 ) : (
-                    <div className="bg-emerald-50 border-2 border-emerald-100 p-6 rounded-2xl text-center">
-                        <p className="text-emerald-800 font-bold text-sm">
-                            Um e-mail foi enviado para <strong>{email}</strong> com as instruções para redefinir sua senha.
+                    <div className="bg-emerald-50 border-2 border-emerald-100/50 p-8 rounded-2xl text-center space-y-4 animate-in zoom-in-95 duration-500 shadow-inner">
+                        <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <Mail className="w-6 h-6 text-emerald-600" />
+                        </div>
+                        <p className="text-emerald-800 font-medium text-sm leading-relaxed">
+                            Um e-mail mágico acabou de pousar em <strong>{email}</strong> com as instruções seguras.
                         </p>
                         <button
                             onClick={() => navigate('/login')}
-                            className="mt-6 text-brand-600 font-black text-xs uppercase tracking-widest hover:underline"
+                            className="mt-6 text-emerald-700 font-black text-xs uppercase tracking-widest hover:text-brand-600 transition-colors"
                         >
                             Voltar para o Login
                         </button>

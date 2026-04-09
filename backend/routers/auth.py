@@ -122,7 +122,7 @@ def forgot_password(request: Request, data: ForgotPasswordRequest, background_ta
             
             token = str(uuid.uuid4())
             user.reset_token = token
-            user.reset_token_expires = datetime.now() + timedelta(hours=1)
+            user.reset_token_expires = datetime.now() + timedelta(minutes=30)
             db.commit()
             
             # Executa o envio de e-mail em segundo plano para evitar 502/Timeout
