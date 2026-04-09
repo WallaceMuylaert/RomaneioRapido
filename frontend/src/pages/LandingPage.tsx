@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import logo from '../assets/romaneiorapido_logo.png'
 import {
     Package,
@@ -17,18 +17,108 @@ import {
     Globe,
     Star,
     Check,
-    AlertTriangle
+    AlertTriangle,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react'
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { PLANS } from '../constants/plans'
 
 export default function LandingPage() {
     const navigate = useNavigate()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [carouselIndex, setCarouselIndex] = useState(0)
+
+    const visiblePlans = PLANS.filter(p => !p.hidden)
+
+    const nextPlan = () => {
+        setCarouselIndex((prev) => (prev + 1) % visiblePlans.length)
+    }
+
+    const prevPlan = () => {
+        setCarouselIndex((prev) => (prev - 1 + visiblePlans.length) % visiblePlans.length)
+    }
+
+    const isHovered = useRef(false)
+
+    // Auto-play
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (!isHovered.current) {
+                nextPlan()
+            }
+        }, 5000)
+        return () => clearInterval(interval)
+    }, [visiblePlans.length])
+
+    const mouseX = useMotionValue(0)
+    const mouseY = useMotionValue(0)
+
+    const springConfig = { damping: 25, stiffness: 100 }
+    const springX = useSpring(mouseX, springConfig)
+    const springY = useSpring(mouseY, springConfig)
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            const { clientX, clientY } = e
+            const { innerWidth, innerHeight } = window
+            mouseX.set((clientX / innerWidth) - 0.5)
+            mouseY.set((clientY / innerHeight) - 0.5)
+        }
+        window.addEventListener('mousemove', handleMouseMove)
+        return () => window.removeEventListener('mousemove', handleMouseMove)
+    }, [])
+
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.2
+            }
+        }
+    }
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+    }
 
     return (
-        <div className="min-h-screen bg-white font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
+        <div className="min-h-screen bg-white font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden relative">
+            
+            {/* Background Animated Blobs */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+                <motion.div 
+                    style={{ x: useTransform(springX, [-0.5, 0.5], [-50, 50]), y: useTransform(springY, [-0.5, 0.5], [-50, 50]) }}
+                    animate={{ 
+                        scale: [1, 1.2, 1],
+                        rotate: [0, 90, 0]
+                    }}
+                    transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                    className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-blue-100/40 rounded-full blur-[120px]" 
+                />
+                <motion.div 
+                    style={{ x: useTransform(springX, [-0.5, 0.5], [50, -50]), y: useTransform(springY, [-0.5, 0.5], [50, -50]) }}
+                    animate={{ 
+                        scale: [1.2, 1, 1.2],
+                        rotate: [90, 0, 90]
+                    }}
+                    transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                    className="absolute top-[20%] -right-[10%] w-[45%] h-[45%] bg-teal-50/50 rounded-full blur-[100px]" 
+                />
+                <motion.div 
+                    style={{ x: useTransform(springX, [-0.5, 0.5], [-30, 30]), y: useTransform(springY, [-0.5, 0.5], [30, -30]) }}
+                    animate={{ 
+                        scale: [1, 1.1, 1],
+                    }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    className="absolute -bottom-[10%] left-[20%] w-[40%] h-[40%] bg-indigo-50/40 rounded-full blur-[110px]" 
+                />
+            </div>
 
-            {/* Header */}
+            <div className="relative z-10">
+                {/* Header */}
             <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
                 <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
                     <a href="/" className="flex items-center gap-2.5 group">
@@ -86,24 +176,53 @@ export default function LandingPage() {
                     <div className="max-w-6xl mx-auto px-5">
                         <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
                             {/* Texto */}
-                            <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000">
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold mb-6 animate-in fade-in zoom-in-95 duration-1000 delay-300 fill-mode-both hover:-translate-y-1 transition-transform cursor-default">
+                            <motion.div 
+                                initial={{ opacity: 0, x: -50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.8 }}
+                            >
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.5, delay: 0.2 }}
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold mb-6 hover:-translate-y-1 transition-transform cursor-default"
+                                >
                                     <Star className="w-3 h-3 fill-blue-600 animate-pulse" />
                                     Sistema ERP para Estoque
-                                </div>
+                                </motion.div>
 
-                                <h1 className="text-4xl md:text-[3.25rem] font-extrabold text-gray-900 leading-[1.15] mb-5 tracking-tight">
+                                <motion.h1 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.8, delay: 0.3 }}
+                                    className="text-4xl md:text-[3.25rem] font-extrabold text-gray-900 leading-[1.15] mb-5 tracking-tight"
+                                >
                                     Gerencie seu estoque
                                     <br />
-                                    <span className="text-blue-600 inline-block animate-in fade-in slide-in-from-left-4 duration-1000 delay-500 fill-mode-both">sem complicação</span>
-                                </h1>
+                                    <span className="text-blue-600 inline-block">sem complicação</span>
+                                </motion.h1>
 
-                                <p className="text-gray-500 text-lg leading-relaxed mb-8 max-w-md animate-in fade-in duration-1000 delay-700 fill-mode-both">
+                                <motion.p 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.8, delay: 0.4 }}
+                                    className="text-gray-500 text-lg leading-relaxed mb-8 max-w-md"
+                                >
                                     Controle total do inventário com leitura de código de barras,
                                     interface rápida como planilha e relatórios em tempo real.
-                                </p>
+                                </motion.p>
 
-                                <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-1000 fill-mode-both">
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.8, delay: 0.5 }}
+                                    className="flex flex-col sm:flex-row gap-3 mb-8"
+                                >
                                     <button
                                         onClick={() => navigate('/login')}
                                         className="group h-12 px-7 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 hover:scale-105 transition-all shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2"
@@ -116,9 +235,15 @@ export default function LandingPage() {
                                     >
                                         Ver Planos e Preços
                                     </a>
-                                </div>
+                                </motion.div>
 
-                                <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-gray-400 font-medium animate-in fade-in duration-1000 delay-1000 fill-mode-both">
+                                <motion.div 
+                                    initial={{ opacity: 0 }}
+                                    whileInView={{ opacity: 1 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 1, delay: 0.6 }}
+                                    className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-gray-400 font-medium"
+                                >
                                     <span className="flex items-center gap-1.5 hover:text-gray-600 transition-colors cursor-default">
                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div> 100% Web
                                     </span>
@@ -128,8 +253,8 @@ export default function LandingPage() {
                                     <span className="flex items-center gap-1.5 hover:text-gray-600 transition-colors cursor-default">
                                         <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse delay-150"></div> Código de barras
                                     </span>
-                                </div>
-                            </div>
+                                </motion.div>
+                            </motion.div>
 
                             {/* Mockup Visual - Mais Premium */}
                             <div className="relative group animate-in fade-in zoom-in-95 duration-1000 delay-500 fill-mode-both">
@@ -201,14 +326,26 @@ export default function LandingPage() {
                 <section id="solucao" className="py-24 bg-gray-50/60 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
                     <div className="max-w-6xl mx-auto px-5">
-                        <div className="text-center mb-20">
-                            <h2 className="text-sm font-bold text-blue-600 uppercase tracking-[0.2em] mb-4">A Experiência RomaneioRapido</h2>
-                            <h3 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
+                        <motion.div 
+                            variants={containerVariants}
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true, amount: 0.3 }}
+                            className="text-center mb-20"
+                        >
+                            <motion.h2 variants={itemVariants} className="text-sm font-bold text-blue-600 uppercase tracking-[0.2em] mb-4">A Experiência RomaneioRapido</motion.h2>
+                            <motion.h3 variants={itemVariants} className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
                                 Tudo o que você precisa para <span className="text-blue-600">vender mais rápido</span>
-                            </h3>
-                        </div>
+                            </motion.h3>
+                        </motion.div>
 
-                        <div className="grid md:grid-cols-2 gap-8">
+                        <motion.div 
+                            variants={containerVariants}
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true, amount: 0.3 }}
+                            className="grid md:grid-cols-2 gap-8"
+                        >
                             {[
                                 {
                                     icon: ScanBarcode,
@@ -235,8 +372,9 @@ export default function LandingPage() {
                                     accent: 'bg-amber-50 text-amber-600'
                                 },
                             ].map((item, i) => (
-                                <div
+                                <motion.div
                                     key={i}
+                                    variants={itemVariants}
                                     className="bg-white rounded-[2.5rem] border border-gray-100 p-8 md:p-10 hover:shadow-2xl hover:shadow-blue-600/5 hover:-translate-y-1 transition-all duration-500 group"
                                 >
                                     <div className={`w-16 h-16 rounded-3xl ${item.accent} flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500`}>
@@ -244,9 +382,9 @@ export default function LandingPage() {
                                     </div>
                                     <h4 className="text-2xl font-black text-gray-900 mb-4">{item.title}</h4>
                                     <p className="text-gray-500 leading-relaxed text-lg">{item.desc}</p>
-                                </div>
+                                </motion.div>
                             ))}
-                        </div>
+                        </motion.div>
                     </div>
                 </section>
 
@@ -298,54 +436,103 @@ export default function LandingPage() {
                             </p>
                         </div>
 
-                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {PLANS.filter(p => !p.hidden).map((plan, i) => (
-                                <div
-                                    key={i}
-                                    className={`relative p-8 rounded-[24px] border transition-all duration-300 ${plan.highlight
-                                        ? 'border-blue-600 shadow-xl shadow-blue-600/10 scale-105 z-10 bg-white'
-                                        : 'border-gray-100 hover:border-gray-200 bg-gray-50/30'
-                                        }`}
+                        {/* Carousel Wrapper */}
+                        <div className="relative group/carousel px-4">
+                            <div className="overflow-hidden py-10">
+                                <motion.div
+                                    className="flex gap-4 md:gap-6"
+                                    onMouseEnter={() => isHovered.current = true}
+                                    onMouseLeave={() => isHovered.current = false}
+                                    animate={{ x: -(carouselIndex * (window.innerWidth < 768 ? 256 : 304)) }} 
+                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                    drag="x"
+                                    dragConstraints={{ 
+                                        left: -((visiblePlans.length - 1) * (window.innerWidth < 768 ? 256 : 304)), 
+                                        right: 0 
+                                    }}
+                                    onDragEnd={(_: any, info: any) => {
+                                        if (info.offset.x < -50 && carouselIndex < visiblePlans.length - 1) nextPlan()
+                                        else if (info.offset.x > 50 && carouselIndex > 0) prevPlan()
+                                    }}
                                 >
-                                    {plan.highlight && (
-                                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                                            Mais Popular
-                                        </div>
-                                    )}
-
-                                    <div className="mb-8">
-                                        <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                                        <p className="text-sm text-gray-500 leading-relaxed min-h-[40px]">{plan.description}</p>
-                                    </div>
-
-                                    <div className="flex items-baseline gap-1 mb-8">
-                                        <span className="text-4xl font-extrabold text-gray-900">{plan.price}</span>
-                                        {plan.period && <span className="text-gray-400 font-medium">{plan.period}</span>}
-                                    </div>
-
-                                    <button
-                                        onClick={() => navigate('/cadastro')}
-                                        className={`w-full py-4 rounded-[10px] font-bold text-sm transition-all duration-200 mb-8 ${plan.highlight
-                                            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20'
-                                            : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-50'
-                                            }`}
-                                    >
-                                        Começar Agora
-                                    </button>
-
-                                    <div className="space-y-4">
-                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">O que está incluso:</p>
-                                        {plan.features.map((feature, j) => (
-                                            <div key={j} className="flex items-center gap-3">
-                                                <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                                    <Check className="w-3 h-3 text-blue-600" />
+                                    {visiblePlans.map((plan, i) => (
+                                        <motion.div
+                                            key={i}
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            whileInView={{ opacity: 1, scale: 1 }}
+                                            viewport={{ once: true }}
+                                            whileHover={{ y: -10 }}
+                                            className={`relative min-w-[240px] md:min-w-[280px] p-6 md:p-8 rounded-[24px] border transition-all duration-300 flex-shrink-0 ${plan.highlight
+                                                ? 'border-blue-600 shadow-2xl shadow-blue-600/20 z-10 bg-white'
+                                                : 'border-gray-100 bg-gray-50/30'
+                                                }`}
+                                        >
+                                            {plan.highlight && (
+                                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-blue-600/30">
+                                                    Mais Popular
                                                 </div>
-                                                <span className="text-sm text-gray-600">{feature}</span>
+                                            )}
+
+                                            <div className="mb-8">
+                                                <h3 className="text-xl font-black text-gray-900 mb-2">{plan.name}</h3>
+                                                <p className="text-sm text-gray-500 font-medium leading-relaxed min-h-[48px]">{plan.description}</p>
                                             </div>
-                                        ))}
-                                    </div>
+
+                                            <div className="flex items-baseline gap-1 mb-8">
+                                                <span className="text-4xl font-black text-gray-900">{plan.price}</span>
+                                                {plan.period && <span className="text-gray-400 font-bold text-sm">{plan.period}</span>}
+                                            </div>
+
+                                            <button
+                                                onClick={() => navigate('/cadastro')}
+                                                className={`w-full py-4 rounded-xl font-black text-sm transition-all duration-300 mb-9 active:scale-95 ${plan.highlight
+                                                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-600/20'
+                                                    : 'bg-white text-gray-900 border-2 border-gray-100 hover:border-blue-200 hover:text-blue-600'
+                                                    }`}
+                                            >
+                                                Começar Agora
+                                            </button>
+
+                                            <div className="space-y-4">
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">O que está incluso:</p>
+                                                {plan.features.map((feature, j) => (
+                                                    <div key={j} className="flex items-start gap-3 group/feat">
+                                                        <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover/feat:bg-blue-600 group-hover/feat:text-white transition-colors">
+                                                            <Check className="w-3 h-3 text-blue-600 group-hover/feat:text-white" />
+                                                        </div>
+                                                        <span className="text-sm text-gray-600 font-medium">{feature}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            </div>
+
+                            {/* Navigation Buttons */}
+                            <div className="hidden md:flex justify-center gap-4 mt-8">
+                                <button 
+                                    onClick={prevPlan}
+                                    className="p-3 rounded-full border border-gray-100 hover:border-blue-200 hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-all active:scale-90 shadow-sm"
+                                >
+                                    <ChevronLeft className="w-6 h-6" />
+                                </button>
+                                <div className="flex items-center gap-2">
+                                    {visiblePlans.map((_, i) => (
+                                        <button 
+                                            key={i}
+                                            onClick={() => setCarouselIndex(i)}
+                                            className={`h-2 rounded-full transition-all duration-300 ${carouselIndex === i ? 'w-8 bg-blue-600' : 'w-2 bg-gray-200'}`}
+                                        />
+                                    ))}
                                 </div>
-                            ))}
+                                <button 
+                                    onClick={nextPlan}
+                                    className="p-3 rounded-full border border-gray-100 hover:border-blue-200 hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-all active:scale-90 shadow-sm"
+                                >
+                                    <ChevronRight className="w-6 h-6" />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -418,6 +605,7 @@ export default function LandingPage() {
                     </div>
                 </footer>
             </main>
+            </div>
         </div>
     )
 }

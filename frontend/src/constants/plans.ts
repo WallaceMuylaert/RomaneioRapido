@@ -70,7 +70,7 @@ export const PLANS: Plan[] = [
             'Suporte técnico prioritário',
             'Impressão de romaneios otimizada'
         ],
-        highlight: false,
+        highlight: true,
         limit_products: 200,
         limit_categories: 20,
         limit_api_keys: 0,
@@ -109,7 +109,7 @@ export const PLANS: Plan[] = [
             'Suporte técnico especializado API',
             'A integração da api pode ser realizada pelo cliente ou por nos com o valor a combinar'
         ],
-        highlight: true,
+        highlight: false,
         limit_products: 999999,
         limit_categories: 999999,
         limit_api_keys: 10,

@@ -9,7 +9,7 @@ from backend.core.security import get_current_user
 from backend.core.trial_utils import require_active_plan
 from backend.core.limiter import limiter
 from backend.models.users import User
-from backend.schemas.products import ProductCreate, ProductUpdate, ProductResponse
+from backend.schemas.products import ProductCreate, ProductUpdate, ProductResponse, ProductSlimResponse, ProductPaginatedResponse
 from backend.crud import products as crud
 from backend.config.logger import get_dynamic_logger
 from backend.core.plans_config import PLANS_CONFIG
@@ -18,7 +18,7 @@ logger = get_dynamic_logger("products")
 router = APIRouter(prefix="/products")
 
 
-@router.get("/")
+@router.get("/", response_model=ProductPaginatedResponse)
 @limiter.limit("200/minute")
 def list_products(
     request: Request,
@@ -30,14 +30,27 @@ def list_products(
     size: Optional[str] = Query(None, description="Filtrar por tamanho"),
     sort_by: str = Query("name", description="Coluna para ordenação"),
     order: str = Query("asc", description="Ordem: asc ou desc"),
+    include_images: Optional[bool] = Query(None, description="Incluir imagens base64"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     try:
+        # Se não especificado, incluir imagens apenas se for uma listagem pequena (ex: página de produtos)
+        # Se for listagem massiva (ex: relatório), remover imagens por performance
+        if include_images is None:
+            include_images = per_page <= 50
+
         skip = (page - 1) * per_page
         total = crud.count_products(db, user_id=current_user.id, search=search, category_id=category_id, color=color, size=size)
-        items = crud.get_products(db, user_id=current_user.id, skip=skip, limit=per_page, search=search, category_id=category_id, color=color, size=size, sort_by=sort_by, order=order)
+        db_items = crud.get_products(db, user_id=current_user.id, skip=skip, limit=per_page, search=search, category_id=category_id, color=color, size=size, sort_by=sort_by, order=order, include_images=include_images)
         pages = math.ceil(total / per_page) if total > 0 else 1
+        
+        # Converte explicitamente para o schema correto para evitar Erro 500 de validação
+        if include_images:
+            items = [ProductResponse.model_validate(i) for i in db_items]
+        else:
+            items = [ProductSlimResponse.model_validate(i) for i in db_items]
+
         return {
             "items": items,
             "total": total,

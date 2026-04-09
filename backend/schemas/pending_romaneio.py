@@ -19,6 +19,7 @@ class PendingRomaneioBase(BaseModel):
     customer_phone: Optional[str] = None
     items: List[PendingItem]
     empenhar_estoque: Optional[bool] = True
+    discount_percentage: Optional[float] = 0.0
 
 class PendingRomaneioCreate(PendingRomaneioBase):
     pass

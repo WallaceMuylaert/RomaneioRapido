@@ -101,8 +101,42 @@ def get_movements(
     return items, total
 
 
-def get_stock_levels(db: Session, user_id: int):
-    products = db.query(Product).filter(Product.is_active == True, Product.user_id == user_id).all()
+def get_stock_levels(
+    db: Session, 
+    user_id: int,
+    skip: int = 0,
+    limit: int = 20,
+    search: str = None,
+    sort_by: str = "product_name",
+    order: str = "asc"
+):
+    """Retorna níveis de estoque simplificados com paginação, busca e ordenação."""
+    query = db.query(Product).filter(Product.is_active == True, Product.user_id == user_id)
+    
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            (Product.name.ilike(search_filter)) |
+            (Product.barcode.ilike(search_filter)) |
+            (Product.sku.ilike(search_filter))
+        )
+    
+    # Mapeamento de campos de ordenação do frontend para o modelo
+    sort_map = {
+        "product_name": Product.name,
+        "stock_quantity": Product.stock_quantity,
+        "price": Product.price
+    }
+    
+    sort_field = sort_map.get(sort_by, Product.name)
+    if order == "desc":
+        query = query.order_by(sort_field.desc())
+    else:
+        query = query.order_by(sort_field.asc())
+        
+    total = query.count()
+    products = query.offset(skip).limit(limit).all()
+    
     levels = []
     for product in products:
         levels.append({
@@ -115,15 +149,14 @@ def get_stock_levels(db: Session, user_id: int):
             "size": product.size,
             "unit": product.unit,
             "price": product.price,
-            "image_base64": product.image_base64,
             "is_low_stock": product.stock_quantity < product.min_stock
         })
-    return levels
+    return levels, total
 
 
 def get_dashboard_summary(db: Session, user_id: int):
-    """Retorna apenas contagens para o Dashboard — nenhum dado pesado."""
-    from sqlalchemy import func as sql_func
+    """Retorna contagens otimizadas para o Dashboard usando agregação SQL."""
+    from sqlalchemy import func as sql_func, distinct
     from datetime import datetime, time, timedelta, timezone
 
     # Total de produtos ativos
@@ -139,21 +172,21 @@ def get_dashboard_summary(db: Session, user_id: int):
     start_of_day_utc = datetime.combine(today_brasilia, time.min) + timedelta(hours=3)
     end_of_day_utc = datetime.combine(today_brasilia, time.max) + timedelta(hours=3)
 
-    today_movements = db.query(InventoryMovement).filter(
+    # 1. Contar romaneios únicos do dia
+    romaneios_count = db.query(sql_func.count(distinct(InventoryMovement.romaneio_id))).filter(
         InventoryMovement.created_by == user_id,
         InventoryMovement.created_at >= start_of_day_utc,
         InventoryMovement.created_at <= end_of_day_utc,
-    ).all()
+        InventoryMovement.romaneio_id.isnot(None)
+    ).scalar() or 0
 
-    seen_romaneios = set()
-    today_count = 0
-    for m in today_movements:
-        if m.romaneio_id:
-            if m.romaneio_id not in seen_romaneios:
-                seen_romaneios.add(m.romaneio_id)
-                today_count += 1
-        else:
-            today_count += 1
+    # 2. Contar movimentações avulsas (sem romaneio) do dia
+    single_movements_count = db.query(sql_func.count(InventoryMovement.id)).filter(
+        InventoryMovement.created_by == user_id,
+        InventoryMovement.created_at >= start_of_day_utc,
+        InventoryMovement.created_at <= end_of_day_utc,
+        InventoryMovement.romaneio_id.is_(None)
+    ).scalar() or 0
 
     # Produtos com estoque baixo
     low_stock_count = db.query(sql_func.count(Product.id)).filter(
@@ -164,7 +197,7 @@ def get_dashboard_summary(db: Session, user_id: int):
 
     return {
         "total_products": total_products,
-        "today_movements": today_count,
+        "today_movements": romaneios_count + single_movements_count,
         "low_stock_count": low_stock_count,
     }
     

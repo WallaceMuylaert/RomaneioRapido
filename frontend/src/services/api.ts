@@ -24,19 +24,21 @@ api.interceptors.response.use(
         const isPollingRequest = error.config?.url?.includes('/plans/session-status')
         const isGetRequest = error.config?.method?.toLowerCase() === 'get'
 
-        // Erro de rede ou servidor fora do ar (não redirecionar durante polling de pagamento e apenas em GET configs para não explodir os Forms)
         if (!error.response || (error.response.status >= 500 && error.response.status <= 504)) {
+            const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout');
+
             if (!isPollingRequest && isGetRequest && window.location.pathname !== '/error') {
-                const code = error.response?.status || 503;
+                const code = error.response?.status || (isTimeout ? 504 : 503);
+                console.warn(`[API] Erro de infraestrutura (${code}). Mantendo sessão.`);
                 window.location.href = `/error?code=${code}`;
             }
             return Promise.reject(error);
         }
 
         if (error.response?.status === 401 && !isLoginRequest && !isLoginPage) {
-            // Não redirecionar para login se já estiver na página de erro (evita loop 502 -> 401 -> login)
             const isErrorPage = window.location.pathname === '/error'
             if (!isErrorPage) {
+                console.error('[API] Sessão expirada ou inválida (401). Redirecionando para login.');
                 localStorage.removeItem('token')
                 window.location.href = '/login'
             }

@@ -6,7 +6,7 @@ from backend.core.security import get_current_user
 from backend.core.trial_utils import require_active_plan
 from backend.core.limiter import limiter
 from backend.models.users import User
-from backend.schemas.inventory import InventoryMovementCreate, InventoryMovementResponse, StockLevel, InventoryMovementPaginatedResponse, MovementType
+from backend.schemas.inventory import InventoryMovementCreate, InventoryMovementResponse, StockLevel, InventoryMovementPaginatedResponse, MovementType, StockLevelPaginatedResponse
 from backend.crud import inventory as crud
 from backend.config.logger import get_dynamic_logger
 
@@ -72,11 +72,34 @@ def list_movements(
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
-@router.get("/stock-levels", response_model=List[StockLevel])
+@router.get("/stock-levels", response_model=StockLevelPaginatedResponse)
 @limiter.limit("200/minute")
-def get_stock_levels(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_stock_levels(
+    request: Request, 
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    sort_by: str = Query("product_name"),
+    order: str = Query("asc"),
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
     try:
-        return crud.get_stock_levels(db, user_id=current_user.id)
+        items, total = crud.get_stock_levels(
+            db, 
+            user_id=current_user.id,
+            skip=skip,
+            limit=limit,
+            search=search,
+            sort_by=sort_by,
+            order=order
+        )
+        return {
+            "items": items,
+            "total": total,
+            "page": (skip // limit) + 1,
+            "per_page": limit
+        }
     except HTTPException:
         raise
     except Exception as e:

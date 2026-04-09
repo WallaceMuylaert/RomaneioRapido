@@ -39,7 +39,6 @@ class InventoryMovementResponse(InventoryMovementBase):
     created_by: Optional[int] = None
     created_at: Optional[datetime] = None
     product_name: Optional[str] = None
-    product_image: Optional[str] = None
     client: Optional[ClientInfo] = None
     product_price: Optional[float] = None
 
@@ -49,10 +48,6 @@ class InventoryMovementResponse(InventoryMovementBase):
         if v is None:
             return False
         return v
-
-    @property
-    def product_image(self) -> Optional[str]:
-        return self.product.image_base64 if self.product else None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -72,9 +67,15 @@ class StockLevel(BaseModel):
     min_stock: float
     unit: str = "UN"
     price: float = 0.0
-    image_base64: Optional[str] = None
     is_low_stock: bool
     color: Optional[str] = None
     size: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class StockLevelPaginatedResponse(BaseModel):
+    items: List[StockLevel]
+    total: int
+    page: int
+    per_page: int

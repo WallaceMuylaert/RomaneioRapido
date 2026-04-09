@@ -1,5 +1,5 @@
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer
 from backend.models.products import Product
 from backend.schemas.products import ProductCreate, ProductUpdate
 
@@ -11,8 +11,13 @@ _ALLOWED_SORT_COLUMNS = {
 }
 
 
-def get_products(db: Session, user_id: int, skip: int = 0, limit: int = 2000, search: str = None, category_id: int = None, color: str = None, size: str = None, sort_by: str = "name", order: str = "asc"):
+def get_products(db: Session, user_id: int, skip: int = 0, limit: int = 2000, search: str = None, category_id: int = None, color: str = None, size: str = None, sort_by: str = "name", order: str = "asc", include_images: bool = True):
     query = db.query(Product).filter(Product.is_active == True, Product.user_id == user_id)
+    
+    # Otimização: Não carregar o campo pesado de imagem se não for solicitado
+    if not include_images:
+        query = query.options(defer(Product.image_base64))
+
     if search:
         query = query.filter(
             (Product.name.ilike(f"%{search}%")) |

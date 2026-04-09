@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional
+from typing import Optional, List, Any
 from datetime import datetime
 
 # Tamanho máximo de imagem base64 ≈ 3 MB em base64
@@ -48,5 +48,39 @@ class ProductResponse(ProductBase):
     id: int
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ProductSlimResponse(BaseModel):
+    """Versão otimizada do produto sem imagem para listagens massivas."""
+    id: int
+    user_id: Optional[int] = None
+    name: str
+    sku: Optional[str] = None
+    barcode: Optional[str] = None
+    description: Optional[str] = None
+    price: float
+    cost_price: Optional[float] = None
+    stock_quantity: float
+    min_stock: float
+    unit: str
+    category_id: Optional[int] = None
+    is_active: bool
+    color: Optional[str] = None
+    size: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ProductPaginatedResponse(BaseModel):
+    """Retorno padronizado para listagens paginadas de produtos."""
+    items: List[Any] # Pode conter ProductResponse ou ProductSlimResponse
+    total: int
+    page: int
+    per_page: int
+    pages: int
 
     model_config = ConfigDict(from_attributes=True)

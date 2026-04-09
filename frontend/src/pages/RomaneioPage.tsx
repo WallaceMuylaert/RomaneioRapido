@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useBlocker } from 'react-router-dom'
 import api from '../services/api'
 import { toast } from 'react-hot-toast'
@@ -59,7 +59,6 @@ interface StockLevel {
     min_stock: number
     unit: string
     price: number
-    image_base64: string | null
     is_low_stock: boolean
     color?: string | null
     size?: string | null
@@ -85,6 +84,7 @@ interface PendingRomaneio {
     customer_phone: string | null
     items: PendingItem[]
     empenhar_estoque: boolean
+    discount_percentage: number
     created_at: string
     updated_at: string
 }
@@ -164,6 +164,9 @@ export default function RomaneioPage() {
     const [isSavingPending, setIsSavingPending] = useState(false)
     const [empenharAoDigitar, setEmpenharAoDigitar] = useState(true)
     const [activePendingId, setActivePendingId] = useState<number | null>(null)
+    const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const isAutoSavingRef = useRef(false)
+    const hasInitializedRef = useRef(false)
 
     // Fechar dropdowns ao clicar fora
     useEffect(() => {
@@ -186,15 +189,20 @@ export default function RomaneioPage() {
     const [estoquePage, setEstoquePage] = useState(1)
     const [estoqueSortField, setEstoqueSortField] = useState<keyof StockLevel>('product_name')
     const [estoqueSortDirection, setEstoqueSortDirection] = useState<'asc' | 'desc'>('asc')
+    const [totalEstoqueItems, setTotalEstoqueItems] = useState(0)
 
     const handleSortEstoque = (field: keyof StockLevel) => {
+        let newDir: 'asc' | 'desc' = 'asc'
+
         if (estoqueSortField === field) {
-            setEstoqueSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+            newDir = estoqueSortDirection === 'asc' ? 'desc' : 'asc'
+            setEstoqueSortDirection(newDir)
         } else {
             setEstoqueSortField(field)
             setEstoqueSortDirection('asc')
         }
         setEstoquePage(1)
+        fetchStockLevels(1, estoqueSearch, field, newDir)
     }
 
     const handleSearchClient = async (query: string) => {
@@ -313,11 +321,21 @@ export default function RomaneioPage() {
 
     const ESTOQUE_PER_PAGE = 20
 
-    const fetchStockLevels = async () => {
+    const fetchStockLevels = async (p = estoquePage, search = estoqueSearch, sort = estoqueSortField, dir = estoqueSortDirection) => {
         setLoading(true)
         try {
-            const res = await api.get('/inventory/stock-levels')
-            setStockLevels(res.data)
+            const skip = (p - 1) * ESTOQUE_PER_PAGE
+            const res = await api.get('/inventory/stock-levels', {
+                params: {
+                    skip,
+                    limit: ESTOQUE_PER_PAGE,
+                    search: search,
+                    sort_by: sort,
+                    order: dir
+                }
+            })
+            setStockLevels(res.data.items)
+            setTotalEstoqueItems(res.data.total)
         } catch (err) {
             console.error('Erro ao buscar níveis de estoque:', err)
         } finally {
@@ -376,6 +394,7 @@ export default function RomaneioPage() {
                 customer_name: customerName,
                 customer_phone: customerPhone,
                 empenhar_estoque: empenharAoDigitar,
+                discount_percentage: discountPercentage,
                 items: cartItems.map(item => ({
                     product_id: item.id,
                     name: item.name,
@@ -409,7 +428,35 @@ export default function RomaneioPage() {
     }
 
     const handleBlockerSave = async () => {
+        // Interromper qualquer auto-save agendado para rodar o manual agora
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+            autoSaveTimerRef.current = null;
+        }
+
+        await handleSavePending();
         blocker.proceed?.();
+    }
+
+    const handleDiscardAndExit = async () => {
+        // Interromper auto-save
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+            autoSaveTimerRef.current = null;
+        }
+
+        try {
+            // Se houver rascunho salvo no banco, deletamos para descarte real
+            if (activePendingId) {
+                await api.delete(`/pending/${activePendingId}`);
+            }
+            resetCart();
+            blocker.proceed?.();
+        } catch (err) {
+            console.error('Erro ao descartar rascunho na saída:', err);
+            // Procede de qualquer forma para não travar o usuário
+            blocker.proceed?.();
+        }
     }
 
     const handleResumePending = async (pending: PendingRomaneio) => {
@@ -429,6 +476,7 @@ export default function RomaneioPage() {
             setCustomerName(pending.customer_name || '')
             setCustomerPhone(pending.customer_phone)
             setSelectedClientId(pending.client_id)
+            setDiscountPercentage(pending.discount_percentage || 0)
 
             try {
                 // Ao retomar, não deletamos imediatamente. Mantemos o ID ativo para que o auto-save sobrescreva o mesmo registro.
@@ -469,9 +517,21 @@ export default function RomaneioPage() {
             confirmText: 'Excluir',
             cancelText: 'Cancelar',
             onConfirm: async () => {
+                // Cancelar auto-save imediatamente para evitar recriação fantasma
+                if (autoSaveTimerRef.current) {
+                    clearTimeout(autoSaveTimerRef.current);
+                    autoSaveTimerRef.current = null;
+                }
+
                 try {
                     await api.delete(`/pending/${id}`)
                     setPendingRomaneios(p => p.filter(x => x.id !== id))
+                    
+                    // Se o rascunho deletado for o ativo, limpa o carrinho
+                    if (id === activePendingId) {
+                        resetCart();
+                    }
+                    
                     toast.success('Rascunho excluído', { id: 'delete-pending' })
                 } catch (err) {
                     toast.error('Erro ao excluir rascunho', { id: 'romaneio-error' })
@@ -484,7 +544,6 @@ export default function RomaneioPage() {
 
     useEffect(() => {
         fetchStockLevels()
-        fetchPendingRomaneios()
 
         // Verificar se há dados copiados de outro lugar
         const copyDataRaw = sessionStorage.getItem('copy_romaneio_data')
@@ -501,6 +560,8 @@ export default function RomaneioPage() {
                     setSelectedClientId(copyData.clientId || null)
                     toast.success('Dados do romaneio retomados!', { id: 'romaneio-resume' })
                     sessionStorage.removeItem('copy_romaneio_data')
+                    hasInitializedRef.current = true
+                    fetchPendingRomaneios()
                     return // Prioridade para dados copiados
                 }
             } catch (err) {
@@ -508,34 +569,40 @@ export default function RomaneioPage() {
             }
         }
 
-        // Se não houver dados copiados, tenta recuperar do localStorage
-        const localDraftRaw = localStorage.getItem('romaneio_local_draft')
-        if (localDraftRaw) {
+        // Recuperar rascunho ativo do banco de dados
+        const initFromDb = async () => {
             try {
-                const draft = JSON.parse(localDraftRaw)
-                // Só recupera se o carrinho atual estiver vazio para não sobrescrever
-                if (cartItems.length === 0 && draft.cartItems && draft.cartItems.length > 0) {
-                    setCartItems(draft.cartItems)
-                    setCustomerName(draft.customerName || '')
-                    setCustomerPhone(draft.customerPhone || null)
-                    setSelectedClientId(draft.selectedClientId || null)
-                    setEmpenharAoDigitar(draft.empenharAoDigitar ?? true)
-                    setDiscountPercentage(draft.discountPercentage || 0)
-                    toast.success('Rascunho recuperado automaticamente!', { icon: '🛡️', id: 'romaneio-local-draft' })
-                }
+                const res = await api.get('/pending/')
+                const pendings: PendingRomaneio[] = res.data
+                setPendingRomaneios(pendings)
             } catch (err) {
-                console.error('Erro ao recuperar rascunho local:', err)
+                console.error('Erro ao buscar rascunhos:', err)
+            } finally {
+                hasInitializedRef.current = true
             }
         }
+        initFromDb()
     }, [])
 
     useEffect(() => {
         if (activeTab === 'estoque') {
             setEstoquePage(1)
             setEstoqueSearch('')
-            fetchStockLevels()
+            fetchStockLevels(1, '')
         }
     }, [activeTab])
+
+    // Debounce para busca no estoque
+    useEffect(() => {
+        if (activeTab !== 'estoque' || !hasInitializedRef.current) return
+
+        const timeout = setTimeout(() => {
+            fetchStockLevels(1, estoqueSearch)
+            setEstoquePage(1)
+        }, 400)
+
+        return () => clearTimeout(timeout)
+    }, [estoqueSearch])
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -551,27 +618,60 @@ export default function RomaneioPage() {
 
 
 
-    // Lógica de Persistência Local (localStorage) para evitar perda de dados por refresh
+    // Auto-save no banco de dados com debounce de 3s
     useEffect(() => {
-        if (cartItems.length === 0 && !customerName && !customerPhone && !selectedClientId) {
-            localStorage.removeItem('romaneio_local_draft');
-            return;
+        if (!hasInitializedRef.current) return;
+
+        // Limpar timer anterior
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
         }
 
-        const timer = setTimeout(() => {
-            const draftData = {
-                cartItems,
-                customerName,
-                customerPhone,
-                selectedClientId,
-                empenharAoDigitar,
-                discountPercentage,
-                timestamp: Date.now()
-            };
-            localStorage.setItem('romaneio_local_draft', JSON.stringify(draftData));
-        }, 1000);
+        // Se carrinho estiver vazio, não faz auto-save
+        if (cartItems.length === 0) return;
 
-        return () => clearTimeout(timer);
+        autoSaveTimerRef.current = setTimeout(async () => {
+            if (isAutoSavingRef.current) return;
+            isAutoSavingRef.current = true;
+
+            try {
+                const payload = {
+                    client_id: selectedClientId,
+                    customer_name: customerName || 'Rascunho Auto-Save',
+                    customer_phone: customerPhone,
+                    empenhar_estoque: empenharAoDigitar,
+                    discount_percentage: discountPercentage,
+                    items: cartItems.map(item => ({
+                        product_id: item.id,
+                        name: item.name,
+                        barcode: item.barcode,
+                        quantity: item.quantity,
+                        unit: item.unit,
+                        price: item.price,
+                        image: item.image,
+                        color: item.color,
+                        size: item.size
+                    }))
+                };
+
+                if (activePendingId) {
+                    await api.put(`/pending/${activePendingId}`, payload);
+                } else {
+                    const res = await api.post('/pending/', payload);
+                    setActivePendingId(res.data.id);
+                }
+            } catch (err) {
+                console.error('Erro no auto-save:', err);
+            } finally {
+                isAutoSavingRef.current = false;
+            }
+        }, 3000);
+
+        return () => {
+            if (autoSaveTimerRef.current) {
+                clearTimeout(autoSaveTimerRef.current);
+            }
+        };
     }, [cartItems, customerName, customerPhone, selectedClientId, empenharAoDigitar, discountPercentage]);
 
 
@@ -772,6 +872,11 @@ export default function RomaneioPage() {
     }
 
     const resetCart = () => {
+        // Cancelar qualquer auto-save pendente antes de resetar
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+            autoSaveTimerRef.current = null;
+        }
         setCartItems([])
         setCustomerName('')
         setCustomerPhone(null)
@@ -780,47 +885,16 @@ export default function RomaneioPage() {
         setBarcodeInput('')
         setDiscountPercentage(0)
         setActivePendingId(null)
-        setEmpenharAoDigitar(false)
-        localStorage.removeItem('romaneio_local_draft')
+        setEmpenharAoDigitar(true) // Reset para o padrão seguro
+        isAutoSavingRef.current = false;
     }
 
     const romaneioSubtotal = cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
     const discountAmount = romaneioSubtotal * (discountPercentage / 100);
     const romaneioTotal = romaneioSubtotal - discountAmount;
 
-    const filteredAndSortedStock = useMemo(() => {
-        let result = [...stockLevels]
-        if (estoqueSearch.trim()) {
-            const query = estoqueSearch.toLowerCase()
-            result = result.filter(s =>
-                s.product_name.toLowerCase().includes(query) ||
-                (s.barcode && s.barcode.toLowerCase().includes(query))
-            )
-        }
-        return result.sort((a, b) => {
-            const valA = a[estoqueSortField]
-            const valB = b[estoqueSortField]
-            if (valA === undefined || valB === undefined) return 0
-            if (valA === null && valB !== null) return estoqueSortDirection === 'asc' ? -1 : 1
-            if (valA !== null && valB === null) return estoqueSortDirection === 'asc' ? 1 : -1
-            let comparison = 0
-            if (typeof valA === 'string' && typeof valB === 'string') {
-                comparison = valA.localeCompare(valB)
-            } else if (typeof valA === 'number' && typeof valB === 'number') {
-                comparison = valA - valB
-            } else if (typeof valA === 'boolean' && typeof valB === 'boolean') {
-                comparison = valA === valB ? 0 : valA ? -1 : 1
-            }
-            if (comparison !== 0) return estoqueSortDirection === 'asc' ? comparison : -comparison
-            return a.product_name.localeCompare(b.product_name)
-        })
-    }, [stockLevels, estoqueSearch, estoqueSortField, estoqueSortDirection])
-
-    const totalEstoquePages = Math.ceil(filteredAndSortedStock.length / ESTOQUE_PER_PAGE)
-    const currentEstoqueItems = useMemo(() => {
-        const start = (estoquePage - 1) * ESTOQUE_PER_PAGE
-        return filteredAndSortedStock.slice(start, start + ESTOQUE_PER_PAGE)
-    }, [filteredAndSortedStock, estoquePage])
+    const totalEstoquePages = Math.ceil(totalEstoqueItems / ESTOQUE_PER_PAGE)
+    const currentEstoqueItems = stockLevels
 
     return (
         <div className="pb-10">
@@ -1266,7 +1340,35 @@ export default function RomaneioPage() {
                             </tbody>
                         </table>
                     </div>
-                    {totalEstoquePages > 1 && <div className="p-6 border-t border-gray-100 flex items-center justify-between"><span className="text-xs font-bold text-gray-400">Página {estoquePage} de {totalEstoquePages}</span><div className="flex gap-2"><button onClick={() => setEstoquePage(p => Math.max(1, p - 1))} disabled={estoquePage === 1} className="h-9 px-4 rounded-xl border text-xs font-bold disabled:opacity-30">Anterior</button><button onClick={() => setEstoquePage(p => Math.min(totalEstoquePages, p + 1))} disabled={estoquePage === totalEstoquePages} className="h-9 px-4 rounded-xl border text-xs font-bold disabled:opacity-30">Próxima</button></div></div>}
+                    {totalEstoquePages > 1 && (
+                        <div className="p-6 border-t border-gray-100 flex items-center justify-between">
+                            <span className="text-xs font-bold text-gray-400">Página {estoquePage} de {totalEstoquePages} ({totalEstoqueItems} itens)</span>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => {
+                                        const newPage = Math.max(1, estoquePage - 1)
+                                        setEstoquePage(newPage)
+                                        fetchStockLevels(newPage)
+                                    }}
+                                    disabled={estoquePage === 1}
+                                    className="h-9 px-4 rounded-xl border text-xs font-bold disabled:opacity-30 hover:bg-gray-50 transition-colors"
+                                >
+                                    Anterior
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const newPage = Math.min(totalEstoquePages, estoquePage + 1)
+                                        setEstoquePage(newPage)
+                                        fetchStockLevels(newPage)
+                                    }}
+                                    disabled={estoquePage === totalEstoquePages}
+                                    className="h-9 px-4 rounded-xl border text-xs font-bold disabled:opacity-30 hover:bg-gray-50 transition-colors"
+                                >
+                                    Próxima
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -1326,7 +1428,7 @@ export default function RomaneioPage() {
                                 Salvar e Sair
                             </button>
                             <div className="grid grid-cols-2 gap-3">
-                                <button onClick={() => blocker.proceed()} className="h-12 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-black text-xs active:scale-95 transition-all">Sair sem salvar</button>
+                                <button onClick={handleDiscardAndExit} className="h-12 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-black text-xs active:scale-95 transition-all">Sair sem salvar</button>
                                 <button onClick={() => blocker.reset()} className="h-12 bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-xl font-black text-xs active:scale-95 transition-all">Voltar</button>
                             </div>
                         </div>
