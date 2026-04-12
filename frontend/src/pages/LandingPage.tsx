@@ -580,7 +580,7 @@ export default function LandingPage() {
                                 </p>
                             </div>
 
-                            <div className="flex gap-12">
+                            <div className="flex flex-wrap gap-12">
                                 <div>
                                     <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Navegação</h4>
                                     <ul className="space-y-2 text-xs text-gray-400">
@@ -590,10 +590,18 @@ export default function LandingPage() {
                                     </ul>
                                 </div>
                                 <div>
+                                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Termos e Políticas</h4>
+                                    <ul className="space-y-2 text-xs text-gray-400">
+                                        <li><button onClick={() => navigate('/termos')} className="hover:text-gray-700 transition-colors">Termos de Uso</button></li>
+                                        <li><button onClick={() => navigate('/privacidade')} className="hover:text-gray-700 transition-colors">Política de Privacidade</button></li>
+                                        <li><button onClick={() => navigate('/cookies')} className="hover:text-gray-700 transition-colors">Cookies</button></li>
+                                    </ul>
+                                </div>
+                                <div>
                                     <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Contato</h4>
                                     <div className="flex items-center gap-2 text-xs text-gray-400">
                                         <Mail className="w-3.5 h-3.5" />
-                                        <span>contato@romaneiorapido.com.br</span>
+                                        <span>romaneiorapido@gmail.com</span>
                                     </div>
                                 </div>
                             </div>

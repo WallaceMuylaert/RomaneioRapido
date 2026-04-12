@@ -201,7 +201,7 @@ export default function RomaneioExportModal({
     }
 
     const printA4 = () => {
-        const printWindow = window.open('', '', 'width=800,height=600')
+        const printWindow = window.open('', '', 'width=900,height=800')
         if (!printWindow) return
 
         const now = new Date();
@@ -221,20 +221,34 @@ export default function RomaneioExportModal({
                     * { margin: 0; padding: 0; box-sizing: border-box; }
                     body { 
                         font-family: 'Inter', -apple-system, sans-serif; 
-                        padding: 40px; 
+                        padding: 20px;
                         color: #1f2937; 
                         line-height: 1.4;
-                        background: #fff;
+                        background: #f3f4f6;
                     }
+                    .page-canvas {
+                        background: #fff;
+                        width: 100%;
+                        max-width: 800px;
+                        margin: 0 auto;
+                        padding: 40px;
+                        min-height: 297mm;
+                        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+                    }
+                    @media print {
+                        body { background: #fff; padding: 0; }
+                        .page-canvas { box-shadow: none; padding: 20px; margin: 0 auto; max-width: 100%; }
+                    }
+                    
                     .watermark-container { 
-                        position: fixed; 
+                        position: absolute; 
                         top: 0; left: 0; width: 100%; height: 100%; 
                         display: flex; align-items: center; justify-content: center; 
-                        pointer-events: none; z-index: -1; 
+                        pointer-events: none; z-index: 0; 
                     }
                     .watermark-logo { width: 500px; opacity: 0.04; transform: rotate(-35deg); }
                     .draft-watermark {
-                        position: fixed;
+                        position: absolute;
                         top: 50%;
                         left: 50%;
                         transform: translate(-50%, -50%) rotate(-45deg);
@@ -255,6 +269,8 @@ export default function RomaneioExportModal({
                         margin-bottom: 40px; 
                         padding-bottom: 24px;
                         border-bottom: 2px solid #f3f4f6;
+                        position: relative;
+                        z-index: 1;
                     }
                     .logo-area { display: flex; align-items: center; gap: 12px; }
                     .logo-img { height: 40px; width: auto; object-fit: contain; }
@@ -270,11 +286,13 @@ export default function RomaneioExportModal({
                         border-radius: 12px; 
                         margin-bottom: 30px; 
                         border: 1px solid #f3f4f6;
+                        position: relative;
+                        z-index: 1;
                     }
                     .card-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #9ca3af; letter-spacing: 0.05em; margin-bottom: 4px; }
                     .card-value { font-size: 15px; font-weight: 700; color: #111827; }
 
-                    table { width: 100%; border-collapse: separate; border-spacing: 0; }
+                    table { width: 100%; border-collapse: separate; border-spacing: 0; position: relative; z-index: 1; }
                     th { 
                         text-align: left; padding: 12px 16px; background: #f9fafb; 
                         color: #6b7280; font-size: 11px; font-weight: 700; 
@@ -291,7 +309,7 @@ export default function RomaneioExportModal({
                     .col-check { width: 40px; text-align: center; }
                     .check-box { width: 18px; height: 18px; border: 2px solid #d1d5db; border-radius: 4px; display: inline-block; }
 
-                    .summary-section { margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-start; }
+                    .summary-section { margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-start; position: relative; z-index: 1; }
                     
                     .pix-area { 
                         display: flex; align-items: center; gap: 16px; 
@@ -313,85 +331,88 @@ export default function RomaneioExportModal({
                         margin-top: 50px; padding-top: 20px; 
                         border-top: 1px solid #f3f4f6; text-align: center; 
                         font-size: 10px; color: #9ca3af; font-weight: 500;
+                        position: relative; z-index: 1;
                     }
                 </style>
             </head>
             <body>
-                <div class="watermark-container">
-                    ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
-                    ${isDraft ? `<div class="draft-watermark">RASCUNHO</div>` : ''}
-                </div>
-                
-                <div class="header">
-                    <div class="logo-area">
-                        ${logoBase64 ? `<img src="${logoBase64}" class="logo-img" />` : '<div style="width: 36px; height: 36px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 18px;">R</div>'}
-                        <div class="logo-text">Romaneio Rápido</div>
+                <div class="page-canvas">
+                    <div class="watermark-container">
+                        ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
+                        ${isDraft ? `<div class="draft-watermark">RASCUNHO</div>` : ''}
                     </div>
-                    <div class="doc-info">
-                        <div class="doc-title">${isDraft ? 'Rascunho de Separação' : 'Documento de Romaneio'}</div>
-                        <div class="doc-date">${dateStr}</div>
-                    </div>
-                </div>
-
-                <div class="customer-card">
-                    <div class="card-label">Cliente / Destino</div>
-                    <div class="card-value">${customerName || 'Consumidor Final'}</div>
-                </div>
-                
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="col-qty">Qtd</th>
-                            <th class="col-unit">Un</th>
-                            <th>Produto</th>
-                            <th style="text-align: right;">v. Unit</th>
-                            <th style="text-align: right;">Subtotal</th>
-                            <th class="col-check">OK</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${items.map(item => `
-                            <tr>
-                                <td class="col-qty">${item.quantity}</td>
-                                <td class="col-unit">${item.unit}</td>
-                                <td>
-                                    <div class="product-name">${item.name}</div>
-                                    <div class="product-meta">
-                                        ${(item.color || item.size) ? `<span class="variant-badge">${[item.color, item.size].filter(Boolean).join(' • ')}</span>` : ''}
-                                        <span>${item.barcode || '-'}</span>
-                                    </div>
-                                </td>
-                                <td class="col-price">${formatCurrency(item.price)}</td>
-                                <td class="col-total">${formatCurrency(item.price * item.quantity)}</td>
-                                <td class="col-check"><div class="check-box"></div></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-                
-                <div class="summary-section">
-                    <div class="pix-area">
-                        ${pixQRCode ? `<img src="${pixQRCode}" class="pix-qr" />` : ''}
-                        <div class="pix-details">
-                            <div class="pix-title">PAGAMENTO VIA PIX</div>
-                            <div class="pix-key">${user?.pix_key || 'Chave não cadastrada'}</div>
-                            <div style="font-size: 10px; color: #9ca3af; margin-top: 4px;">Escaneie o QR Code ou use a chave.</div>
+                    
+                    <div class="header">
+                        <div class="logo-area">
+                            ${logoBase64 ? `<img src="${logoBase64}" class="logo-img" />` : '<div style="width: 36px; height: 36px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 18px;">R</div>'}
+                            <div class="logo-text">Romaneio Rápido</div>
+                        </div>
+                        <div class="doc-info">
+                            <div class="doc-title">${isDraft ? 'Rascunho de Separação' : 'Documento de Romaneio'}</div>
+                            <div class="doc-date">${dateStr}</div>
                         </div>
                     </div>
 
-                    <div class="totals-area">
-                        <div class="total-label">Subtotal</div>
-                        <div style="font-size: 16px; font-weight: 700; color: #374151;">${formatCurrency(subtotal)}</div>
-                        ${discount > 0 ? `<div class="discount-label">Desconto: -${formatCurrency(discount)}</div>` : ''}
-                        
-                        <div class="total-label" style="margin-top: 12px;">Total do Romaneio</div>
-                        <div class="total-value">${formatCurrency(totalValue)}</div>
-                        <div class="total-items">Volume Total: ${totalItemsSummary}</div>
+                    <div class="customer-card">
+                        <div class="card-label">Cliente / Destino</div>
+                        <div class="card-value">${customerName || 'Consumidor Final'}</div>
                     </div>
-                </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="col-qty">Qtd</th>
+                                <th class="col-unit">Un</th>
+                                <th>Produto</th>
+                                <th style="text-align: right;">v. Unit</th>
+                                <th style="text-align: right;">Subtotal</th>
+                                <th class="col-check">OK</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${items.map(item => `
+                                <tr>
+                                    <td class="col-qty">${item.quantity}</td>
+                                    <td class="col-unit">${item.unit}</td>
+                                    <td>
+                                        <div class="product-name">${item.name}</div>
+                                        <div class="product-meta">
+                                            ${(item.color || item.size) ? `<span class="variant-badge">${[item.color, item.size].filter(Boolean).join(' • ')}</span>` : ''}
+                                            <span>${item.barcode || '-'}</span>
+                                        </div>
+                                    </td>
+                                    <td class="col-price">${formatCurrency(item.price)}</td>
+                                    <td class="col-total">${formatCurrency(item.price * item.quantity)}</td>
+                                    <td class="col-check"><div class="check-box"></div></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div class="summary-section">
+                        <div class="pix-area">
+                            ${pixQRCode ? `<img src="${pixQRCode}" class="pix-qr" />` : ''}
+                            <div class="pix-details">
+                                <div class="pix-title">PAGAMENTO VIA PIX</div>
+                                <div class="pix-key">${user?.pix_key || 'Chave não cadastrada'}</div>
+                                <div style="font-size: 10px; color: #9ca3af; margin-top: 4px;">Escaneie o QR Code ou use a chave.</div>
+                            </div>
+                        </div>
 
-                <div class="footer">
-                    Este documento não é um cupom fiscal. Gerado por romaneiorapido.com.br
+                        <div class="totals-area">
+                            <div class="total-label">Subtotal</div>
+                            <div style="font-size: 16px; font-weight: 700; color: #374151;">${formatCurrency(subtotal)}</div>
+                            ${discount > 0 ? `<div class="discount-label">Desconto: -${formatCurrency(discount)}</div>` : ''}
+                            
+                            <div class="total-label" style="margin-top: 12px;">Total do Romaneio</div>
+                            <div class="total-value">${formatCurrency(totalValue)}</div>
+                            <div class="total-items">Volume Total: ${totalItemsSummary}</div>
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        Este documento não é um cupom fiscal. Gerado por romaneiorapido.com.br
+                    </div>
                 </div>
             </body>
             </html>
@@ -404,7 +425,6 @@ export default function RomaneioExportModal({
             printWindow.print()
         }, 250)
     }
-
 
     const printThermal = () => {
         const printWindow = window.open('', '', 'width=400,height=600')
@@ -426,72 +446,59 @@ export default function RomaneioExportModal({
                     body { 
                         font-family: 'Courier New', Courier, monospace; 
                         width: 280px; 
-                        padding: 15px; 
+                        padding: 5px; 
                         color: #000; 
-                        margin: 0 auto; 
+                        margin: 0; 
                         font-size: 11px; 
-                        line-height: 1.3;
-                    }
-                    .watermark-container { 
-                        position: fixed; 
-                        top: 0; left: 0; width: 100%; height: 100%; 
-                        display: flex; align-items: center; justify-content: center; 
-                        pointer-events: none; z-index: -1; 
-                    }
-                    .watermark-logo { width: 280px; opacity: 0.06; transform: rotate(-35deg); }
-                    .watermark-domain { 
-                        position: fixed; 
-                        bottom: 10px; right: 10px; 
-                        font-size: 8px; 
-                        color: #999; 
-                        opacity: 0.5;
+                        line-height: 1.2;
+                        background: #fff;
                     }
                     .center { text-align: center; }
                     .bold { font-weight: bold; }
-                    .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
+                    .divider { border-bottom: 1px dashed #000; margin: 8px 0; }
                     
-                    .header { margin-bottom: 10px; }
-                    .brand-logo { height: 40px; width: auto; object-fit: contain; margin-bottom: 5px; }
-                    .brand-name { font-size: 16px; font-weight: bold; margin-bottom: 2px; }
+                    .header { margin-bottom: 8px; }
+                    .brand-logo { height: 35px; width: auto; object-fit: contain; margin-bottom: 4px; filter: grayscale(100%) contrast(200%); }
+                    .brand-name { font-size: 14px; font-weight: bold; }
                     .brand-sub { font-size: 10px; }
+                    
+                    .draft-notice { 
+                        border: 2px solid #000; 
+                        padding: 4px; 
+                        margin: 5px 0; 
+                        font-size: 14px; 
+                        font-weight: 900; 
+                    }
 
-                    .info-block { margin-bottom: 15px; }
+                    .info-block { margin-bottom: 10px; }
                     .info-row { display: flex; justify-content: space-between; }
-                    .customer-name { font-size: 13px; margin-top: 4px; border: 1px solid #000; padding: 4px; text-align: center; }
+                    .customer-name { font-size: 12px; margin-top: 4px; border: 1px solid #000; padding: 4px; text-align: center; }
 
-                    .item { margin-bottom: 8px; }
-                    .item-header { font-weight: bold; font-size: 12px; }
-                    .item-variant { font-size: 9px; font-weight: bold; margin-bottom: 2px; }
+                    .item { margin-bottom: 6px; }
+                    .item-header { font-weight: bold; font-size: 11px; }
+                    .item-variant { font-size: 9px; font-weight: bold; margin-bottom: 1px; }
                     .item-details { display: flex; justify-content: space-between; }
                     
-                    .total-block { margin-top: 10px; font-size: 12px; }
-                    .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
-                    .discount-row { display: flex; justify-content: space-between; margin-bottom: 2px; color: #444; }
-                    .grand-total { font-size: 16px; margin-top: 6px; border-top: 1px solid #000; padding-top: 6px; }
+                    .total-block { margin-top: 8px; font-size: 11px; }
+                    .total-row { display: flex; justify-content: space-between; margin-bottom: 1px; }
+                    .grand-total { font-size: 14px; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px; }
 
-                    .pix-section { margin-top: 15px; text-align: center; border: 1px solid #000; padding: 8px; }
-                    .qr-code { width: 140px; height: 140px; margin: 5px auto; display: block; }
-                    .pix-key { font-size: 9px; word-break: break-all; margin-top: 4px; }
+                    .pix-section { margin-top: 12px; text-align: center; border: 1px solid #000; padding: 6px; }
+                    .qr-code { width: 120px; height: 120px; margin: 4px auto; display: block; filter: contrast(300%); }
+                    .pix-key { font-size: 9px; word-break: break-all; margin-top: 2px; }
 
-                    .signature-area { margin-top: 30px; text-align: center; }
-                    .signature-line { border-bottom: 1px solid #000; width: 80%; margin: 25px auto 5px; }
+                    .signature-area { margin-top: 25px; text-align: center; }
+                    .signature-line { border-bottom: 1px solid #000; width: 85%; margin: 20px auto 4px; }
 
-                    .footer { margin-top: 20px; font-size: 9px; color: #333; }
+                    .footer { margin-top: 15px; font-size: 8px; color: #000; }
                 </style>
             </head>
             <body>
-                <div class="watermark-container">
-                    ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
-                    ${isDraft ? `
-                        <div style="position: fixed; top: 100px; left: 0; width: 100%; text-align: center; font-size: 40px; font-weight: 900; color: rgba(0,0,0,0.05); transform: rotate(-20deg); pointer-events: none;">RASCUNHO</div>
-                        <div style="position: fixed; top: 300px; left: 0; width: 100%; text-align: center; font-size: 40px; font-weight: 900; color: rgba(0,0,0,0.05); transform: rotate(-20deg); pointer-events: none;">RASCUNHO</div>
-                    ` : ''}
-                </div>
-
                 <div class="header center">
                     ${logoBase64 ? `<img src="${logoBase64}" class="brand-logo" />` : ''}
                     <div class="brand-name">ROMANEIO RÁPIDO</div>
                     <div class="brand-sub">Comprovante de Separação</div>
+                    ${isDraft ? `<div class="draft-notice">*** RASCUNHO ***</div>` : ''}
                 </div>
 
                 <div class="divider"></div>
@@ -505,7 +512,7 @@ export default function RomaneioExportModal({
                         <span>HORA:</span>
                         <span>${dateStr.split(',')[1] || ''}</span>
                     </div>
-                    <div class="bold" style="margin-top: 8px;">CLIENTE:</div>
+                    <div class="bold" style="margin-top: 6px;">CLIENTE:</div>
                     <div class="customer-name bold">${customerName || 'CONSUMIDOR'}</div>
                 </div>
 
@@ -521,7 +528,7 @@ export default function RomaneioExportModal({
                             <span>${item.quantity} ${item.unit} x ${formatCurrency(item.price)}</span>
                             <span class="bold">${formatCurrency(item.quantity * item.price)}</span>
                         </div>
-                        ${item.barcode ? `<div style="font-size: 9px; color: #555;">REF: ${item.barcode}</div>` : ''}
+                        ${item.barcode ? `<div style="font-size: 9px;">REF: ${item.barcode}</div>` : ''}
                     </div>
                 `).join('')}
 
@@ -537,7 +544,7 @@ export default function RomaneioExportModal({
                         <span>${formatCurrency(subtotal)}</span>
                     </div>
                     ${discount > 0 ? `
-                        <div class="discount-row">
+                        <div class="total-row">
                             <span>DESCONTO:</span>
                             <span>-${formatCurrency(discount)}</span>
                         </div>
