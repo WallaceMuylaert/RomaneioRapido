@@ -425,73 +425,65 @@ export default function RomaneioExportModal({
                     * { margin: 0; padding: 0; box-sizing: border-box; }
                     body { 
                         font-family: 'Courier New', Courier, monospace; 
-                        width: 280px; 
-                        padding: 15px; 
+                        width: 220px; 
+                        padding: 10px; 
                         color: #000; 
                         margin: 0 auto; 
                         font-size: 11px; 
-                        line-height: 1.3;
-                    }
-                    .watermark-container { 
-                        position: fixed; 
-                        top: 0; left: 0; width: 100%; height: 100%; 
-                        display: flex; align-items: center; justify-content: center; 
-                        pointer-events: none; z-index: -1; 
-                    }
-                    .watermark-logo { width: 280px; opacity: 0.06; transform: rotate(-35deg); }
-                    .watermark-domain { 
-                        position: fixed; 
-                        bottom: 10px; right: 10px; 
-                        font-size: 8px; 
-                        color: #999; 
-                        opacity: 0.5;
+                        line-height: 1.2;
+                        background: #fff;
                     }
                     .center { text-align: center; }
                     .bold { font-weight: bold; }
-                    .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
+                    .divider { border-bottom: 1px dashed #000; margin: 8px 0; }
                     
-                    .header { margin-bottom: 10px; }
-                    .brand-logo { height: 40px; width: auto; object-fit: contain; margin-bottom: 5px; }
-                    .brand-name { font-size: 16px; font-weight: bold; margin-bottom: 2px; }
+                    .header { margin-bottom: 8px; }
+                    .brand-logo { height: 35px; width: auto; object-fit: contain; margin-bottom: 4px; filter: grayscale(100%) contrast(200%); }
+                    .brand-name { font-size: 14px; font-weight: bold; }
                     .brand-sub { font-size: 10px; }
+                    
+                    .draft-notice { 
+                        border: 2px solid #000; 
+                        padding: 4px; 
+                        margin: 5px 0; 
+                        font-size: 14px; 
+                        font-weight: 900; 
+                    }
 
-                    .info-block { margin-bottom: 15px; }
+                    .info-block { margin-bottom: 10px; }
                     .info-row { display: flex; justify-content: space-between; }
-                    .customer-name { font-size: 13px; margin-top: 4px; border: 1px solid #000; padding: 4px; text-align: center; }
+                    .customer-name { font-size: 12px; margin-top: 4px; border: 1px solid #000; padding: 4px; text-align: center; }
 
-                    .item { margin-bottom: 8px; }
-                    .item-header { font-weight: bold; font-size: 12px; }
-                    .item-variant { font-size: 9px; font-weight: bold; margin-bottom: 2px; }
+                    .item { margin-bottom: 6px; }
+                    .item-header { font-weight: bold; font-size: 11px; }
+                    .item-variant { font-size: 9px; font-weight: bold; margin-bottom: 1px; }
                     .item-details { display: flex; justify-content: space-between; }
                     
-                    .total-block { margin-top: 10px; font-size: 12px; }
-                    .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
-                    .discount-row { display: flex; justify-content: space-between; margin-bottom: 2px; color: #444; }
-                    .grand-total { font-size: 16px; margin-top: 6px; border-top: 1px solid #000; padding-top: 6px; }
+                    .total-block { margin-top: 8px; font-size: 11px; }
+                    .total-row { display: flex; justify-content: space-between; margin-bottom: 1px; }
+                    .grand-total { font-size: 14px; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px; }
 
-                    .pix-section { margin-top: 15px; text-align: center; border: 1px solid #000; padding: 8px; }
-                    .qr-code { width: 140px; height: 140px; margin: 5px auto; display: block; }
-                    .pix-key { font-size: 9px; word-break: break-all; margin-top: 4px; }
+                    .pix-section { margin-top: 12px; text-align: center; border: 1px solid #000; padding: 6px; }
+                    .qr-code { width: 120px; height: 120px; margin: 4px auto; display: block; filter: contrast(300%); }
+                    .pix-key { font-size: 9px; word-break: break-all; margin-top: 2px; }
 
-                    .signature-area { margin-top: 30px; text-align: center; }
-                    .signature-line { border-bottom: 1px solid #000; width: 80%; margin: 25px auto 5px; }
+                    .signature-area { margin-top: 25px; text-align: center; }
+                    .signature-line { border-bottom: 1px solid #000; width: 85%; margin: 20px auto 4px; }
 
-                    .footer { margin-top: 20px; font-size: 9px; color: #333; }
+                    .footer { margin-top: 15px; font-size: 8px; color: #000; }
+                    
+                    /* Ocultar elementos desnecessários na impressão */
+                    @media print {
+                        body { width: 100%; padding: 0; }
+                    }
                 </style>
             </head>
             <body>
-                <div class="watermark-container">
-                    ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
-                    ${isDraft ? `
-                        <div style="position: fixed; top: 100px; left: 0; width: 100%; text-align: center; font-size: 40px; font-weight: 900; color: rgba(0,0,0,0.05); transform: rotate(-20deg); pointer-events: none;">RASCUNHO</div>
-                        <div style="position: fixed; top: 300px; left: 0; width: 100%; text-align: center; font-size: 40px; font-weight: 900; color: rgba(0,0,0,0.05); transform: rotate(-20deg); pointer-events: none;">RASCUNHO</div>
-                    ` : ''}
-                </div>
-
                 <div class="header center">
                     ${logoBase64 ? `<img src="${logoBase64}" class="brand-logo" />` : ''}
                     <div class="brand-name">ROMANEIO RÁPIDO</div>
                     <div class="brand-sub">Comprovante de Separação</div>
+                    ${isDraft ? `<div class="draft-notice">*** RASCUNHO ***</div>` : ''}
                 </div>
 
                 <div class="divider"></div>
@@ -505,7 +497,7 @@ export default function RomaneioExportModal({
                         <span>HORA:</span>
                         <span>${dateStr.split(',')[1] || ''}</span>
                     </div>
-                    <div class="bold" style="margin-top: 8px;">CLIENTE:</div>
+                    <div class="bold" style="margin-top: 6px;">CLIENTE:</div>
                     <div class="customer-name bold">${customerName || 'CONSUMIDOR'}</div>
                 </div>
 
@@ -521,7 +513,7 @@ export default function RomaneioExportModal({
                             <span>${item.quantity} ${item.unit} x ${formatCurrency(item.price)}</span>
                             <span class="bold">${formatCurrency(item.quantity * item.price)}</span>
                         </div>
-                        ${item.barcode ? `<div style="font-size: 9px; color: #555;">REF: ${item.barcode}</div>` : ''}
+                        ${item.barcode ? `<div style="font-size: 9px;">REF: ${item.barcode}</div>` : ''}
                     </div>
                 `).join('')}
 
@@ -537,7 +529,7 @@ export default function RomaneioExportModal({
                         <span>${formatCurrency(subtotal)}</span>
                     </div>
                     ${discount > 0 ? `
-                        <div class="discount-row">
+                        <div class="total-row">
                             <span>DESCONTO:</span>
                             <span>-${formatCurrency(discount)}</span>
                         </div>
