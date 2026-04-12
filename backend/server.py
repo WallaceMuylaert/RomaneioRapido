@@ -13,6 +13,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from backend.config.logger import get_dynamic_logger
+from backend.core.config import settings
 from backend.core.limiter import limiter
 from backend.core import database
 from backend.models.users import User
