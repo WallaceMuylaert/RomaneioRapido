@@ -301,6 +301,7 @@ export default function RomaneioExportModal({
                     td { padding: 14px 16px; border-bottom: 1px solid #f3f4f6; font-size: 13px; vertical-align: middle; }
                     .col-qty { width: 60px; text-align: center; font-weight: 700; font-size: 14px; }
                     .col-unit { width: 60px; color: #6b7280; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+                    .col-num { width: 40px; text-align: center; color: #9ca3af; font-weight: 600; font-size: 11px; }
                     .product-name { font-weight: 700; color: #111827; margin-bottom: 2px; }
                     .product-meta { font-size: 11px; color: #6b7280; display: flex; gap: 8px; }
                     .variant-badge { background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
@@ -333,9 +334,46 @@ export default function RomaneioExportModal({
                         font-size: 10px; color: #9ca3af; font-weight: 500;
                         position: relative; z-index: 1;
                     }
+
+                    .page-footer-total {
+                        display: none;
+                    }
+
+                    @media print {
+                        body { background: #fff; padding: 0; }
+                        .page-canvas { box-shadow: none; padding: 10px; margin: 0 auto; max-width: 100%; min-height: auto; }
+                        
+                        .page-footer-total {
+                            display: flex;
+                            flex-direction: column;
+                            position: fixed;
+                            bottom: 8mm;
+                            right: 8mm;
+                            text-align: right;
+                            padding: 8px 20px;
+                            background: #111827 !important;
+                            color: #ffffff !important;
+                            border-radius: 10px;
+                            z-index: 9999;
+                            border: 1px solid #374151;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                        }
+                        .page-footer-label { font-size: 9px; color: #9ca3af !important; font-weight: 700; text-transform: uppercase; margin-bottom: 1px; }
+                        .page-footer-value { font-size: 18px; font-weight: 800; color: #ffffff !important; }
+
+                        /* Aumentamos a margem inferior do corpo para reservar espaço para o rodapé fixo */
+                        body { margin-bottom: 40mm; }
+                    }
                 </style>
             </head>
             <body>
+                <div class="page-footer-total">
+                    <div class="page-footer-label">Total do Romaneio</div>
+                    <div class="page-footer-value">${formatCurrency(totalValue)}</div>
+                </div>
+
                 <div class="page-canvas">
                     <div class="watermark-container">
                         ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
@@ -361,6 +399,11 @@ export default function RomaneioExportModal({
                     <table>
                         <thead>
                             <tr>
+                                <th colspan="4" style="text-align: left; background: #f3f4f6; color: #374151; font-size: 10px; border-bottom: none;">Documento de Conferência</th>
+                                <th colspan="3" style="text-align: right; background: #111827; color: white; font-size: 14px; border-bottom: none; -webkit-print-color-adjust: exact; print-color-adjust: exact;">TOTAL: ${formatCurrency(totalValue)}</th>
+                            </tr>
+                            <tr>
+                                <th class="col-num">#</th>
                                 <th class="col-qty">Qtd</th>
                                 <th class="col-unit">Un</th>
                                 <th>Produto</th>
@@ -370,8 +413,9 @@ export default function RomaneioExportModal({
                             </tr>
                         </thead>
                         <tbody>
-                            ${items.map(item => `
+                            ${items.map((item, index) => `
                                 <tr>
+                                    <td class="col-num">${index + 1}</td>
                                     <td class="col-qty">${item.quantity}</td>
                                     <td class="col-unit">${item.unit}</td>
                                     <td>
@@ -387,6 +431,11 @@ export default function RomaneioExportModal({
                                 </tr>
                             `).join('')}
                         </tbody>
+                        <tfoot style="display: table-footer-group;">
+                            <tr>
+                                <td colspan="7" style="height: 80px; border: none !important;"></td>
+                            </tr>
+                        </tfoot>
                     </table>
                     
                     <div class="summary-section">
