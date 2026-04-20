@@ -89,7 +89,7 @@ export default function SuperAdminPage() {
         return matchesSearch && matchesPlan
     })
 
-    const plans = ['trial', 'basic', 'plus', 'pro', 'enterprise']
+    const plans = ['trial', 'basic', 'plus', 'pro', 'api', 'enterprise']
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500">

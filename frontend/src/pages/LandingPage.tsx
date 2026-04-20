@@ -29,19 +29,28 @@ export default function LandingPage() {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [carouselIndex, setCarouselIndex] = useState(0)
 
+    const scrollRef = useRef<HTMLDivElement>(null)
     const visiblePlans = PLANS.filter(p => !p.hidden)
 
     const nextPlan = () => {
-        setCarouselIndex((prev) => (prev + 1) % visiblePlans.length)
+        if (!scrollRef.current || !scrollRef.current.children[0]) return
+        const nextIndex = (carouselIndex + 1) % visiblePlans.length
+        const cardWidth = (scrollRef.current.children[0] as HTMLElement).offsetWidth + 24
+        scrollRef.current.scrollTo({ left: nextIndex * cardWidth, behavior: 'smooth' })
+        setCarouselIndex(nextIndex)
     }
 
     const prevPlan = () => {
-        setCarouselIndex((prev) => (prev - 1 + visiblePlans.length) % visiblePlans.length)
+        if (!scrollRef.current || !scrollRef.current.children[0]) return
+        const prevIndex = (carouselIndex - 1 + visiblePlans.length) % visiblePlans.length
+        const cardWidth = (scrollRef.current.children[0] as HTMLElement).offsetWidth + 24
+        scrollRef.current.scrollTo({ left: prevIndex * cardWidth, behavior: 'smooth' })
+        setCarouselIndex(prevIndex)
     }
 
     const isHovered = useRef(false)
 
-    // Auto-play
+    // Auto-play (All screens)
     useEffect(() => {
         const interval = setInterval(() => {
             if (!isHovered.current) {
@@ -49,7 +58,8 @@ export default function LandingPage() {
             }
         }, 5000)
         return () => clearInterval(interval)
-    }, [visiblePlans.length])
+    }, [carouselIndex, visiblePlans.length])
+
 
     const mouseX = useMotionValue(0)
     const mouseY = useMotionValue(0)
@@ -436,102 +446,112 @@ export default function LandingPage() {
                             </p>
                         </div>
 
-                        {/* Carousel Wrapper */}
-                        <div className="relative group/carousel px-4">
-                            <div className="overflow-hidden py-10">
-                                <motion.div
-                                    className="flex gap-4 md:gap-6"
-                                    onMouseEnter={() => isHovered.current = true}
-                                    onMouseLeave={() => isHovered.current = false}
-                                    animate={{ x: -(carouselIndex * (window.innerWidth < 768 ? 256 : 304)) }} 
-                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                    drag="x"
-                                    dragConstraints={{ 
-                                        left: -((visiblePlans.length - 1) * (window.innerWidth < 768 ? 256 : 304)), 
-                                        right: 0 
-                                    }}
-                                    onDragEnd={(_: any, info: any) => {
-                                        if (info.offset.x < -50 && carouselIndex < visiblePlans.length - 1) nextPlan()
-                                        else if (info.offset.x > 50 && carouselIndex > 0) prevPlan()
-                                    }}
-                                >
-                                    {visiblePlans.map((plan, i) => (
-                                        <motion.div
-                                            key={i}
-                                            initial={{ opacity: 0, scale: 0.9 }}
-                                            whileInView={{ opacity: 1, scale: 1 }}
-                                            viewport={{ once: true }}
-                                            whileHover={{ y: -10 }}
-                                            className={`relative min-w-[240px] md:min-w-[280px] p-6 md:p-8 rounded-[24px] border transition-all duration-300 flex-shrink-0 ${plan.highlight
-                                                ? 'border-blue-600 shadow-2xl shadow-blue-600/20 z-10 bg-white'
-                                                : 'border-gray-100 bg-gray-50/30'
+                        {/* Unified Carousel for all screens */}
+                        <div 
+                            className="relative group/carousel px-4 md:px-0" 
+                            role="region" 
+                            aria-label="Planos de Assinatura"
+                            onMouseEnter={() => isHovered.current = true}
+                            onMouseLeave={() => isHovered.current = false}
+                        >
+                            {/* Navigation Arrows - Desktop/Premium Only */}
+                            <button
+                                onClick={prevPlan}
+                                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 md:-translate-x-12 z-30 w-12 h-12 bg-white border border-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-100 shadow-xl transition-all opacity-0 group-hover/carousel:opacity-100 active:scale-90"
+                                aria-label="Plano anterior"
+                            >
+                                <ChevronLeft className="w-6 h-6" />
+                            </button>
+
+                            <button
+                                onClick={nextPlan}
+                                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 md:translate-x-12 z-30 w-12 h-12 bg-white border border-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-100 shadow-xl transition-all opacity-0 group-hover/carousel:opacity-100 active:scale-90"
+                                aria-label="Próximo plano"
+                            >
+                                <ChevronRight className="w-6 h-6" />
+                            </button>
+
+                            <div 
+                                ref={scrollRef}
+                                className="flex overflow-x-auto gap-6 pt-10 pb-12 snap-x snap-mandatory scroll-smooth no-scrollbar"
+                                role="list"
+                                onScroll={(e) => {
+                                    const target = e.currentTarget;
+                                    const firstCard = target.children[0] as HTMLElement;
+                                    if (firstCard) {
+                                        const cardWidth = firstCard.offsetWidth + 24;
+                                        const index = Math.round(target.scrollLeft / cardWidth);
+                                        if (index !== carouselIndex) setCarouselIndex(index);
+                                    }
+                                }}
+                            >
+                                {visiblePlans.map((plan, i) => (
+                                    <div
+                                        key={i}
+                                        role="listitem"
+                                        aria-label={`Plano ${plan.name}`}
+                                        className={`relative w-[280px] md:w-[320px] p-6 md:p-10 rounded-[32px] border transition-all duration-300 flex-shrink-0 snap-center flex flex-col h-full ${plan.highlight
+                                            ? 'border-blue-600 shadow-xl shadow-blue-600/10 z-10 bg-white ring-1 ring-blue-100'
+                                            : 'border-slate-100 bg-gray-50/40 hover:bg-white hover:border-blue-200 hover:shadow-lg'
+                                            }`}
+                                    >
+                                        {plan.highlight && (
+                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black px-5 py-2 rounded-full uppercase tracking-[0.2em] shadow-lg shadow-blue-600/30 whitespace-nowrap z-20">
+                                                Destaque
+                                            </div>
+                                        )}
+
+                                        <div className="mb-8">
+                                            <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">{plan.name}</h3>
+                                            <p className="text-sm text-slate-500 font-medium leading-relaxed min-h-[48px]">{plan.description}</p>
+                                        </div>
+
+                                        <div className="flex items-baseline gap-1.5 mb-10">
+                                            <span className="text-4xl font-black text-slate-900 tracking-tighter">{plan.price}</span>
+                                            {plan.period && <span className="text-slate-400 font-bold text-[11px] uppercase tracking-widest">{plan.period}</span>}
+                                        </div>
+
+                                        <button
+                                            onClick={() => navigate('/cadastro')}
+                                            className={`w-full py-4.5 rounded-2xl font-black text-sm transition-all duration-300 mb-10 active:scale-95 ${plan.highlight
+                                                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-600/30'
+                                                : 'bg-slate-900 text-white hover:bg-blue-600 shadow-lg shadow-slate-200'
                                                 }`}
                                         >
-                                            {plan.highlight && (
-                                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-blue-600/30">
-                                                    Mais Popular
-                                                </div>
-                                            )}
+                                            Começar Agora
+                                        </button>
 
-                                            <div className="mb-8">
-                                                <h3 className="text-xl font-black text-gray-900 mb-2">{plan.name}</h3>
-                                                <p className="text-sm text-gray-500 font-medium leading-relaxed min-h-[48px]">{plan.description}</p>
-                                            </div>
-
-                                            <div className="flex items-baseline gap-1 mb-8">
-                                                <span className="text-4xl font-black text-gray-900">{plan.price}</span>
-                                                {plan.period && <span className="text-gray-400 font-bold text-sm">{plan.period}</span>}
-                                            </div>
-
-                                            <button
-                                                onClick={() => navigate('/cadastro')}
-                                                className={`w-full py-4 rounded-xl font-black text-sm transition-all duration-300 mb-9 active:scale-95 ${plan.highlight
-                                                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-600/20'
-                                                    : 'bg-white text-gray-900 border-2 border-gray-100 hover:border-blue-200 hover:text-blue-600'
-                                                    }`}
-                                            >
-                                                Começar Agora
-                                            </button>
-
-                                            <div className="space-y-4">
-                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">O que está incluso:</p>
-                                                {plan.features.map((feature, j) => (
-                                                    <div key={j} className="flex items-start gap-3 group/feat">
-                                                        <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover/feat:bg-blue-600 group-hover/feat:text-white transition-colors">
-                                                            <Check className="w-3 h-3 text-blue-600 group-hover/feat:text-white" />
-                                                        </div>
-                                                        <span className="text-sm text-gray-600 font-medium">{feature}</span>
+                                        <div className="space-y-4.5 mt-auto">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-3">Recursos inclusos:</p>
+                                            {plan.features.map((feature, j) => (
+                                                <div key={j} className="flex items-start gap-3.5 group/feat">
+                                                    <div className="w-5.5 h-5.5 rounded-full bg-blue-50/50 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover/feat:bg-blue-600 transition-colors">
+                                                        <Check className="w-3 h-3 text-blue-600 group-hover/feat:text-white" />
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </motion.div>
+                                                    <span className="text-[13px] text-slate-600 font-semibold leading-snug group-hover/feat:text-slate-900 transition-colors">{feature}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
 
-                            {/* Navigation Buttons */}
-                            <div className="hidden md:flex justify-center gap-4 mt-8">
-                                <button 
-                                    onClick={prevPlan}
-                                    className="p-3 rounded-full border border-gray-100 hover:border-blue-200 hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-all active:scale-90 shadow-sm"
-                                >
-                                    <ChevronLeft className="w-6 h-6" />
-                                </button>
-                                <div className="flex items-center gap-2">
-                                    {visiblePlans.map((_, i) => (
-                                        <button 
-                                            key={i}
-                                            onClick={() => setCarouselIndex(i)}
-                                            className={`h-2 rounded-full transition-all duration-300 ${carouselIndex === i ? 'w-8 bg-blue-600' : 'w-2 bg-gray-200'}`}
-                                        />
-                                    ))}
-                                </div>
-                                <button 
-                                    onClick={nextPlan}
-                                    className="p-3 rounded-full border border-gray-100 hover:border-blue-200 hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-all active:scale-90 shadow-sm"
-                                >
-                                    <ChevronRight className="w-6 h-6" />
-                                </button>
+                            {/* Enhanced Dots Indicator */}
+                            <div className="flex justify-center items-center gap-3 mt-6">
+                                {visiblePlans.map((_, i) => (
+                                    <button 
+                                        key={i}
+                                        aria-label={`Ver plano ${i + 1}`}
+                                        aria-current={carouselIndex === i ? 'true' : 'false'}
+                                        onClick={() => {
+                                            if (scrollRef.current && scrollRef.current.children[0]) {
+                                                const cardWidth = (scrollRef.current.children[0] as HTMLElement).offsetWidth + 24;
+                                                scrollRef.current?.scrollTo({ left: i * cardWidth, behavior: 'smooth' });
+                                            }
+                                        }}
+                                        className={`h-2 rounded-full transition-all duration-500 ${carouselIndex === i ? 'w-10 bg-blue-600 shadow-lg shadow-blue-600/20' : 'w-2 bg-slate-200 hover:bg-slate-300'}`}
+                                    />
+                                ))}
                             </div>
                         </div>
                     </div>

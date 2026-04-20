@@ -241,7 +241,7 @@ export default function RomaneioExportModal({
                     }
                     
                     .watermark-container { 
-                        position: absolute; 
+                        position: fixed; 
                         top: 0; left: 0; width: 100%; height: 100%; 
                         display: flex; align-items: center; justify-content: center; 
                         pointer-events: none; z-index: 0; 
@@ -335,50 +335,20 @@ export default function RomaneioExportModal({
                         position: relative; z-index: 1;
                     }
 
-                    .page-footer-total {
-                        display: none;
-                    }
 
                     @media print {
                         body { background: #fff; padding: 0; }
                         .page-canvas { box-shadow: none; padding: 10px; margin: 0 auto; max-width: 100%; min-height: auto; }
-                        
-                        .page-footer-total {
-                            display: flex;
-                            flex-direction: column;
-                            position: fixed;
-                            bottom: 8mm;
-                            right: 8mm;
-                            text-align: right;
-                            padding: 8px 20px;
-                            background: #111827 !important;
-                            color: #ffffff !important;
-                            border-radius: 10px;
-                            z-index: 9999;
-                            border: 1px solid #374151;
-                            -webkit-print-color-adjust: exact;
-                            print-color-adjust: exact;
-                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                        }
-                        .page-footer-label { font-size: 9px; color: #9ca3af !important; font-weight: 700; text-transform: uppercase; margin-bottom: 1px; }
-                        .page-footer-value { font-size: 18px; font-weight: 800; color: #ffffff !important; }
-
-                        /* Aumentamos a margem inferior do corpo para reservar espaço para o rodapé fixo */
-                        body { margin-bottom: 40mm; }
                     }
                 </style>
             </head>
             <body>
-                <div class="page-footer-total">
-                    <div class="page-footer-label">Total do Romaneio</div>
-                    <div class="page-footer-value">${formatCurrency(totalValue)}</div>
+                <div class="watermark-container">
+                    ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
+                    ${isDraft ? `<div class="draft-watermark">RASCUNHO</div>` : ''}
                 </div>
 
                 <div class="page-canvas">
-                    <div class="watermark-container">
-                        ${logoBase64 ? `<img src="${logoBase64}" class="watermark-logo" />` : ''}
-                        ${isDraft ? `<div class="draft-watermark">RASCUNHO</div>` : ''}
-                    </div>
                     
                     <div class="header">
                         <div class="logo-area">
@@ -400,7 +370,7 @@ export default function RomaneioExportModal({
                         <thead>
                             <tr>
                                 <th colspan="4" style="text-align: left; background: #f3f4f6; color: #374151; font-size: 10px; border-bottom: none;">Documento de Conferência</th>
-                                <th colspan="3" style="text-align: right; background: #111827; color: white; font-size: 14px; border-bottom: none; -webkit-print-color-adjust: exact; print-color-adjust: exact;">TOTAL: ${formatCurrency(totalValue)}</th>
+                                <th colspan="3" style="text-align: right; background: #f3f4f6; color: #374151; font-size: 14px; border-bottom: none;">TOTAL: ${formatCurrency(totalValue)}</th>
                             </tr>
                             <tr>
                                 <th class="col-num">#</th>

@@ -13,7 +13,7 @@ export function useSubscription() {
         setIsSubscribing(planId)
         try {
             // Planos pagos: redirecionar para Stripe Checkout
-            if (['basic', 'plus', 'pro'].includes(planId)) {
+            if (['basic', 'plus', 'pro', 'api'].includes(planId)) {
                 const res = await api.post('/plans/checkout', { plan_id: planId })
                 window.location.href = res.data.checkout_url
                 return
