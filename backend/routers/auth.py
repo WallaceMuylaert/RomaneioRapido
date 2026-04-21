@@ -73,6 +73,7 @@ def get_me(request: Request, current_user: User = Depends(get_current_user)):
         user_data = UserResponse.model_validate(current_user)
         user_data.trial_expired = is_trial_expired(current_user)
         user_data.trial_days_remaining = get_trial_days_remaining(current_user)
+        user_data.subscription_status = getattr(current_user, 'subscription_status', 'active') or 'active'
         return user_data
     except HTTPException:
         raise

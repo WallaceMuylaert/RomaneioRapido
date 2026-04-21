@@ -15,6 +15,7 @@ export interface User {
     pix_key?: string | null
     trial_expired?: boolean
     trial_days_remaining?: number | null
+    subscription_status?: string
 }
 
 interface AuthContextType {

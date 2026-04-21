@@ -1,4 +1,5 @@
 import stripe
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
@@ -235,6 +236,8 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         _handle_subscription_deleted(data, db)
     elif event_type == "invoice.payment_failed":
         _handle_payment_failed(data, db)
+    elif event_type == "invoice.payment_succeeded":
+        _handle_payment_succeeded(data, db)
 
     return {"status": "ok"}
 
@@ -258,6 +261,8 @@ def _handle_checkout_completed(session: dict, db: Session):
         try:
             user.plan_id = plan_id
             user.stripe_subscription_id = subscription_id
+            user.subscription_status = "active"
+            user.payment_failed_at = None
             db.commit()
             logger.info(f"Usuário {user.id} atualizado para plano {plan_id}")
         except Exception as e:
@@ -268,7 +273,7 @@ def _handle_checkout_completed(session: dict, db: Session):
 
 
 def _handle_subscription_updated(subscription: dict, db: Session):
-    """Atualiza plano quando assinatura muda (upgrade/downgrade)."""
+    """Atualiza plano e status quando assinatura muda (upgrade/downgrade/inadimplência)."""
     customer_id = subscription.get("customer")
 
     user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
@@ -280,17 +285,45 @@ def _handle_subscription_updated(subscription: dict, db: Session):
     plan_id = PRICE_TO_PLAN_MAP.get(price_id)
     status = subscription.get("status")
 
-    if plan_id and status == "active":
-        try:
-            user.plan_id = plan_id
+    try:
+        if status == "active":
+            # Pagamento regularizado ou upgrade/downgrade
+            if plan_id:
+                user.plan_id = plan_id
             user.stripe_subscription_id = subscription["id"]
+            user.subscription_status = "active"
+            user.payment_failed_at = None
             db.commit()
-            logger.info(f"Assinatura de {user.id} atualizada para {plan_id}")
-        except Exception as e:
-            db.rollback()
-            logger.exception(f"Erro ao atualizar assinatura para o usuário {user.id}")
-    elif status in ("past_due", "unpaid"):
-        logger.warning(f"Assinatura de {user.id} com status {status}")
+            logger.info(f"Assinatura de {user.id} ativa — plano {plan_id or user.plan_id}")
+
+        elif status == "past_due":
+            # Pagamento falhou, Stripe ainda retentando
+            user.subscription_status = "past_due"
+            if not user.payment_failed_at:
+                user.payment_failed_at = datetime.now(timezone.utc)
+            db.commit()
+            logger.warning(f"Assinatura de {user.id} com pagamento pendente (past_due)")
+
+        elif status == "unpaid":
+            # Todas as tentativas falharam — bloquear acesso
+            user.subscription_status = "unpaid"
+            db.commit()
+            logger.warning(f"Assinatura de {user.id} não paga (unpaid) — acesso bloqueado")
+
+        elif status in ("canceled", "incomplete_expired"):
+            # Assinatura cancelada pela Stripe
+            user.subscription_status = "canceled"
+            user.plan_id = "trial"
+            user.stripe_subscription_id = None
+            user.payment_failed_at = None
+            db.commit()
+            logger.info(f"Assinatura de {user.id} cancelada via subscription.updated, revertido para trial")
+        else:
+            logger.info(f"Assinatura de {user.id} com status não tratado: {status}")
+
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"Erro ao atualizar assinatura para o usuário {user.id}")
 
 
 def _handle_subscription_deleted(subscription: dict, db: Session):
@@ -304,6 +337,8 @@ def _handle_subscription_deleted(subscription: dict, db: Session):
     try:
         user.plan_id = "trial"
         user.stripe_subscription_id = None
+        user.subscription_status = "canceled"
+        user.payment_failed_at = None
         db.commit()
         logger.info(f"Assinatura de {user.id} cancelada, revertido para trial")
     except Exception as e:
@@ -312,9 +347,58 @@ def _handle_subscription_deleted(subscription: dict, db: Session):
 
 
 def _handle_payment_failed(invoice: dict, db: Session):
-    """Log quando pagamento falha."""
+    """Marca usuário como inadimplente quando pagamento falha."""
     customer_id = invoice.get("customer")
-    logger.warning(f"Pagamento falhou para customer {customer_id}")
+
+    user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
+    if not user:
+        logger.warning(f"Usuário não encontrado para customer {customer_id} (payment_failed)")
+        return
+
+    try:
+        # Marcar como past_due se ainda não estiver em estado pior
+        if user.subscription_status not in ("unpaid", "canceled"):
+            user.subscription_status = "past_due"
+        if not user.payment_failed_at:
+            user.payment_failed_at = datetime.now(timezone.utc)
+        db.commit()
+
+        attempt_number = invoice.get("attempt_count", "?")
+        failure_message = invoice.get("last_finalization_error", {})
+        if isinstance(failure_message, dict):
+            failure_message = failure_message.get("message", "Motivo não informado")
+        else:
+            failure_message = "Motivo não informado"
+
+        logger.warning(
+            f"Pagamento falhou para usuário {user.id} (customer {customer_id}) "
+            f"| Tentativa: {attempt_number} | Motivo: {failure_message}"
+        )
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"Erro ao processar payment_failed para customer {customer_id}")
+
+
+def _handle_payment_succeeded(invoice: dict, db: Session):
+    """Limpa estado de inadimplência quando pagamento é confirmado."""
+    customer_id = invoice.get("customer")
+
+    user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
+    if not user:
+        return
+
+    try:
+        # Só reseta se o status anterior era de falha
+        if user.subscription_status in ("past_due", "unpaid"):
+            user.subscription_status = "active"
+            user.payment_failed_at = None
+            db.commit()
+            logger.info(f"Pagamento regularizado para usuário {user.id} — status restaurado para active")
+        else:
+            logger.info(f"Pagamento confirmado para usuário {user.id} (já estava ativo)")
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"Erro ao processar payment_succeeded para customer {customer_id}")
 
 
 # Mantém endpoint legado para compatibilidade (apenas leitura de uso)

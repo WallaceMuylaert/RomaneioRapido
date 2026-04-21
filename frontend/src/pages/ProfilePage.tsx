@@ -30,7 +30,8 @@ import {
     ArrowUpRight,
     ShieldAlert,
     CheckCircle2,
-    Sparkles
+    Sparkles,
+    AlertTriangle
 } from 'lucide-react'
 import ImageCropper from '../components/ImageCropper'
 import { PLANS } from '../constants/plans'
@@ -537,9 +538,15 @@ export default function ProfilePage() {
                                             <div className="flex-1 text-center md:text-left space-y-4">
                                                 <div className="flex flex-col sm:flex-row items-center gap-3 justify-center md:justify-start">
                                                     <h4 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">{currentPlan.name}</h4>
-                                                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100/50 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 shadow-sm">
-                                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Ativo
-                                                    </span>
+                                                    {user?.subscription_status === 'past_due' ? (
+                                                        <span className="px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100/50 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 shadow-sm">
+                                                            <AlertTriangle className="w-3 h-3" /> Pendente
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100/50 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 shadow-sm">
+                                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Ativo
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <p className="text-slate-500 text-sm font-medium max-w-sm mx-auto md:mx-0 leading-relaxed">{currentPlan.description}</p>
                                                 
@@ -548,10 +555,10 @@ export default function ProfilePage() {
                                                     <div className="pt-2 flex justify-center md:justify-start">
                                                         <button
                                                             onClick={handleManageSubscription}
-                                                            className="h-11 px-5 text-sm font-bold bg-slate-900 text-white rounded-xl hover:bg-brand-600 transition-all shadow-lg shadow-slate-200 flex items-center gap-2 active:scale-95 group/btn"
+                                                            className={`h-11 px-5 text-sm font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 active:scale-95 group/btn ${user?.subscription_status === 'past_due' ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-amber-500/30' : 'bg-slate-900 text-white hover:bg-brand-600 shadow-slate-200'}`}
                                                         >
-                                                            <CreditCard className="w-4 h-4 text-slate-400 group-hover/btn:text-white transition-colors" />
-                                                            Gerenciar Assinatura
+                                                            <CreditCard className={`w-4 h-4 transition-colors ${user?.subscription_status === 'past_due' ? 'text-amber-100 group-hover/btn:text-white' : 'text-slate-400 group-hover/btn:text-white'}`} />
+                                                            {user?.subscription_status === 'past_due' ? 'Regularizar Pagamento' : 'Gerenciar Assinatura'}
                                                         </button>
                                                     </div>
                                                 )}

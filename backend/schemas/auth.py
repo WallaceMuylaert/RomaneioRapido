@@ -100,6 +100,7 @@ class UserResponse(UserBase):
     trial_days: Optional[int] = 7
     trial_expired: bool = False
     trial_days_remaining: Optional[int] = None
+    subscription_status: Optional[str] = "active"
 
     model_config = ConfigDict(from_attributes=True)
 

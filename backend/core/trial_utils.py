@@ -45,7 +45,14 @@ def get_trial_days_remaining(user) -> Optional[int]:
 
 def require_active_plan(current_user=Depends(get_current_user)):
     """
-    FastAPI dependency: bloqueia ações de escrita se o trial expirou.
+    FastAPI dependency: bloqueia ações de escrita se o trial expirou
+    ou se a assinatura está inadimplente (unpaid).
+    
+    - Trial expirado → bloqueia
+    - subscription_status == "unpaid" → bloqueia (todas as tentativas de cobrança falharam)
+    - subscription_status == "past_due" → PERMITE (Stripe ainda retentando, período de carência)
+    - subscription_status == "active" → PERMITE
+    
     Usar em endpoints POST/PUT/PATCH/DELETE.
     Endpoints GET (leitura) NÃO devem usar esta dependency.
     """
@@ -54,4 +61,12 @@ def require_active_plan(current_user=Depends(get_current_user)):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Seu período de teste de 7 dias terminou. Assine um plano para continuar usando o sistema.",
         )
+    
+    sub_status = getattr(current_user, 'subscription_status', 'active') or 'active'
+    if sub_status == "unpaid":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Sua assinatura está suspensa por falta de pagamento. Atualize seu método de pagamento para continuar.",
+        )
+    
     return current_user
