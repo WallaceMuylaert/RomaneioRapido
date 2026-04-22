@@ -48,6 +48,8 @@ def update_user_system(
             user.is_admin = update_data.is_admin
         if update_data.trial_days is not None:
             user.trial_days = update_data.trial_days
+        if update_data.is_unlimited is not None:
+            user.is_unlimited = update_data.is_unlimited
 
         db.commit()
         db.refresh(user)

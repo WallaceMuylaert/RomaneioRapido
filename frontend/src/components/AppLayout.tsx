@@ -41,8 +41,16 @@ export default function AppLayout() {
     const { isSubscribing, handleSubscribe } = useSubscription()
 
     const subscriptionStatus = user?.subscription_status || 'active'
-    const isTrialLocked = user?.plan_id === 'trial' && user?.trial_expired && !user?.is_admin
-    const isUnpaidLocked = subscriptionStatus === 'unpaid' && !user?.is_admin
+    
+    // Bypass total para admin ou unlimited
+    const hasFullAccess = user?.is_admin || user?.is_unlimited || user?.plan_id === 'unlimited'
+    
+    // Bypass para acesso manual (plano premium sem Stripe ID)
+    const isManualPremium = user?.plan_id !== 'trial' && !user?.stripe_subscription_id
+
+    const isTrialLocked = user?.plan_id === 'trial' && user?.trial_expired && !hasFullAccess
+    const isUnpaidLocked = subscriptionStatus === 'unpaid' && !hasFullAccess && !isManualPremium
+    
     const isLockEnabled = isTrialLocked || isUnpaidLocked
 
     // Bloqueio de navegação forçada e refresh de status

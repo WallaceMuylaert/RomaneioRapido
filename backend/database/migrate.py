@@ -126,6 +126,10 @@ def add_column_if_not_exists(table_name, column_name, column_type, nullable=True
                 print(f"  [⚡] Filling existing rows for 'subscription_status' with default ('active')...")
                 conn.execute(text(f"UPDATE {table_name} SET subscription_status = 'active' WHERE subscription_status IS NULL;"))
                 conn.commit()
+            elif column_name == 'is_unlimited':
+                print(f"  [⚡] Filling existing rows for 'is_unlimited' with default (False)...")
+                conn.execute(text(f"UPDATE {table_name} SET is_unlimited = False WHERE is_unlimited IS NULL;"))
+                conn.commit()
             
             return True
         return False

@@ -18,6 +18,7 @@ class User(Base):
     plan_id = Column(String, default="trial")
     trial_days = Column(Integer, default=7)
     is_active = Column(Boolean, default=True)
+    is_unlimited = Column(Boolean, default=False)
 
     # Stripe
     stripe_customer_id = Column(String, unique=True, index=True, nullable=True)

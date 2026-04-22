@@ -23,6 +23,7 @@ interface User {
     plan_id: string
     is_active: boolean
     is_admin: boolean
+    is_unlimited: boolean
     created_at: string
     trial_days?: number
     trial_expired?: boolean
@@ -89,7 +90,16 @@ export default function SuperAdminPage() {
         return matchesSearch && matchesPlan
     })
 
-    const plans = ['trial', 'basic', 'plus', 'pro', 'api', 'enterprise']
+    const plans = ['trial', 'basic', 'plus', 'pro', 'api', 'enterprise', 'unlimited']
+    const planTranslations: Record<string, string> = {
+        trial: 'Teste Grátis',
+        basic: 'Básico',
+        plus: 'Plus',
+        pro: 'Profissional',
+        api: 'Acesso API',
+        enterprise: 'Corporativo',
+        unlimited: 'Ilimitado'
+    }
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500">
@@ -135,7 +145,7 @@ export default function SuperAdminPage() {
                             onClick={() => setPlanFilter(p)}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${planFilter === p ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}`}
                         >
-                            <span className="uppercase">{p}</span>
+                            <span className="uppercase">{planTranslations[p] || p}</span>
                             <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${planFilter === p ? 'bg-brand-500/50' : 'bg-slate-100'}`}>{count}</span>
                         </button>
                     )
@@ -189,7 +199,7 @@ export default function SuperAdminPage() {
                                                 u.plan_id === 'trial' ? 'bg-slate-100 text-slate-600' : 
                                                 'bg-brand-50 text-brand-700'
                                             }`}>
-                                                {u.plan_id}
+                                                {planTranslations[u.plan_id] || u.plan_id}
                                             </span>
                                         </td>
                                         <td className="px-10 py-6 text-center">

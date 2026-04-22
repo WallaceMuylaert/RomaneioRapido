@@ -74,6 +74,7 @@ class UserUpdate(BaseModel):
     trial_days: Optional[int] = Field(None, ge=1, le=365)
     is_active: Optional[bool] = None
     is_admin: Optional[bool] = None
+    is_unlimited: Optional[bool] = None
 
     @field_validator("email")
     @classmethod
@@ -95,6 +96,7 @@ class UserResponse(UserBase):
     is_admin: bool
     plan_id: str
     is_active: bool
+    is_unlimited: bool = False
     pix_key: Optional[str] = None
     created_at: Optional[datetime] = None
     trial_days: Optional[int] = 7

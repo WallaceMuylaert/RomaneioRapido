@@ -19,6 +19,7 @@ interface User {
     plan_id: string
     is_active: boolean
     is_admin: boolean
+    is_unlimited: boolean
     trial_days?: number
     created_at?: string
 }
@@ -45,6 +46,7 @@ export default function UserManagementModal({
     const [localPlan, setLocalPlan] = useState(user.plan_id)
     const [localIsActive, setLocalIsActive] = useState(user.is_active)
     const [localIsAdmin, setLocalIsAdmin] = useState(user.is_admin)
+    const [localIsUnlimited, setLocalIsUnlimited] = useState(user.is_unlimited)
     const [localTrialDays, setLocalTrialDays] = useState(user.trial_days || 7)
 
     // Reset local state when modal opens with a different user
@@ -52,6 +54,7 @@ export default function UserManagementModal({
         setLocalPlan(user.plan_id)
         setLocalIsActive(user.is_active)
         setLocalIsAdmin(user.is_admin)
+        setLocalIsUnlimited(user.is_unlimited)
         setLocalTrialDays(user.trial_days || 7)
         setIsResettingPassword(false)
         setNewPassword('')
@@ -59,12 +62,22 @@ export default function UserManagementModal({
 
     if (!isOpen) return null
 
-    const plans = ['trial', 'basic', 'plus', 'pro', 'enterprise', 'api']
+    const plans = ['trial', 'basic', 'plus', 'pro', 'enterprise', 'api', 'unlimited']
+    const planTranslations: Record<string, string> = {
+        trial: 'Teste Grátis',
+        basic: 'Básico',
+        plus: 'Plus',
+        pro: 'Profissional',
+        api: 'Acesso API',
+        enterprise: 'Corporativo',
+        unlimited: 'Ilimitado'
+    }
 
     const hasChanges = 
         localPlan !== user.plan_id || 
         localIsActive !== user.is_active || 
         localIsAdmin !== user.is_admin || 
+        localIsUnlimited !== user.is_unlimited ||
         localTrialDays !== (user.trial_days || 7)
 
     const handleSaveChanges = async () => {
@@ -75,6 +88,7 @@ export default function UserManagementModal({
         if (localPlan !== user.plan_id) await onUpdate('plan_id', localPlan)
         if (localIsActive !== user.is_active) await onUpdate('is_active', localIsActive)
         if (localIsAdmin !== user.is_admin) await onUpdate('is_admin', localIsAdmin)
+        if (localIsUnlimited !== user.is_unlimited) await onUpdate('is_unlimited', localIsUnlimited)
         if (localTrialDays !== (user.trial_days || 7)) await onUpdate('trial_days', localTrialDays)
         
         toast.success('Alterações salvas com sucesso!')
@@ -155,7 +169,7 @@ export default function UserManagementModal({
                                             : 'bg-white text-slate-600 border-slate-100 hover:border-brand-200'
                                         }`}
                                     >
-                                        <span className="uppercase">{p === 'api' ? 'Acesso API' : p}</span>
+                                        <span className="uppercase">{planTranslations[p] || p}</span>
                                         {localPlan === p && <CheckCircle2 className="w-4 h-4" />}
                                     </button>
                                 ))}
@@ -239,6 +253,32 @@ export default function UserManagementModal({
                                         </p>
                                         <p className="text-[10px] font-medium opacity-70">
                                             {localIsAdmin ? 'Acesso total às configurações.' : 'Acesso limitado ao painel operacional.'}
+                                        </p>
+                                    </div>
+                                </button>
+                            </div>
+                            
+                            {/* UNLIMITED TOGGLE */}
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Acesso Ilimitado (VIP)</label>
+                                <button
+                                    onClick={() => setLocalIsUnlimited(!localIsUnlimited)}
+                                    disabled={updating}
+                                    className={`w-full p-4 rounded-3xl border transition-all flex items-center gap-4 ${
+                                        localIsUnlimited 
+                                        ? 'bg-blue-50 border-blue-100 text-blue-700' 
+                                        : 'bg-slate-50 border-slate-100 text-slate-500'
+                                    }`}
+                                >
+                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${localIsUnlimited ? 'bg-blue-500 text-white' : 'bg-slate-300 text-white'}`}>
+                                        <CheckCircle2 className="w-5 h-5" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-sm font-black uppercase text-current">
+                                            {localIsUnlimited ? 'Acesso Ilimitado' : 'Acesso Padrão'}
+                                        </p>
+                                        <p className="text-[10px] font-medium opacity-70">
+                                            {localIsUnlimited ? 'Ignora bloqueios de Trial e Pagamento.' : 'Sujeito a regras de assinatura padrão.'}
                                         </p>
                                     </div>
                                 </button>

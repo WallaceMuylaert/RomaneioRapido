@@ -8,6 +8,7 @@ PLANS_CONFIG = {
     "pro": {"limit_products": 999999, "limit_categories": 999999, "limit_api_keys": 0, "api_rate_limit": "0/minute"},
     "api": {"limit_products": 999999, "limit_categories": 999999, "limit_api_keys": 10, "api_rate_limit": "500/minute"},
     "enterprise": {"limit_products": 999999, "limit_categories": 999999, "limit_api_keys": 20, "api_rate_limit": "300/minute"},
+    "unlimited": {"limit_products": 999999, "limit_categories": 999999, "limit_api_keys": 999999, "api_rate_limit": "999/minute"},
 }
 
 PLANS_WITH_API_ACCESS = {"api", "enterprise"}

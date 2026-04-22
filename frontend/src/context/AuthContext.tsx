@@ -9,6 +9,7 @@ export interface User {
     is_admin: boolean
     plan_id: string
     is_active: boolean
+    is_unlimited: boolean
     photo_base64?: string | null
     phone?: string | null
     store_name?: string | null
@@ -16,6 +17,7 @@ export interface User {
     trial_expired?: boolean
     trial_days_remaining?: number | null
     subscription_status?: string
+    stripe_subscription_id?: string | null
 }
 
 interface AuthContextType {
