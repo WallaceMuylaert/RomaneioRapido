@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from backend.core.database import get_db
 from backend.core.security import get_current_superadmin, get_password_hash
 from backend.models.users import User
-from backend.schemas.auth import UserResponse, UserUpdate
+from backend.schemas.auth import UserResponse, UserUpdate, PaginatedUserResponse
 from backend.core.trial_utils import is_trial_expired, get_trial_days_remaining
 from backend.config.logger import get_dynamic_logger
 
@@ -12,16 +12,45 @@ logger = get_dynamic_logger("admin")
 
 router = APIRouter(prefix="/admin", dependencies=[Depends(get_current_superadmin)])
 
-@router.get("/users", response_model=List[UserResponse])
-def list_users(db: Session = Depends(get_db)):
-    """Lista todos os usuários do sistema (apenas Super Admin)."""
+@router.get("/users", response_model=PaginatedUserResponse)
+def list_users(
+    page: int = 1,
+    size: int = 20,
+    search: Optional[str] = None,
+    plan: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Lista todos os usuários do sistema com paginação e filtros (apenas Super Admin)."""
     try:
-        users = db.query(User).all()
+        query = db.query(User)
+        
+        if search:
+            query = query.filter(
+                (User.full_name.ilike(f"%{search}%")) | 
+                (User.email.ilike(f"%{search}%"))
+            )
+            
+        if plan and plan != 'all':
+            query = query.filter(User.plan_id == plan)
+
+        total = query.count()
+        pages = (total + size - 1) // size
+        skip = (page - 1) * size
+        
+        users = query.order_by(User.created_at.desc()).offset(skip).limit(size).all()
+        
         # Injetar informações de trial em tempo de execução
         for u in users:
             u.trial_expired = is_trial_expired(u)
             u.trial_days_remaining = get_trial_days_remaining(u)
-        return users
+            
+        return {
+            "items": users,
+            "total": total,
+            "page": page,
+            "size": size,
+            "pages": pages
+        }
     except Exception as e:
         logger.exception("Erro ao listar usuários para o Super Admin")
         raise HTTPException(status_code=500, detail="Erro interno ao buscar usuários")

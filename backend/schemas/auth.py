@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 import re
 
@@ -105,6 +105,14 @@ class UserResponse(UserBase):
     subscription_status: Optional[str] = "active"
 
     model_config = ConfigDict(from_attributes=True)
+    
+
+class PaginatedUserResponse(BaseModel):
+    items: List[UserResponse]
+    total: int
+    page: int
+    size: int
+    pages: int
 
 
 class ForgotPasswordRequest(BaseModel):
