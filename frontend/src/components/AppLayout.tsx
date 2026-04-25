@@ -16,8 +16,10 @@ import {
     ArrowRightLeft,
     Clock,
     ShieldCheck,
-    AlertTriangle
+    AlertTriangle,
+    LifeBuoy
 } from 'lucide-react'
+import { getWhatsAppLink } from '../constants/contacts'
 import { useState, useEffect } from 'react'
 import TrialExpiredBanner from './TrialExpiredBanner'
 import PaymentFailedBanner from './PaymentFailedBanner'
@@ -224,6 +226,16 @@ export default function AppLayout() {
                             </div>
                         )}
                     </div>
+                    <a
+                        href={getWhatsAppLink('Olá! Preciso de suporte com o Romaneio Rápido.')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={isCollapsed ? "Suporte WhatsApp" : ""}
+                        className={`flex items-center w-full text-[13px] font-semibold text-brand-600 hover:bg-brand-50 rounded-xl transition-all border border-transparent hover:border-brand-100 mb-2 ${isCollapsed ? 'justify-center p-3' : 'gap-2.5 px-3 py-2.5'}`}
+                    >
+                        <LifeBuoy className="w-4 h-4 shrink-0" />
+                        {!isCollapsed && <span className="whitespace-nowrap animate-in fade-in duration-300">Suporte WhatsApp</span>}
+                    </a>
                     <button
                         onClick={handleLogout}
                         title={isCollapsed ? "Sair" : ""}
