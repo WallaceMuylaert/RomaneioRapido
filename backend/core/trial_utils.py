@@ -45,13 +45,37 @@ def get_trial_days_remaining(user) -> Optional[int]:
 
 def require_active_plan(current_user=Depends(get_current_user)):
     """
-    FastAPI dependency: bloqueia ações de escrita se o trial expirou.
+    FastAPI dependency: bloqueia ações de escrita se o trial expirou
+    ou se a assinatura está inadimplente (unpaid).
+    
+    - Trial expirado → bloqueia
+    - subscription_status == "unpaid" → bloqueia (todas as tentativas de cobrança falharam)
+    - subscription_status == "past_due" → PERMITE (Stripe ainda retentando, período de carência)
+    - subscription_status == "active" → PERMITE
+    
     Usar em endpoints POST/PUT/PATCH/DELETE.
     Endpoints GET (leitura) NÃO devem usar esta dependency.
     """
+    # 1. Bypass para Admins e usuários com flag de acesso ilimitado
+    if getattr(current_user, 'is_admin', False) or getattr(current_user, 'is_unlimited', False):
+        return current_user
+
+    # 2. Bypass para usuários que têm um plano premium mas NÃO têm Stripe ID (concedido manualmente)
+    # Isso evita que usuários que ganharam acesso VIP sem cartão sejam bloqueados por 'unpaid'.
+    if current_user.plan_id != "trial" and not current_user.stripe_subscription_id:
+        return current_user
+
     if is_trial_expired(current_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Seu período de teste de 7 dias terminou. Assine um plano para continuar usando o sistema.",
         )
+    
+    sub_status = getattr(current_user, 'subscription_status', 'active') or 'active'
+    if sub_status == "unpaid":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Sua assinatura está suspensa por falta de pagamento. Atualize seu método de pagamento para continuar.",
+        )
+    
     return current_user

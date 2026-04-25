@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 import re
 
@@ -74,6 +74,7 @@ class UserUpdate(BaseModel):
     trial_days: Optional[int] = Field(None, ge=1, le=365)
     is_active: Optional[bool] = None
     is_admin: Optional[bool] = None
+    is_unlimited: Optional[bool] = None
 
     @field_validator("email")
     @classmethod
@@ -95,13 +96,23 @@ class UserResponse(UserBase):
     is_admin: bool
     plan_id: str
     is_active: bool
+    is_unlimited: bool = False
     pix_key: Optional[str] = None
     created_at: Optional[datetime] = None
     trial_days: Optional[int] = 7
     trial_expired: bool = False
     trial_days_remaining: Optional[int] = None
+    subscription_status: Optional[str] = "active"
 
     model_config = ConfigDict(from_attributes=True)
+    
+
+class PaginatedUserResponse(BaseModel):
+    items: List[UserResponse]
+    total: int
+    page: int
+    size: int
+    pages: int
 
 
 class ForgotPasswordRequest(BaseModel):

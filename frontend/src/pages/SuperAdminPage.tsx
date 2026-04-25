@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import api from '../services/api'
 import LoadingOverlay from '../components/LoadingOverlay'
 import UserManagementModal from '../components/UserManagementModal'
@@ -11,7 +11,9 @@ import {
     Search,
     Users,
     Settings2,
-    AlertTriangle
+    AlertTriangle,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -23,6 +25,7 @@ interface User {
     plan_id: string
     is_active: boolean
     is_admin: boolean
+    is_unlimited: boolean
     created_at: string
     trial_days?: number
     trial_expired?: boolean
@@ -34,25 +37,43 @@ export default function SuperAdminPage() {
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [planFilter, setPlanFilter] = useState('all')
+    const [currentPage, setCurrentPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
+    const [totalCount, setTotalCount] = useState(0)
+    
     const [updatingUserId, setUpdatingUserId] = useState<number | null>(null)
     const [managementModalOpen, setManagementModalOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
+        setLoading(true)
         try {
-            const res = await api.get('/admin/users')
-            setUsers(res.data)
+            const res = await api.get('/admin/users', {
+                params: {
+                    page: currentPage,
+                    size: 15,
+                    search: searchQuery || undefined,
+                    plan: planFilter === 'all' ? undefined : planFilter
+                }
+            })
+            setUsers(res.data.items)
+            setTotalPages(res.data.pages)
+            setTotalCount(res.data.total)
         } catch (err) {
             console.error('Erro ao buscar usuários:', err)
             toast.error('Erro ao carregar lista de usuários', { id: 'admin-error' })
         } finally {
             setLoading(false)
         }
-    }
+    }, [currentPage, searchQuery, planFilter])
 
     useEffect(() => {
-        fetchUsers()
-    }, [])
+        const timer = setTimeout(() => {
+            fetchUsers()
+        }, searchQuery ? 500 : 0) // Debounce search
+
+        return () => clearTimeout(timer)
+    }, [fetchUsers])
 
     const handleUpdateUser = async (field: keyof User | 'password', value: any) => {
         if (!selectedUser) return
@@ -62,12 +83,11 @@ export default function SuperAdminPage() {
             await api.put(`/admin/users/${selectedUser.id}`, { [field]: value })
             toast.success(`${field === 'password' ? 'Senha' : 'Usuário'} atualizado!`, { id: 'admin-success' })
             
-            // Refresh data
+            // Local update to avoid full refresh
             const updatedUsers = users.map(u => 
                 u.id === selectedUser.id ? { ...u, [field]: value } : u
             )
             setUsers(updatedUsers)
-            // Update selected user to reflect changes in modal
             setSelectedUser({ ...selectedUser, [field]: value })
         } catch (err: any) {
             console.error('Erro ao atualizar:', err)
@@ -75,25 +95,26 @@ export default function SuperAdminPage() {
             const detail = err.response?.data?.detail
             if (typeof detail === 'string') errorMsg = detail
             else if (Array.isArray(detail)) errorMsg = detail.map((d: any) => d.msg || d.type).join(', ')
-            else if (err.response?.data?.message) errorMsg = err.response.data.message
             toast.error(errorMsg, { id: 'admin-error' })
         } finally {
             setUpdatingUserId(null)
         }
     }
 
-    const filteredUsers = users.filter(u => {
-        const matchesSearch = u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                             u.email.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesPlan = planFilter === 'all' || u.plan_id === planFilter
-        return matchesSearch && matchesPlan
-    })
-
-    const plans = ['trial', 'basic', 'plus', 'pro', 'api', 'enterprise']
+    const plans = ['trial', 'basic', 'plus', 'pro', 'api', 'enterprise', 'unlimited']
+    const planTranslations: Record<string, string> = {
+        trial: 'Teste Grátis',
+        basic: 'Básico',
+        plus: 'Plus',
+        pro: 'Profissional',
+        api: 'Acesso API',
+        enterprise: 'Corporativo',
+        unlimited: 'Ilimitado'
+    }
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500">
-            {loading && <LoadingOverlay message="Carregando base de usuários..." />}
+        <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500 pb-20">
+            {loading && <LoadingOverlay message="Buscando usuários..." />}
 
             {/* HEADER */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -112,7 +133,10 @@ export default function SuperAdminPage() {
                             type="text"
                             placeholder="Buscar nome ou email..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value)
+                                setCurrentPage(1) // Reset to page 1 on search
+                            }}
                             className="w-full sm:w-80 h-12 pl-12 pr-4 text-sm bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 font-semibold shadow-sm transition-all"
                         />
                     </div>
@@ -122,28 +146,30 @@ export default function SuperAdminPage() {
             {/* FILTROS RÁPIDOS */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
                 <button 
-                    onClick={() => setPlanFilter('all')}
+                    onClick={() => {
+                        setPlanFilter('all')
+                        setCurrentPage(1)
+                    }}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${planFilter === 'all' ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}`}
                 >
-                    Todos ({users.length})
+                    Todos
                 </button>
-                {plans.map(p => {
-                    const count = users.filter(u => u.plan_id === p).length
-                    return (
-                        <button 
-                            key={p}
-                            onClick={() => setPlanFilter(p)}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${planFilter === p ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}`}
-                        >
-                            <span className="uppercase">{p}</span>
-                            <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${planFilter === p ? 'bg-brand-500/50' : 'bg-slate-100'}`}>{count}</span>
-                        </button>
-                    )
-                })}
+                {plans.map(p => (
+                    <button 
+                        key={p}
+                        onClick={() => {
+                            setPlanFilter(p)
+                            setCurrentPage(1)
+                        }}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${planFilter === p ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}`}
+                    >
+                        <span className="uppercase">{planTranslations[p] || p}</span>
+                    </button>
+                ))}
             </div>
 
             {/* TABLE */}
-            <div className="glass-card rounded-[2.5rem] overflow-hidden shadow-xl shadow-slate-200/50 border border-slate-100">
+            <div className="glass-card rounded-[2.5rem] overflow-hidden shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -156,14 +182,14 @@ export default function SuperAdminPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {filteredUsers.length === 0 ? (
+                            {users.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="py-24 text-center text-sm font-bold text-slate-400 italic">
                                         Nenhum usuário encontrado.
                                     </td>
                                 </tr>
                             ) : (
-                                filteredUsers.map((u) => (
+                                users.map((u) => (
                                     <tr key={u.id} className="hover:bg-slate-50/30 transition-colors group">
                                         <td className="px-10 py-6">
                                             <div className="flex items-center gap-4">
@@ -173,9 +199,9 @@ export default function SuperAdminPage() {
                                                 <div className="min-w-0">
                                                     <p className="text-sm font-black text-slate-900 truncate flex items-center gap-2 mb-0.5">
                                                         {u.full_name}
-                                                        {u.is_admin && (
-                                                            <div className="p-1 rounded-md bg-orange-50" title="Admin">
-                                                                <ShieldCheck className="w-3.5 h-3.5 text-orange-600" />
+                                                        {(u.is_admin || u.is_unlimited) && (
+                                                            <div className={`p-1 rounded-md ${u.is_admin ? 'bg-orange-50' : 'bg-blue-50'}`} title={u.is_admin ? 'Admin' : 'VIP Ilimitado'}>
+                                                                <ShieldCheck className={`w-3.5 h-3.5 ${u.is_admin ? 'text-orange-600' : 'text-blue-600'}`} />
                                                             </div>
                                                         )}
                                                     </p>
@@ -189,7 +215,7 @@ export default function SuperAdminPage() {
                                                 u.plan_id === 'trial' ? 'bg-slate-100 text-slate-600' : 
                                                 'bg-brand-50 text-brand-700'
                                             }`}>
-                                                {u.plan_id}
+                                                {planTranslations[u.plan_id] || u.plan_id}
                                             </span>
                                         </td>
                                         <td className="px-10 py-6 text-center">
@@ -199,7 +225,7 @@ export default function SuperAdminPage() {
                                                         <XCircle className="w-3.5 h-3.5" />
                                                         <span className="text-[10px] font-black uppercase tracking-wider">Bloqueado</span>
                                                     </div>
-                                                ) : u.trial_expired ? (
+                                                ) : u.trial_expired && !u.is_unlimited ? (
                                                     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
                                                         <AlertTriangle className="w-3.5 h-3.5" />
                                                         <span className="text-[10px] font-black uppercase tracking-wider">Expirado</span>
@@ -238,6 +264,65 @@ export default function SuperAdminPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* PAGINATION CONTROLS */}
+                {totalPages > 1 && (
+                    <div className="px-10 py-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+                        <p className="text-xs font-bold text-slate-400">
+                            Mostrando <span className="text-slate-900">{users.length}</span> de <span className="text-slate-900">{totalCount}</span> usuários
+                        </p>
+                        
+                        <div className="flex items-center gap-2">
+                            <button 
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1 || loading}
+                                className="w-10 h-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-50 transition-all"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            
+                            <div className="flex items-center gap-1">
+                                {[...Array(totalPages)].map((_, i) => {
+                                    const pageNum = i + 1
+                                    // Show first, last, and pages around current
+                                    if (
+                                        pageNum === 1 || 
+                                        pageNum === totalPages || 
+                                        (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                                    ) {
+                                        return (
+                                            <button
+                                                key={pageNum}
+                                                onClick={() => setCurrentPage(pageNum)}
+                                                className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${
+                                                    currentPage === pageNum 
+                                                    ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20' 
+                                                    : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+                                                }`}
+                                            >
+                                                {pageNum}
+                                            </button>
+                                        )
+                                    } else if (
+                                        pageNum === currentPage - 2 || 
+                                        pageNum === currentPage + 2
+                                    ) {
+                                        return <span key={pageNum} className="text-slate-300 font-bold px-1">...</span>
+                                    }
+                                    return null
+                                })}
+                            </div>
+
+                            <button 
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages || loading}
+                                className="w-10 h-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-50 transition-all"
+                            >
+                                <ChevronRight className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* INFO FOOTER */}
@@ -247,23 +332,16 @@ export default function SuperAdminPage() {
                         <Users className="w-8 h-8 text-brand-400" />
                     </div>
                     <div>
-                        <h3 className="text-2xl font-black tracking-tight">Métricas Gerais</h3>
-                        <p className="text-slate-400 text-sm font-semibold opacity-60">Visão panorâmica da plataforma.</p>
+                        <h3 className="text-2xl font-black tracking-tight">Base de Dados</h3>
+                        <p className="text-slate-400 text-sm font-semibold opacity-60">Total de {totalCount} usuários registrados.</p>
                     </div>
                 </div>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-12 w-full lg:w-auto relative z-10">
-                    {[
-                        { label: 'Total', value: users.length, color: 'text-white' },
-                        { label: 'Ativos', value: users.filter(u => u.is_active).length, color: 'text-brand-400' },
-                        { label: 'Pagantes', value: users.filter(u => !['trial', 'enterprise'].includes(u.plan_id)).length, color: 'text-emerald-400' },
-                        { label: 'Bloqueados', value: users.filter(u => !u.is_active).length, color: 'text-red-400' }
-                    ].map(stat => (
-                        <div key={stat.label} className="text-center lg:text-left">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] mb-2">{stat.label}</p>
-                            <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
-                        </div>
-                    ))}
+                <div className="flex items-center gap-4 relative z-10">
+                    <div className="px-8 py-4 bg-white/5 rounded-[2rem] border border-white/10 text-center">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Página Atual</p>
+                        <p className="text-2xl font-black text-brand-400">{currentPage} de {totalPages}</p>
+                    </div>
                 </div>
 
                 {/* Decorative backgrounds */}
