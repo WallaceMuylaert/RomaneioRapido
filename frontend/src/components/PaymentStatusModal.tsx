@@ -1,6 +1,7 @@
-import { PartyPopper, Check, X, Sparkles, Loader2, AlertCircle, Clock } from 'lucide-react'
+import { PartyPopper, Check, X, Sparkles, Loader2, AlertCircle, Clock, LifeBuoy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getWhatsAppLink } from '../constants/contacts'
 
 export type PaymentStatus = 'processing' | 'success' | 'failed' | 'pending'
 
@@ -143,8 +144,20 @@ export default function PaymentStatusModal({ status, isOpen, onClose, planName =
                                         'bg-slate-900 hover:bg-slate-800 text-white shadow-slate-200'
                                     }`}
                             >
-                                {isSuccess ? 'Vamos lá! 🚀' : isFailed ? 'Entendi' : 'Fechar'}
+                                {isSuccess ? 'Vamos lá! 🚀' : isFailed ? 'Tentar Novamente' : 'Fechar'}
                             </button>
+                        )}
+
+                        {isFailed && (
+                            <a
+                                href={getWhatsAppLink('Olá! Tive um problema com o pagamento da minha assinatura no Romaneio Rápido.')}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-4 flex items-center justify-center gap-2 text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors"
+                            >
+                                <LifeBuoy className="w-4 h-4" />
+                                Falar com Suporte no WhatsApp
+                            </a>
                         )}
 
                         <p className="text-[10px] text-slate-400 mt-6 font-bold uppercase tracking-widest">RomaneioRapido</p>

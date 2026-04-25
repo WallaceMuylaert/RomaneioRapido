@@ -20,7 +20,9 @@ import {
     AlertTriangle,
     ChevronLeft,
     ChevronRight,
+    MessageCircle
 } from 'lucide-react'
+import { getWhatsAppLink } from '../constants/contacts'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { PLANS } from '../constants/plans'
 
@@ -144,6 +146,15 @@ export default function LandingPage() {
                             <a href="#recursos" className="hover:text-blue-600 hover:-translate-y-0.5 transition-all duration-300">Recursos</a>
                             <a href="#planos" className="hover:text-blue-600 hover:-translate-y-0.5 transition-all duration-300">Planos</a>
                             <a href="#contato" className="hover:text-blue-600 hover:-translate-y-0.5 transition-all duration-300">Contato</a>
+                            <a 
+                                href={getWhatsAppLink('Olá! Gostaria de tirar algumas dúvidas sobre o Romaneio Rápido.')} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 transition-colors font-bold"
+                            >
+                                <MessageCircle className="w-4 h-4" />
+                                Suporte
+                            </a>
                         </nav>
                         <button
                             onClick={() => navigate('/login')}
@@ -618,11 +629,19 @@ export default function LandingPage() {
                                     </ul>
                                 </div>
                                 <div>
-                                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Contato</h4>
-                                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-2">
                                         <Mail className="w-3.5 h-3.5" />
                                         <span>romaneiorapido@gmail.com</span>
                                     </div>
+                                    <a 
+                                        href={getWhatsAppLink('Olá! Vim pela Landing Page e preciso de suporte.')}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 text-xs text-emerald-600 font-bold hover:text-emerald-700 transition-colors"
+                                    >
+                                        <MessageCircle className="w-3.5 h-3.5" />
+                                        <span>WhatsApp Suporte</span>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -634,6 +653,24 @@ export default function LandingPage() {
                 </footer>
             </main>
             </div>
+
+            {/* Floating WhatsApp Button */}
+            <motion.a
+                href={getWhatsAppLink('Olá! Estou na Landing Page e gostaria de falar com o suporte.')}
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                whileHover={{ scale: 1.1, y: -5 }}
+                whileTap={{ scale: 0.9 }}
+                className="fixed bottom-6 right-6 z-[100] w-14 h-14 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/40 border-2 border-white hover:bg-emerald-600 transition-colors group"
+                title="Falar com Suporte"
+            >
+                <MessageCircle className="w-7 h-7" />
+                <span className="absolute right-full mr-4 px-4 py-2 bg-white text-slate-800 text-xs font-black rounded-xl shadow-xl border border-slate-100 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none uppercase tracking-widest">
+                    Suporte WhatsApp
+                </span>
+            </motion.a>
         </div>
     )
 }
