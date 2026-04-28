@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 from backend.models.clients import Client
+from backend.models.inventory import InventoryMovement
+from backend.models.pending_romaneio import PendingRomaneio
 from backend.schemas.clients import ClientCreate, ClientUpdate
 from typing import Optional
 
@@ -50,7 +52,28 @@ def delete_client(db: Session, client_id: int, user_id: int):
     db_client = get_client(db, client_id, user_id)
     if not db_client:
         return None
-    
+
+    deleted_client = {
+        "id": db_client.id,
+        "user_id": db_client.user_id,
+        "name": db_client.name,
+        "phone": db_client.phone,
+        "document": db_client.document,
+        "email": db_client.email,
+        "notes": db_client.notes,
+        "created_at": db_client.created_at,
+        "updated_at": db_client.updated_at,
+    }
+
+    db.query(PendingRomaneio).filter(
+        PendingRomaneio.user_id == user_id,
+        PendingRomaneio.client_id == client_id,
+    ).update({PendingRomaneio.client_id: None}, synchronize_session=False)
+    db.query(InventoryMovement).filter(
+        InventoryMovement.created_by == user_id,
+        InventoryMovement.client_id == client_id,
+    ).update({InventoryMovement.client_id: None}, synchronize_session=False)
+
     db.delete(db_client)
     db.commit()
-    return db_client
+    return deleted_client
