@@ -116,7 +116,7 @@ export default function MovementsPage() {
 
         movements.forEach(m => {
             const effectivePrice = getEffectivePrice(m)
-            const itemValue = m.is_cancelled ? 0 : (m.quantity * effectivePrice)
+            const itemValue = m.is_cancelled ? 0 : (Math.abs(Number(m.quantity) || 0) * effectivePrice)
 
             if (m.romaneio_id) {
                 if (!groups[m.romaneio_id]) {
@@ -748,6 +748,9 @@ export default function MovementsPage() {
                                         const styles = getTypeStyles(m)
                                         const isGroup = 'isGroup' in m && m.isGroup;
                                         const cancelled = m.is_cancelled;
+                                        const rowTotalValue = isGroup
+                                            ? (m as any).totalValue
+                                            : (cancelled ? 0 : Math.abs(Number(m.quantity) || 0) * getEffectivePrice(m));
 
                                         return (
                                             <tr key={isGroup ? `group-${m.id}` : m.id} className={`hover:bg-slate-50/50 transition-colors group ${cancelled ? 'opacity-60 bg-slate-50/30' : ''}`}>
@@ -807,11 +810,9 @@ export default function MovementsPage() {
                                                                 {isGroup ? 'ITENS' : (m.unit_snapshot || 'UN')}
                                                             </span>
                                                         </div>
-                                                        {isGroup && (
-                                                            <span className="text-[10px] font-bold text-emerald-600">
-                                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((m as any).totalValue)}
-                                                            </span>
-                                                        )}
+                                                        <span className="text-[10px] font-bold text-emerald-600">
+                                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rowTotalValue)}
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-5">
