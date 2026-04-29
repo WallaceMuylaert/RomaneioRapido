@@ -133,11 +133,13 @@ export default function MovementsPage() {
                         customerPhone: m.client?.phone || null,
                         items: [],
                         movement_type: m.movement_type,
+                        totalQuantity: 0,
                         totalValue: 0,
                         is_cancelled: m.is_cancelled
                     }
                 }
                 groups[m.romaneio_id].items.push(m)
+                groups[m.romaneio_id].totalQuantity += Math.abs(Number(m.quantity) || 0)
                 groups[m.romaneio_id].totalValue += itemValue
 
                 if (m.client || m.client_id) {
@@ -798,8 +800,8 @@ export default function MovementsPage() {
                                                     <div className="flex flex-col items-end">
                                                         <div className="flex items-baseline justify-end gap-1">
                                                             <span className={`font-black text-sm ${cancelled ? 'text-slate-400 line-through' : (m.movement_type === 'OUT' ? 'text-rose-600' : m.movement_type === 'IN' ? 'text-emerald-600' : 'text-slate-900')}`}>
-                                                                {m.movement_type === 'OUT' ? '-' : m.movement_type === 'IN' ? '+' : ''}
-                                                                {isGroup ? (m as any).items.length : (m.quantity % 1 === 0 ? m.quantity : m.quantity.toFixed(2))}
+                                                                {!isGroup && (m.movement_type === 'OUT' ? '-' : m.movement_type === 'IN' ? '+' : '')}
+                                                                {isGroup ? (((m as any).totalQuantity % 1 === 0) ? (m as any).totalQuantity : (m as any).totalQuantity.toFixed(2)) : (m.quantity % 1 === 0 ? m.quantity : m.quantity.toFixed(2))}
                                                             </span>
                                                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
                                                                 {isGroup ? 'ITENS' : (m.unit_snapshot || 'UN')}

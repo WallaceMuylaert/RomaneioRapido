@@ -311,6 +311,7 @@ export default function LoginPage() {
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         value={password}
+                                        autoComplete={isRegistering ? 'new-password' : 'current-password'}
                                         onChange={(e) => {
                                             setPassword(e.target.value)
                                             if (errors.password) setErrors(prev => ({ ...prev, password: undefined }))
@@ -342,6 +343,7 @@ export default function LoginPage() {
                                         <input
                                             type={showConfirmPassword ? 'text' : 'password'}
                                             value={confirmPassword}
+                                            autoComplete="new-password"
                                             onChange={(e) => {
                                                 setConfirmPassword(e.target.value)
                                                 if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: undefined }))
