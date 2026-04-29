@@ -319,6 +319,7 @@ export default function UserManagementModal({
                                                 type="password"
                                                 placeholder="Nova senha (mínimo 8 caracteres)"
                                                 value={newPassword}
+                                                autoComplete="new-password"
                                                 onChange={(e) => setNewPassword(e.target.value)}
                                                 className="w-full h-12 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:bg-white/10 transition-all"
                                                 autoFocus

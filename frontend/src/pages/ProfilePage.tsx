@@ -682,6 +682,7 @@ export default function ProfilePage() {
                                             <input
                                                 type={showPassword ? 'text' : 'password'}
                                                 value={form.password}
+                                                autoComplete="new-password"
                                                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                                                 className="w-full h-12 pl-12 pr-12 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
                                                 placeholder="••••••••"
@@ -722,6 +723,7 @@ export default function ProfilePage() {
                                             <input
                                                 type={showConfirmPassword ? 'text' : 'password'}
                                                 value={form.confirm_password}
+                                                autoComplete="new-password"
                                                 onChange={(e) => setForm({ ...form, confirm_password: e.target.value })}
                                                 className="w-full h-12 pl-12 pr-12 text-sm font-semibold bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white hover:bg-slate-50 transition-all duration-300 shadow-sm"
                                                 placeholder="••••••••"

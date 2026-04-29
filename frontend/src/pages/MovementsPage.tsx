@@ -116,7 +116,7 @@ export default function MovementsPage() {
 
         movements.forEach(m => {
             const effectivePrice = getEffectivePrice(m)
-            const itemValue = m.is_cancelled ? 0 : (m.quantity * effectivePrice)
+            const itemValue = m.is_cancelled ? 0 : (Math.abs(Number(m.quantity) || 0) * effectivePrice)
 
             if (m.romaneio_id) {
                 if (!groups[m.romaneio_id]) {
@@ -133,11 +133,13 @@ export default function MovementsPage() {
                         customerPhone: m.client?.phone || null,
                         items: [],
                         movement_type: m.movement_type,
+                        totalQuantity: 0,
                         totalValue: 0,
                         is_cancelled: m.is_cancelled
                     }
                 }
                 groups[m.romaneio_id].items.push(m)
+                groups[m.romaneio_id].totalQuantity += Math.abs(Number(m.quantity) || 0)
                 groups[m.romaneio_id].totalValue += itemValue
 
                 if (m.client || m.client_id) {
@@ -746,6 +748,9 @@ export default function MovementsPage() {
                                         const styles = getTypeStyles(m)
                                         const isGroup = 'isGroup' in m && m.isGroup;
                                         const cancelled = m.is_cancelled;
+                                        const rowTotalValue = isGroup
+                                            ? (m as any).totalValue
+                                            : (cancelled ? 0 : Math.abs(Number(m.quantity) || 0) * getEffectivePrice(m));
 
                                         return (
                                             <tr key={isGroup ? `group-${m.id}` : m.id} className={`hover:bg-slate-50/50 transition-colors group ${cancelled ? 'opacity-60 bg-slate-50/30' : ''}`}>
@@ -798,18 +803,16 @@ export default function MovementsPage() {
                                                     <div className="flex flex-col items-end">
                                                         <div className="flex items-baseline justify-end gap-1">
                                                             <span className={`font-black text-sm ${cancelled ? 'text-slate-400 line-through' : (m.movement_type === 'OUT' ? 'text-rose-600' : m.movement_type === 'IN' ? 'text-emerald-600' : 'text-slate-900')}`}>
-                                                                {m.movement_type === 'OUT' ? '-' : m.movement_type === 'IN' ? '+' : ''}
-                                                                {isGroup ? (m as any).items.length : (m.quantity % 1 === 0 ? m.quantity : m.quantity.toFixed(2))}
+                                                                {!isGroup && (m.movement_type === 'OUT' ? '-' : m.movement_type === 'IN' ? '+' : '')}
+                                                                {isGroup ? (((m as any).totalQuantity % 1 === 0) ? (m as any).totalQuantity : (m as any).totalQuantity.toFixed(2)) : (m.quantity % 1 === 0 ? m.quantity : m.quantity.toFixed(2))}
                                                             </span>
                                                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
                                                                 {isGroup ? 'ITENS' : (m.unit_snapshot || 'UN')}
                                                             </span>
                                                         </div>
-                                                        {isGroup && (
-                                                            <span className="text-[10px] font-bold text-emerald-600">
-                                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((m as any).totalValue)}
-                                                            </span>
-                                                        )}
+                                                        <span className="text-[10px] font-bold text-emerald-600">
+                                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rowTotalValue)}
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-5">

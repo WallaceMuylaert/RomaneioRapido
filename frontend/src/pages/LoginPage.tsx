@@ -242,7 +242,7 @@ export default function LoginPage() {
                         </div>
 
                         {/* Formulário */}
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
                             {isRegistering && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
@@ -251,8 +251,11 @@ export default function LoginPage() {
                                             <User className={`h-4 w-4 ${errors.fullName ? 'text-red-400' : 'text-slate-400'}`} />
                                         </div>
                                         <input
+                                            id="fullName"
+                                            name="name"
                                             type="text"
                                             value={fullName}
+                                            autoComplete="name"
                                             onChange={(e) => {
                                                 setFullName(e.target.value)
                                                 if (errors.fullName) setErrors(prev => ({ ...prev, fullName: undefined }))
@@ -275,8 +278,11 @@ export default function LoginPage() {
                                         <Mail className={`h-4 w-4 ${errors.email ? 'text-red-400' : 'text-slate-400'}`} />
                                     </div>
                                     <input
+                                        id="email"
+                                        name="username"
                                         type="email"
                                         value={email}
+                                        autoComplete="username"
                                         onChange={(e) => {
                                             setEmail(e.target.value)
                                             if (errors.email) setErrors(prev => ({ ...prev, email: undefined }))
@@ -309,8 +315,12 @@ export default function LoginPage() {
                                         <Lock className={`h-4 w-4 ${errors.password ? 'text-red-400' : 'text-slate-400'}`} />
                                     </div>
                                     <input
+                                        key={isRegistering ? 'register-password' : 'login-password'}
+                                        id="password"
+                                        name="password"
                                         type={showPassword ? 'text' : 'password'}
                                         value={password}
+                                        autoComplete={isRegistering ? 'new-password' : 'current-password'}
                                         onChange={(e) => {
                                             setPassword(e.target.value)
                                             if (errors.password) setErrors(prev => ({ ...prev, password: undefined }))
@@ -340,8 +350,11 @@ export default function LoginPage() {
                                             <Lock className={`h-4 w-4 ${errors.confirmPassword ? 'text-red-400' : 'text-slate-400'}`} />
                                         </div>
                                         <input
+                                            id="confirmPassword"
+                                            name="confirmPassword"
                                             type={showConfirmPassword ? 'text' : 'password'}
                                             value={confirmPassword}
+                                            autoComplete="new-password"
                                             onChange={(e) => {
                                                 setConfirmPassword(e.target.value)
                                                 if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: undefined }))
