@@ -159,9 +159,9 @@ export default function DashboardPage() {
                             <div className="h-4 w-64 bg-slate-100 rounded-md" />
                         </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 sm:gap-6">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4">
                         {[1, 2, 3].map((i) => (
-                            <div key={i} className="h-32 sm:h-40 bg-white rounded-3xl border border-slate-100 shadow-sm" />
+                            <div key={i} className="h-24 bg-white rounded-2xl border border-slate-100 shadow-sm" />
                         ))}
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -190,44 +190,50 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 sm:gap-6">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 <button
                     onClick={() => navigate('/produtos')}
-                    className="glass-card rounded-xl sm:rounded-[2rem] p-3 sm:p-8 text-left relative overflow-hidden group cursor-pointer hover:border-brand-200 hover:shadow-lg transition-all"
+                    className="glass-card rounded-xl sm:rounded-2xl p-2.5 sm:p-5 text-left relative overflow-hidden group cursor-pointer hover:border-brand-200 hover:shadow-lg transition-all"
                 >
-                    <div className="flex items-center justify-between mb-3 sm:mb-6">
-                        <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-brand-50 flex items-center justify-center shadow-sm ring-1 ring-brand-100/50">
-                            <Boxes className="w-4 h-4 sm:w-6 sm:h-6 text-brand-600" />
+                    <div className="flex items-center gap-2 sm:gap-4">
+                        <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-brand-50 flex items-center justify-center shadow-sm ring-1 ring-brand-100/50 shrink-0">
+                            <Boxes className="w-4 h-4 sm:w-5 sm:h-5 text-brand-600" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-xl sm:text-3xl font-black text-slate-900 leading-none tracking-tight">{stats.totalProducts}</p>
+                            <p className="mt-1 text-[8px] sm:text-[11px] font-black text-slate-400 uppercase tracking-wider leading-tight">Produtos</p>
                         </div>
                     </div>
-                    <p className="text-2xl sm:text-4xl font-black text-slate-900 mb-1 tracking-tighter">{stats.totalProducts}</p>
-                    <p className="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest leading-tight">Produtos</p>
                 </button>
 
                 <button
                     onClick={() => navigate('/movimentacoes')}
-                    className="glass-card rounded-xl sm:rounded-[2rem] p-3 sm:p-8 text-left relative overflow-hidden group cursor-pointer hover:border-brand-200 hover:shadow-lg transition-all"
+                    className="glass-card rounded-xl sm:rounded-2xl p-2.5 sm:p-5 text-left relative overflow-hidden group cursor-pointer hover:border-brand-200 hover:shadow-lg transition-all"
                 >
-                    <div className="flex items-center justify-between mb-3 sm:mb-6">
-                        <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-brand-50 flex items-center justify-center shadow-sm ring-1 ring-brand-100/50">
-                            <ArrowRightLeft className="w-4 h-4 sm:w-6 sm:h-6 text-brand-600" />
+                    <div className="flex items-center gap-2 sm:gap-4">
+                        <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-brand-50 flex items-center justify-center shadow-sm ring-1 ring-brand-100/50 shrink-0">
+                            <ArrowRightLeft className="w-4 h-4 sm:w-5 sm:h-5 text-brand-600" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-xl sm:text-3xl font-black text-slate-900 leading-none tracking-tight">{stats.todayMovements}</p>
+                            <p className="mt-1 text-[8px] sm:text-[11px] font-black text-slate-400 uppercase tracking-wider leading-tight">Hoje</p>
                         </div>
                     </div>
-                    <p className="text-2xl sm:text-4xl font-black text-slate-900 mb-1 tracking-tighter">{stats.todayMovements}</p>
-                    <p className="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest leading-tight">Hoje</p>
                 </button>
 
                 <button
                     onClick={() => navigate('/produtos')}
-                    className="glass-card rounded-xl sm:rounded-[2rem] p-3 sm:p-8 text-left relative overflow-hidden group cursor-pointer hover:border-orange-200 hover:shadow-lg transition-all"
+                    className="glass-card rounded-xl sm:rounded-2xl p-2.5 sm:p-5 text-left relative overflow-hidden group cursor-pointer hover:border-orange-200 hover:shadow-lg transition-all"
                 >
-                    <div className="flex items-center justify-between mb-3 sm:mb-6">
-                        <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-orange-50 flex items-center justify-center shadow-sm ring-1 ring-orange-100/50">
-                            <AlertTriangle className="w-4 h-4 sm:w-6 sm:h-6 text-orange-500" />
+                    <div className="flex items-center gap-2 sm:gap-4">
+                        <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-orange-50 flex items-center justify-center shadow-sm ring-1 ring-orange-100/50 shrink-0">
+                            <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-xl sm:text-3xl font-black text-slate-900 leading-none tracking-tight">{stats.lowStockCount}</p>
+                            <p className="mt-1 text-[8px] sm:text-[11px] font-black text-slate-400 uppercase tracking-wider leading-tight">Alertas</p>
                         </div>
                     </div>
-                    <p className="text-2xl sm:text-4xl font-black text-slate-900 mb-1 tracking-tighter">{stats.lowStockCount}</p>
-                    <p className="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest leading-tight">Alertas</p>
                 </button>
             </div>
 

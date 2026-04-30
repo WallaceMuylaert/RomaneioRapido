@@ -280,7 +280,7 @@ export default function AppLayout() {
                         }
                     }}>
                         <div className="h-8 flex items-center justify-center">
-                            <img src={logo} alt="Logo" className="h-15 object-contain" />
+                            <img src={logo} alt="Logo" className="h-12 object-contain" />
                         </div>
                     </div>
                     <button
