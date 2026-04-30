@@ -35,7 +35,7 @@ export default function CookiesPage() {
                         </section>
 
                         <section>
-                            <h2 className="text-xl font-bold text-slate-900 mb-4 tracking-tight">Como o RomaneioRapido usa isso?</h2>
+                            <h2 className="text-xl font-bold text-slate-900 mb-4 tracking-tight">Como o RomaneioRápido usa isso?</h2>
                             <p className="leading-relaxed">
                                 Diferente de aplicativos que coletam as suas informações minuciosamente para te mostrar anúncios, nós usamos esses cookies de forma estrita para fazer a <strong>plataforma funcionar e agir de forma segura</strong>. É através deles que não solicitamos que você ponha sua senha todo instante e é dessa forma que evitamos que seus romaneios não-salvos se percam quando a tela falhar.
                             </p>

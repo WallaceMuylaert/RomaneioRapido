@@ -12,12 +12,26 @@
   --color-brand-800: #1e40af;
   --color-brand-900: #1e3a8a;
   --color-brand-950: #172554;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+  --radius-2xl: 8px;
+  --radius-3xl: 10px;
 }
 
 :root {
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(255, 255, 255, 0.3);
   --glass-blur: 12px;
+  --app-radius-sm: 2px;
+  --app-radius-md: 3px;
+  --app-radius-lg: 4px;
+  --app-radius-xl: 6px;
+  --app-radius-2xl: 8px;
+  --app-radius-3xl: 10px;
+  --app-border-color: #d5dbe6;
+  --app-border-color-strong: #c4ccd9;
 }
 
 @layer base {
@@ -29,11 +43,12 @@
 
 @layer components {
   .glass-card {
-    @apply bg-white/70 backdrop-blur-md border border-white/30 shadow-sm transition-all duration-300;
+    @apply bg-white/70 backdrop-blur-md border transition-all duration-300;
+    border-color: var(--app-border-color);
   }
 
   .glass-card:hover {
-    @apply shadow-md border-white/50;
+    border-color: var(--app-border-color-strong);
   }
 
   .premium-gradient {
@@ -68,12 +83,12 @@
 }
 
 #reader video {
-  border-radius: 1.5rem !important;
+  border-radius: var(--app-radius-3xl) !important;
   object-fit: cover !important;
 }
 
 #reader button {
-  @apply bg-brand-600 text-white rounded-xl px-6 py-2.5 text-sm font-bold border-none mt-4 cursor-pointer transition-all duration-200 hover:bg-brand-700 active:scale-95 shadow-lg shadow-brand-500/20;
+  @apply bg-brand-600 text-white rounded-xl px-6 py-2.5 text-sm font-bold border-none mt-4 cursor-pointer transition-all duration-200 hover:bg-brand-700 active:scale-95;
 }
 
 #reader img {
@@ -179,4 +194,101 @@
 
 .animate-bounce-slow {
   animation: bounce-slow 2s ease-in-out infinite;
+}
+
+/* Sistema visual global: bordas finas, cantos mais retos e sem sombras pesadas. */
+:where(.rounded) {
+  border-radius: var(--app-radius-md) !important;
+}
+
+:where(.rounded-md) {
+  border-radius: var(--app-radius-lg) !important;
+}
+
+:where(.rounded-lg, .rounded-xl) {
+  border-radius: var(--app-radius-xl) !important;
+}
+
+:where(
+  .rounded-2xl,
+  .rounded-3xl,
+  .rounded-\[1\.25rem\],
+  .rounded-\[1\.5rem\],
+  .rounded-\[2rem\],
+  .rounded-\[2\.5rem\],
+  .rounded-\[3rem\],
+  .rounded-\[4rem\],
+  .rounded-\[32px\],
+  .rounded-\[100px\]
+) {
+  border-radius: var(--app-radius-2xl) !important;
+}
+
+:where(.rounded-t, .rounded-t-lg, .rounded-t-xl, .rounded-t-2xl, .rounded-t-3xl) {
+  border-top-left-radius: var(--app-radius-xl) !important;
+  border-top-right-radius: var(--app-radius-xl) !important;
+}
+
+:where(.rounded-b, .rounded-b-lg, .rounded-b-xl, .rounded-b-2xl, .rounded-b-3xl) {
+  border-bottom-right-radius: var(--app-radius-xl) !important;
+  border-bottom-left-radius: var(--app-radius-xl) !important;
+}
+
+:where(.rounded-l, .rounded-l-lg, .rounded-l-xl, .rounded-l-2xl, .rounded-l-3xl) {
+  border-top-left-radius: var(--app-radius-xl) !important;
+  border-bottom-left-radius: var(--app-radius-xl) !important;
+}
+
+:where(.rounded-r, .rounded-r-lg, .rounded-r-xl, .rounded-r-2xl, .rounded-r-3xl) {
+  border-top-right-radius: var(--app-radius-xl) !important;
+  border-bottom-right-radius: var(--app-radius-xl) !important;
+}
+
+:where(.rounded-tl, .rounded-tl-lg, .rounded-tl-xl, .rounded-tl-2xl, .rounded-tl-3xl) {
+  border-top-left-radius: var(--app-radius-xl) !important;
+}
+
+:where(.rounded-tr, .rounded-tr-lg, .rounded-tr-xl, .rounded-tr-2xl, .rounded-tr-3xl) {
+  border-top-right-radius: var(--app-radius-xl) !important;
+}
+
+:where(.rounded-br, .rounded-br-lg, .rounded-br-xl, .rounded-br-2xl, .rounded-br-3xl) {
+  border-bottom-right-radius: var(--app-radius-xl) !important;
+}
+
+:where(.rounded-bl, .rounded-bl-lg, .rounded-bl-xl, .rounded-bl-2xl, .rounded-bl-3xl) {
+  border-bottom-left-radius: var(--app-radius-xl) !important;
+}
+
+:where(.border-2, .border-3, .border-4, .border-8) {
+  border-width: 1px !important;
+}
+
+:where(
+  .border-slate-50,
+  .border-slate-100,
+  .border-slate-200,
+  [class~="border-slate-50/50"],
+  [class~="border-slate-100/50"],
+  [class~="border-slate-100/80"],
+  [class~="border-slate-200/60"],
+  [class~="border-slate-200/80"],
+  .border-gray-100,
+  .border-gray-200,
+  .border-white,
+  [class~="border-white/10"],
+  [class~="border-white/20"],
+  [class~="border-white/30"],
+  [class~="border-white/40"],
+  [class~="border-white/50"],
+  [class~="border-white/60"],
+  [class~="border-white/80"]
+) {
+  border-color: var(--app-border-color) !important;
+}
+
+:where([class*="shadow-"]:not([class*="shadow-["]), .shadow) {
+  --tw-shadow: 0 0 #0000 !important;
+  --tw-shadow-colored: 0 0 #0000 !important;
+  box-shadow: none !important;
 }

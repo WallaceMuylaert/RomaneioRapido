@@ -901,7 +901,7 @@ export default function MovementsPage() {
                                                                     onClick={() => setOpenMenu(null)}
                                                                 />
                                                                 <div
-                                                                    className="fixed bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-slate-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+                                                                    className="fixed bg-white rounded-2xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
                                                                     style={{
                                                                         top: openMenu.top,
                                                                         bottom: openMenu.bottom,

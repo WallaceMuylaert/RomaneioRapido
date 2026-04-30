@@ -206,7 +206,7 @@ export default function LoginPage() {
 
                 {/* Rodapé Visual */}
                 <div className="flex items-center gap-6 text-slate-500 text-xs font-bold uppercase tracking-widest relative z-10 mt-auto pt-10">
-                    <span>© 2026 RomaneioRapido</span>
+                    <span>© 2026 Romaneio Rápido</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-brand-600" />
                     <span>Segurança Bancária</span>
                 </div>

@@ -75,7 +75,6 @@ export default function AppLayout() {
             {/* Sidebar */}
             <aside className={`
         fixed inset-y-0 left-0 z-50 bg-white/80 backdrop-blur-xl border-r border-slate-100 flex flex-col
-        shadow-[20px_0_40px_rgba(0,0,0,0.02)]
         transform transition-all duration-300 ease-in-out md:translate-x-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         ${isCollapsed ? 'md:w-20' : 'md:w-64'}
@@ -91,7 +90,7 @@ export default function AppLayout() {
 
                 {/* Logo */}
                 <div 
-                    className={`h-16 flex items-center border-b border-slate-100/50 group cursor-pointer transition-all ${isCollapsed ? 'justify-center px-0' : 'px-6 gap-3'}`} 
+                    className={`h-16 flex items-center group cursor-pointer transition-all ${isCollapsed ? 'justify-center px-0' : 'px-6 gap-3'}`} 
                     onClick={() => {
                         if (isLockEnabled) {
                             navigate('/perfil?tab=subscription')
@@ -109,7 +108,7 @@ export default function AppLayout() {
                     </div>
                     {!isCollapsed && (
                         <span className="text-base font-bold text-slate-900 tracking-tight whitespace-nowrap animate-in fade-in duration-300">
-                            Romaneio<span className="text-brand-600">Rapido</span>
+                            Romaneio<span className="text-brand-600"> Rápido</span>
                         </span>
                     )}
                     <button className="md:hidden ml-auto p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors" onClick={() => setSidebarOpen(false)}>
