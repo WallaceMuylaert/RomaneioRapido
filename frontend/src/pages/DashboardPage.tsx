@@ -79,7 +79,18 @@ export default function DashboardPage() {
 
             {/* 3 Main Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div className="glass-card rounded-[2rem] p-8 relative overflow-hidden group">
+                <div
+                    onClick={() => navigate('/produtos')}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            navigate('/produtos')
+                        }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="glass-card rounded-[2rem] p-8 relative overflow-hidden group cursor-pointer hover:border-brand-200 hover:shadow-lg transition-all"
+                >
                     <div className="absolute -right-4 -top-4 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
                     <div className="flex items-center justify-between mb-6">
                         <div className="w-12 h-12 rounded-2xl bg-brand-50 flex items-center justify-center shadow-sm ring-1 ring-brand-100/50">
