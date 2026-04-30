@@ -133,9 +133,9 @@ export default function LandingPage() {
                 {/* Header */}
             <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
                 <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-                    <a href="/" className="flex items-center gap-2.5 group">
+                    <a href="/" className="flex items-center gap-1 group">
                         <div className="h-8 flex items-center justify-center">
-                            <img src={logo} alt="Logo" className="h-7 object-contain" />
+                            <img src={logo} alt="Logo" className="h-12 object-contain" />
                         </div>
                         <span className="text-lg font-bold text-gray-900">Romaneio<span className="text-blue-600">Rapido</span></span>
                     </a>

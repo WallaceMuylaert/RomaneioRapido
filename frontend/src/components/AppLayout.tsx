@@ -271,7 +271,7 @@ export default function AppLayout() {
             {/* Main */}
             <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
                 {/* Top bar mobile */}
-                <header className="md:hidden h-14 bg-white/90 backdrop-blur-md border-b border-slate-200 px-3 flex items-center justify-between sticky top-0 z-30">
+                <header className="md:hidden h-14 bg-white/90 backdrop-blur-md px-3 flex items-center justify-between sticky top-0 z-30">
                     <div className="flex items-center gap-2.5 group cursor-pointer" onClick={() => {
                         if (isLockEnabled) {
                             navigate('/perfil?tab=subscription')

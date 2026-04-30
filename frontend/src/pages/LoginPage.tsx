@@ -2,10 +2,11 @@ import { useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import LoadingOverlay from '../components/LoadingOverlay'
-import { Package, Eye, EyeOff, Loader2, ArrowLeft, Zap, BarChart3, ScanBarcode, User, Mail, Lock } from 'lucide-react'
+import { Eye, EyeOff, Loader2, ArrowLeft, Zap, BarChart3, ScanBarcode, User, Mail, Lock } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import api from '../services/api'
 import AlertModal from '../components/AlertModal'
+import logo from '../assets/romaneiorapido_logo.png'
 
 export default function LoginPage() {
     const { login } = useAuth()
@@ -215,14 +216,15 @@ export default function LoginPage() {
             {/* Seção Direita - Formulário */}
             <div className="flex-1 flex flex-col bg-white overflow-y-auto">
                 {/* Mobile Header (Apenas em Mobile) */}
-                <div className="lg:hidden p-6 flex items-center justify-between border-b border-slate-100">
-                    <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/')}>
-                        <div className="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
-                            <Package className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="font-black text-slate-900 tracking-tight">Romaneio<span className="text-brand-600">Rapido</span></span>
+                <div className="lg:hidden flex items-center justify-between">
+                    <div className="flex items-center gap-1 ps-4 group cursor-pointer" onClick={() => navigate('/')}>
+                        <img
+                            src={logo}
+                            alt="Romaneio Rápido"
+                            className="h-15 w-15 rounded-xl object-contain bg-white shadow-lg shadow-brand-500/20"
+                        />
                     </div>
-                    <button onClick={() => navigate('/')} className="text-xs font-black text-brand-600 uppercase tracking-wider">
+                    <button onClick={() => navigate('/')} className="text-xs font-black text-brand-600 uppercase tracking-wider pe-6">
                         Voltar
                     </button>
                 </div>
