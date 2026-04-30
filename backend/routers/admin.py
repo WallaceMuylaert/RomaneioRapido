@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from backend.core.database import get_db
+from backend.core.limiter import limiter
 from backend.core.security import get_current_superadmin, get_password_hash
 from backend.models.users import User
 from backend.schemas.auth import UserResponse, UserUpdate, PaginatedUserResponse
@@ -58,7 +59,9 @@ def list_users(
         raise HTTPException(status_code=500, detail="Erro interno ao buscar usuários")
 
 @router.post("/users/bulk-email", response_model=BulkEmailResponse)
+@limiter.limit("3/hour")
 def send_bulk_email_to_users(
+    request: Request,
     email_data: BulkEmailRequest,
     db: Session = Depends(get_db),
 ):

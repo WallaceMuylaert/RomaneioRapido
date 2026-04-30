@@ -1,28 +1,74 @@
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, joinedload
+from backend.models.clients import Client
 from backend.models.inventory import InventoryMovement, MovementType
+from backend.models.pending_romaneio import PendingRomaneio
 from backend.models.products import Product
 from backend.schemas.inventory import InventoryMovementCreate
 
 
+def _get_owned_product(db: Session, product_id: int, user_id: int) -> Product:
+    product = db.query(Product).filter(
+        Product.id == product_id,
+        Product.user_id == user_id,
+        Product.is_active == True
+    ).first()
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Produto não encontrado",
+        )
+    return product
+
+
+def _validate_owned_relationships(db: Session, movement_data: dict, user_id: int) -> None:
+    client_id = movement_data.get("client_id")
+    if client_id is not None:
+        client = db.query(Client).filter(Client.id == client_id, Client.user_id == user_id).first()
+        if not client:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Cliente não encontrado",
+            )
+
+    pending_romaneio_id = movement_data.get("pending_romaneio_id")
+    if pending_romaneio_id is not None:
+        pending = db.query(PendingRomaneio).filter(
+            PendingRomaneio.id == pending_romaneio_id,
+            PendingRomaneio.user_id == user_id,
+        ).first()
+        if not pending:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Rascunho não encontrado",
+            )
+
+
 def create_movement(db: Session, movement: InventoryMovementCreate, user_id: int = None):
     # Buscar o produto para atualizar o estoque e preencher snapshots
-    product = db.query(Product).filter(Product.id == movement.product_id).first()
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuário não autenticado",
+        )
+
+    product = _get_owned_product(db, movement.product_id, user_id)
     
     movement_data = movement.model_dump()
+    _validate_owned_relationships(db, movement_data, user_id)
     
     # Preenchimento automático de snapshots se não forem fornecidos
-    if product:
-        snapshot_map = {
-            "product_name_snapshot": "name",
-            "product_barcode_snapshot": "barcode", 
-            "unit_price_snapshot": "price",
-            "unit_snapshot": "unit",
-            "product_color_snapshot": "color",
-            "product_size_snapshot": "size"
-        }
-        for snap_field, prod_field in snapshot_map.items():
-            if not movement_data.get(snap_field):
-                movement_data[snap_field] = getattr(product, prod_field)
+    snapshot_map = {
+        "product_name_snapshot": "name",
+        "product_barcode_snapshot": "barcode",
+        "unit_price_snapshot": "price",
+        "unit_snapshot": "unit",
+        "product_color_snapshot": "color",
+        "product_size_snapshot": "size"
+    }
+    for snap_field, prod_field in snapshot_map.items():
+        if not movement_data.get(snap_field):
+            movement_data[snap_field] = getattr(product, prod_field)
 
     # Criar o registro de movimentação
     db_movement = InventoryMovement(
@@ -32,13 +78,12 @@ def create_movement(db: Session, movement: InventoryMovementCreate, user_id: int
     db.add(db_movement)
 
     # Atualizar o estoque do produto
-    if product:
-        if movement.movement_type == MovementType.IN:
-            product.stock_quantity += movement.quantity
-        elif movement.movement_type == MovementType.OUT:
-            product.stock_quantity -= movement.quantity
-        elif movement.movement_type == MovementType.ADJUSTMENT:
-            product.stock_quantity = movement.quantity
+    if movement.movement_type == MovementType.IN:
+        product.stock_quantity += movement.quantity
+    elif movement.movement_type == MovementType.OUT:
+        product.stock_quantity -= movement.quantity
+    elif movement.movement_type == MovementType.ADJUSTMENT:
+        product.stock_quantity = movement.quantity
 
     db.commit()
     db.refresh(db_movement)
@@ -263,7 +308,10 @@ def cancel_movement(db: Session, movement_id: int, user_id: int):
         
     # Buscar o produto para reverter o estoque
     if movement.product_id:
-        product = db.query(Product).filter(Product.id == movement.product_id).first()
+        product = db.query(Product).filter(
+            Product.id == movement.product_id,
+            Product.user_id == user_id,
+        ).first()
         if product:
             if movement.movement_type == MovementType.IN:
                 product.stock_quantity -= movement.quantity

@@ -1,3 +1,4 @@
+import os
 import stripe
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -420,6 +421,12 @@ def subscribe_legacy(
         raise HTTPException(
             status_code=400,
             detail="Use POST /plans/checkout para assinar planos pagos",
+        )
+
+    if os.getenv("ENVIRONMENT", "development").lower() != "development":
+        raise HTTPException(
+            status_code=503,
+            detail="Pagamentos temporariamente indisponíveis. Contate o suporte.",
         )
 
     try:
