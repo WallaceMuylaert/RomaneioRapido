@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, type MouseEvent } from 'react'
+import { createPortal } from 'react-dom'
 import api from '../services/api'
 import {
     Search,
@@ -73,10 +74,64 @@ export default function MovementsPage() {
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [sharingMovement, setSharingMovement] = useState<Movement | null>(null)
     const [exportingMovement, setExportingMovement] = useState<{ clientId: number | null, customerName: string, createdAt: string, phone: string | null, image: string | null, items: CartItem[], discount?: number } | null>(null)
-    const [openMenuId, setOpenMenuId] = useState<number | null>(null)
+    const [openMenu, setOpenMenu] = useState<{
+        id: string
+        left: number
+        width: number
+        arrowLeft: number
+        placement: 'top' | 'bottom'
+        top?: number
+        bottom?: number
+    } | null>(null)
     const [logoBase64, setLogoBase64] = useState<string>('')
     const [cancelModal, setCancelModal] = useState<{ isOpen: boolean, id: number | null }>({ isOpen: false, id: null })
     const [cancelling, setCancelling] = useState(false)
+
+    const handleActionMenuClick = (event: MouseEvent<HTMLButtonElement>, menuId: string) => {
+        if (openMenu?.id === menuId) {
+            setOpenMenu(null)
+            return
+        }
+
+        const rect = event.currentTarget.getBoundingClientRect()
+        const menuWidth = Math.min(224, window.innerWidth - 24)
+        const estimatedMenuHeight = 216
+        const margin = 12
+        const gap = 10
+        const buttonCenter = rect.left + rect.width / 2
+
+        const left = Math.min(
+            Math.max(margin, buttonCenter - menuWidth / 2),
+            window.innerWidth - menuWidth - margin
+        )
+        const arrowLeft = Math.min(Math.max(18, buttonCenter - left), menuWidth - 18)
+        const shouldOpenUp =
+            rect.bottom + gap + estimatedMenuHeight > window.innerHeight - margin &&
+            rect.top > window.innerHeight - rect.bottom
+
+        setOpenMenu({
+            id: menuId,
+            left,
+            width: menuWidth,
+            arrowLeft,
+            placement: shouldOpenUp ? 'top' : 'bottom',
+            top: shouldOpenUp ? undefined : rect.bottom + gap,
+            bottom: shouldOpenUp ? window.innerHeight - rect.top + gap : undefined
+        })
+    }
+
+    useEffect(() => {
+        if (!openMenu) return
+
+        const closeMenu = () => setOpenMenu(null)
+        window.addEventListener('resize', closeMenu)
+        window.addEventListener('scroll', closeMenu, true)
+
+        return () => {
+            window.removeEventListener('resize', closeMenu)
+            window.removeEventListener('scroll', closeMenu, true)
+        }
+    }, [openMenu])
 
     useEffect(() => {
         getBase64FromUrl(logoImg).then(setLogoBase64).catch(console.error)
@@ -748,6 +803,7 @@ export default function MovementsPage() {
                                         const styles = getTypeStyles(m)
                                         const isGroup = 'isGroup' in m && m.isGroup;
                                         const cancelled = m.is_cancelled;
+                                        const menuId = String(m.id);
                                         const rowTotalValue = isGroup
                                             ? (m as any).totalValue
                                             : (cancelled ? 0 : Math.abs(Number(m.quantity) || 0) * getEffectivePrice(m));
@@ -832,19 +888,32 @@ export default function MovementsPage() {
                                                 <td className="px-8 py-5 text-right relative">
                                                     <div className="flex justify-end">
                                                         <button
-                                                            onClick={() => setOpenMenuId(openMenuId === m.id ? null : m.id)}
-                                                            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${openMenuId === m.id ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-100'}`}
+                                                            onClick={(event) => handleActionMenuClick(event, menuId)}
+                                                            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${openMenu?.id === menuId ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-100'}`}
                                                         >
                                                             <MoreVertical className="w-4 h-4" />
                                                         </button>
 
-                                                        {openMenuId === m.id && (
+                                                        {openMenu?.id === menuId && createPortal(
                                                             <>
                                                                 <div
-                                                                    className="fixed inset-0 z-20"
-                                                                    onClick={() => setOpenMenuId(null)}
+                                                                    className="fixed inset-0 z-40"
+                                                                    onClick={() => setOpenMenu(null)}
                                                                 />
-                                                                <div className="absolute right-0 top-11 w-56 bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-slate-100 py-2 z-30 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+                                                                <div
+                                                                    className="fixed bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-slate-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+                                                                    style={{
+                                                                        top: openMenu.top,
+                                                                        bottom: openMenu.bottom,
+                                                                        left: openMenu.left,
+                                                                        width: openMenu.width,
+                                                                        transformOrigin: `${openMenu.arrowLeft}px ${openMenu.placement === 'top' ? 'bottom' : 'top'}`
+                                                                    }}
+                                                                >
+                                                                    <div
+                                                                        className={`absolute w-3 h-3 bg-white border-slate-100 rotate-45 pointer-events-none ${openMenu.placement === 'top' ? '-bottom-1.5 border-b border-r' : '-top-1.5 border-t border-l'}`}
+                                                                        style={{ left: openMenu.arrowLeft - 6 }}
+                                                                    />
                                                                     <button
                                                                         onClick={() => {
                                                                             if (isGroup) {
@@ -852,7 +921,7 @@ export default function MovementsPage() {
                                                                             } else {
                                                                                 setSharingMovement(m)
                                                                             }
-                                                                            setOpenMenuId(null)
+                                                                            setOpenMenu(null)
                                                                         }}
                                                                         className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all group"
                                                                     >
@@ -866,7 +935,7 @@ export default function MovementsPage() {
                                                                         <button
                                                                             onClick={() => {
                                                                                 handleCopyToRomaneio(m as any)
-                                                                                setOpenMenuId(null)
+                                                                                setOpenMenu(null)
                                                                             }}
                                                                             className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-all group"
                                                                         >
@@ -923,7 +992,7 @@ export default function MovementsPage() {
                                                                                     discount: m.discount_snapshot || 0
                                                                                 })
                                                                             }
-                                                                            setOpenMenuId(null)
+                                                                            setOpenMenu(null)
                                                                         }}
                                                                         className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-all group"
                                                                     >
@@ -937,7 +1006,7 @@ export default function MovementsPage() {
                                                                         <button
                                                                             onClick={() => {
                                                                                 setCancelModal({ isOpen: true, id: m.id })
-                                                                                setOpenMenuId(null)
+                                                                                setOpenMenu(null)
                                                                             }}
                                                                             className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-slate-700 hover:bg-rose-50 hover:text-rose-600 transition-all group"
                                                                         >
@@ -948,7 +1017,8 @@ export default function MovementsPage() {
                                                                         </button>
                                                                     )}
                                                                 </div>
-                                                            </>
+                                                            </>,
+                                                            document.body
                                                         )}
                                                     </div>
                                                 </td>
