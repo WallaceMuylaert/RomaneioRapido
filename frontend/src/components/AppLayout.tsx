@@ -118,7 +118,7 @@ export default function AppLayout() {
                         <img
                             src={logo}
                             alt="RomaneioRápido"
-                            className={`transition-all duration-300 object-contain ${isCollapsed ? 'h-8 w-8' : 'h-8'}`}
+                            className={`transition-all duration-300 object-contain ${isCollapsed ? 'h-12 w-12' : 'h-12'}`}
                         />
                     </div>
                     {!isCollapsed && (
@@ -271,7 +271,7 @@ export default function AppLayout() {
             {/* Main */}
             <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
                 {/* Top bar mobile */}
-                <header className="md:hidden h-14 bg-white/90 backdrop-blur-md px-3 flex items-center justify-between sticky top-0 z-30">
+                <header className="md:hidden h-14 bg-white/90 backdrop-blur-md border border-slate-200 rounded-2xl mx-2 mt-2 px-2 flex items-center justify-between sticky top-3 z-30">
                     <div className="flex items-center gap-2.5 group cursor-pointer" onClick={() => {
                         if (isLockEnabled) {
                             navigate('/perfil?tab=subscription')
@@ -298,7 +298,12 @@ export default function AppLayout() {
                             className="absolute inset-0 bg-slate-900/30"
                             onClick={() => setMobileMenuOpen(false)}
                         />
-                        <div className="absolute inset-0 bg-white overflow-hidden flex flex-col">
+                        <div className="absolute inset-x-3 top-20 bottom-auto max-h-[78vh] bg-white border border-slate-200 rounded-2xl overflow-visible flex flex-col z-50 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200 origin-top-right">
+                            <div
+                                className="absolute -top-1.5 right-4 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45 pointer-events-none"
+                                aria-hidden="true"
+                            />
+                            <div className="rounded-2xl overflow-hidden flex flex-col bg-white">
                             <div className="flex items-center justify-between px-4 py-3">
                                 <div className="flex items-center gap-2.5 min-w-0">
                                     <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-600 overflow-hidden shrink-0">
@@ -370,6 +375,7 @@ export default function AppLayout() {
                                     <LogOut className="w-4 h-4" />
                                     Sair
                                 </button>
+                            </div>
                             </div>
                         </div>
                     </div>

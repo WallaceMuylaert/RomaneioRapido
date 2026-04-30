@@ -403,7 +403,7 @@ export default function ProductsPage() {
         return (
             <>
                 <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                <div className="absolute right-0 top-10 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right overflow-hidden">
+                <div className="absolute right-0 top-10 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right overflow-hidden max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-4 max-sm:top-auto max-sm:w-auto max-sm:origin-bottom">
                     <button
                         onClick={(e) => { e.stopPropagation(); openEdit(p); setOpenMenuId(null); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors text-left"

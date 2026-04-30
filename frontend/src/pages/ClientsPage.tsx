@@ -513,7 +513,7 @@ export default function ClientsPage() {
                                         {openMenuId === c.id && (
                                             <>
                                                 <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                                                <div className="absolute right-0 top-12 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2">
+                                                <div className="absolute right-0 top-12 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-4 max-sm:top-auto max-sm:w-auto max-sm:rounded-2xl">
                                                     <button
                                                         onClick={() => { openEdit(c); setOpenMenuId(null); }}
                                                         className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600"
