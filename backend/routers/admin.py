@@ -5,6 +5,8 @@ from backend.core.database import get_db
 from backend.core.security import get_current_superadmin, get_password_hash
 from backend.models.users import User
 from backend.schemas.auth import UserResponse, UserUpdate, PaginatedUserResponse
+from backend.schemas.admin import BulkEmailRequest, BulkEmailResponse
+from backend.core.mail_utils import send_admin_bulk_email
 from backend.core.trial_utils import is_trial_expired, get_trial_days_remaining
 from backend.config.logger import get_dynamic_logger
 
@@ -54,6 +56,63 @@ def list_users(
     except Exception as e:
         logger.exception("Erro ao listar usuários para o Super Admin")
         raise HTTPException(status_code=500, detail="Erro interno ao buscar usuários")
+
+@router.post("/users/bulk-email", response_model=BulkEmailResponse)
+def send_bulk_email_to_users(
+    email_data: BulkEmailRequest,
+    db: Session = Depends(get_db),
+):
+    """Envia e-mail em massa para usuários cadastrados (apenas Super Admin)."""
+    try:
+        query = db.query(User).filter(User.email.isnot(None))
+
+        if email_data.recipient_scope == "active":
+            query = query.filter(User.is_active == True)
+        elif email_data.recipient_scope == "inactive":
+            query = query.filter(User.is_active == False)
+
+        if email_data.plan_id:
+            query = query.filter(User.plan_id == email_data.plan_id)
+
+        if email_data.exclude_admins:
+            query = query.filter(User.is_admin == False)
+
+        users = query.order_by(User.id.asc()).all()
+
+        recipients_by_email = {}
+        for user in users:
+            email = (user.email or "").strip().lower()
+            if email:
+                recipients_by_email[email] = user.full_name or email
+
+        recipients = list(recipients_by_email.items())
+        if not recipients:
+            raise HTTPException(status_code=400, detail="Nenhum usuário encontrado para os filtros selecionados")
+
+        result = send_admin_bulk_email(recipients, email_data.subject, email_data.message)
+        logger.info(
+            "Super Admin solicitou envio em massa. "
+            f"Destinatários: {len(recipients)}, enviados: {result['sent']}, falhas: {result['failed']}"
+        )
+
+        if not result["smtp_configured"]:
+            raise HTTPException(
+                status_code=503,
+                detail="SMTP não configurado. Preencha SMTP_HOST, SMTP_USER e SMTP_PASS no ambiente.",
+            )
+
+        return {
+            "total_recipients": len(recipients),
+            "sent": result["sent"],
+            "failed": result["failed"],
+            "failed_emails": result["failed_emails"],
+            "smtp_configured": result["smtp_configured"],
+        }
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Erro ao enviar e-mail em massa")
+        raise HTTPException(status_code=500, detail="Erro interno ao enviar e-mail em massa")
 
 @router.put("/users/{user_id}", response_model=UserResponse)
 def update_user_system(

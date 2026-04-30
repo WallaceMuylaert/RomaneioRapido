@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import api from '../services/api'
 import LoadingOverlay from '../components/LoadingOverlay'
 import UserManagementModal from '../components/UserManagementModal'
+import BulkEmailModal from '../components/BulkEmailModal'
 import { toast } from 'react-hot-toast'
 import { 
     ShieldCheck, 
@@ -13,7 +14,8 @@ import {
     Settings2,
     AlertTriangle,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Mail
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -32,6 +34,14 @@ interface User {
     trial_days_remaining?: number | null
 }
 
+interface BulkEmailPayload {
+    subject: string
+    message: string
+    recipient_scope: 'all' | 'active' | 'inactive'
+    plan_id?: string
+    exclude_admins: boolean
+}
+
 export default function SuperAdminPage() {
     const [users, setUsers] = useState<User[]>([])
     const [loading, setLoading] = useState(true)
@@ -44,6 +54,8 @@ export default function SuperAdminPage() {
     const [updatingUserId, setUpdatingUserId] = useState<number | null>(null)
     const [managementModalOpen, setManagementModalOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
+    const [bulkEmailOpen, setBulkEmailOpen] = useState(false)
+    const [sendingBulkEmail, setSendingBulkEmail] = useState(false)
 
     const fetchUsers = useCallback(async () => {
         setLoading(true)
@@ -101,6 +113,27 @@ export default function SuperAdminPage() {
         }
     }
 
+    const handleBulkEmailSend = async (payload: BulkEmailPayload) => {
+        setSendingBulkEmail(true)
+        try {
+            const res = await api.post('/admin/users/bulk-email', payload)
+            const { total_recipients, sent, failed } = res.data
+            toast.success(`Envio finalizado: ${sent}/${total_recipients} e-mails enviados${failed ? `, ${failed} falharam` : ''}.`, {
+                duration: 5000
+            })
+            setBulkEmailOpen(false)
+        } catch (err: any) {
+            console.error('Erro ao enviar e-mail em massa:', err)
+            let errorMsg = 'Erro ao enviar e-mail em massa'
+            const detail = err.response?.data?.detail
+            if (typeof detail === 'string') errorMsg = detail
+            else if (Array.isArray(detail)) errorMsg = detail.map((d: any) => d.msg || d.type).join(', ')
+            toast.error(errorMsg, { id: 'bulk-email-error', duration: 6000 })
+        } finally {
+            setSendingBulkEmail(false)
+        }
+    }
+
     const plans = ['trial', 'basic', 'plus', 'pro', 'api', 'enterprise', 'unlimited']
     const planTranslations: Record<string, string> = {
         trial: 'Teste Grátis',
@@ -127,6 +160,13 @@ export default function SuperAdminPage() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <button
+                        onClick={() => setBulkEmailOpen(true)}
+                        className="h-12 px-5 rounded-2xl bg-brand-600 text-white text-xs font-black uppercase tracking-widest hover:bg-brand-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20"
+                    >
+                        <Mail className="w-4 h-4" />
+                        Enviar E-mail
+                    </button>
                     <div className="relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-brand-500 transition-colors" />
                         <input
@@ -197,14 +237,14 @@ export default function SuperAdminPage() {
                                                     {u.full_name.charAt(0).toUpperCase()}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-sm font-black text-slate-900 truncate flex items-center gap-2 mb-0.5">
+                                                    <div className="text-sm font-black text-slate-900 truncate flex items-center gap-2 mb-0.5">
                                                         {u.full_name}
                                                         {(u.is_admin || u.is_unlimited) && (
-                                                            <div className={`p-1 rounded-md ${u.is_admin ? 'bg-orange-50' : 'bg-blue-50'}`} title={u.is_admin ? 'Admin' : 'VIP Ilimitado'}>
+                                                            <span className={`p-1 rounded-md ${u.is_admin ? 'bg-orange-50' : 'bg-blue-50'}`} title={u.is_admin ? 'Admin' : 'VIP Ilimitado'}>
                                                                 <ShieldCheck className={`w-3.5 h-3.5 ${u.is_admin ? 'text-orange-600' : 'text-blue-600'}`} />
-                                                            </div>
+                                                            </span>
                                                         )}
-                                                    </p>
+                                                    </div>
                                                     <p className="text-xs text-slate-400 font-semibold truncate">{u.email}</p>
                                                 </div>
                                             </div>
@@ -359,6 +399,16 @@ export default function SuperAdminPage() {
                     updating={updatingUserId !== null}
                 />
             )}
+
+            <BulkEmailModal
+                isOpen={bulkEmailOpen}
+                onClose={() => setBulkEmailOpen(false)}
+                onSend={handleBulkEmailSend}
+                sending={sendingBulkEmail}
+                totalCount={totalCount}
+                plans={plans}
+                planTranslations={planTranslations}
+            />
         </div>
     )
 }
