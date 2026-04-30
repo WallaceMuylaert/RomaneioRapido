@@ -17,7 +17,7 @@ jobs:
     env:
       TESTING: "1"
       SECRET_KEY: test_secret_key_only_for_ci
-      DATABASE_URL: sqlite:///:memory:
+      DATABASE_URL: sqlite:///./ci_test.sqlite
       PYTHONPATH: ${{ github.workspace }}
 
     steps:
@@ -34,8 +34,12 @@ jobs:
       - name: Install backend dependencies
         run: python -m pip install --upgrade pip && pip install -r backend/requirements.txt
 
-      - name: Run backend security tests
-        run: python -m pytest backend/tests/test_security_isolation.py -v
+      - name: Run backend tests
+        run: |
+          for test_file in backend/tests/test_*.py; do
+            echo "Running ${test_file}"
+            python -m pytest "${test_file}" -v
+          done
 
   deploy:
     needs: tests

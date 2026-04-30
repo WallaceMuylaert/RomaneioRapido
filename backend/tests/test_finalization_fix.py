@@ -2,6 +2,8 @@ import pytest
 from sqlalchemy.orm import Session
 from backend.core.database import SessionLocal
 from backend.models.users import User
+from backend.models.categories import Category
+from backend.models.clients import Client
 from backend.models.products import Product
 from backend.models.pending_romaneio import PendingRomaneio
 from backend.models.inventory import InventoryMovement, MovementType

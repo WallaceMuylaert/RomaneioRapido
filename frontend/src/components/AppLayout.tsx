@@ -270,7 +270,7 @@ export default function AppLayout() {
                         <div className="h-7 flex items-center justify-center">
                             <img src={logo} alt="Logo" className="h-6 object-contain" />
                         </div>
-                        <span className="text-sm font-bold text-slate-900">Romaneio<span className="text-brand-600">Rapido</span></span>
+                        <span className="text-sm font-bold text-slate-900">Romaneio<span className="text-brand-600"> Rápido</span></span>
                     </div>
                     <div className="w-10"></div> {/* Spacer for symmetry */}
                 </header>

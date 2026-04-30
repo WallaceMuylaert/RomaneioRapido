@@ -33,6 +33,8 @@ def setup_database():
     Base.metadata.create_all(bind=engine)
     yield
     # Cleanup after session
+    client.close()
+    engine.dispose()
     if os.path.exists("./test_db.sqlite"):
         os.remove("./test_db.sqlite")
 
@@ -67,7 +69,7 @@ def test_clients_crud(test_user_token):
     # 1. List clients (empty)
     response = client.get("/clients/", headers={"Authorization": test_user_token})
     assert response.status_code == 200
-    assert len(response.json()) == 0
+    assert len(response.json()["items"]) == 0
 
     # 2. Create client
     client_data = {
@@ -86,7 +88,7 @@ def test_clients_crud(test_user_token):
     # 3. List clients (now with 1)
     response = client.get("/clients/", headers={"Authorization": test_user_token})
     assert response.status_code == 200
-    assert len(response.json()) == 1
+    assert len(response.json()["items"]) == 1
 
     # 4. Update client
     update_data = {"name": "Cliente Alterado"}
@@ -100,4 +102,4 @@ def test_clients_crud(test_user_token):
 
     # 6. Verify deleted
     response = client.get("/clients/", headers={"Authorization": test_user_token})
-    assert len(response.json()) == 0
+    assert len(response.json()["items"]) == 0
