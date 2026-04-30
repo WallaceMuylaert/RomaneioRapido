@@ -61,11 +61,11 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Painel</h1>
-                    <p className="text-sm font-semibold text-slate-400">
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Painel</h1>
+                    <p className="text-xs sm:text-sm font-semibold text-slate-400">
                         Bem-vindo de volta, <span className="text-brand-600">{user?.full_name.split(' ')[0]}</span>! Aqui está um resumo do seu estoque.
                     </p>
                 </div>
@@ -78,7 +78,7 @@ export default function DashboardPage() {
             </div>
 
             {/* 3 Main Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="grid grid-cols-3 gap-2 sm:gap-6">
                 <div
                     onClick={() => navigate('/produtos')}
                     onKeyDown={(event) => {
@@ -89,93 +89,93 @@ export default function DashboardPage() {
                     }}
                     role="button"
                     tabIndex={0}
-                    className="glass-card rounded-[2rem] p-8 relative overflow-hidden group cursor-pointer hover:border-brand-200 hover:shadow-lg transition-all"
+                    className="glass-card rounded-xl sm:rounded-[2rem] p-3 sm:p-8 relative overflow-hidden group cursor-pointer hover:border-brand-200 hover:shadow-lg transition-all"
                 >
                     <div className="absolute -right-4 -top-4 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="w-12 h-12 rounded-2xl bg-brand-50 flex items-center justify-center shadow-sm ring-1 ring-brand-100/50">
-                            <Boxes className="w-6 h-6 text-brand-600" />
+                    <div className="flex items-center justify-between mb-3 sm:mb-6">
+                        <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-brand-50 flex items-center justify-center shadow-sm ring-1 ring-brand-100/50">
+                            <Boxes className="w-4 h-4 sm:w-6 sm:h-6 text-brand-600" />
                         </div>
                     </div>
-                    <p className="text-4xl font-black text-slate-900 mb-1 tracking-tighter">
+                    <p className="text-2xl sm:text-4xl font-black text-slate-900 mb-1 tracking-tighter">
                         {stats.totalProducts}
                     </p>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Produtos Registrados</p>
+                    <p className="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest leading-tight">Produtos</p>
                 </div>
 
                 <div
                     onClick={() => navigate('/movimentacoes')}
-                    className="glass-card rounded-[2rem] p-8 relative overflow-hidden group cursor-pointer hover:border-brand-200 hover:shadow-lg transition-all"
+                    className="glass-card rounded-xl sm:rounded-[2rem] p-3 sm:p-8 relative overflow-hidden group cursor-pointer hover:border-brand-200 hover:shadow-lg transition-all"
                 >
                     <div className="absolute -right-4 -top-4 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="w-12 h-12 rounded-2xl bg-brand-50 flex items-center justify-center shadow-sm ring-1 ring-brand-100/50">
-                            <ArrowRightLeft className="w-6 h-6 text-brand-600" />
+                    <div className="flex items-center justify-between mb-3 sm:mb-6">
+                        <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-brand-50 flex items-center justify-center shadow-sm ring-1 ring-brand-100/50">
+                            <ArrowRightLeft className="w-4 h-4 sm:w-6 sm:h-6 text-brand-600" />
                         </div>
                     </div>
-                    <p className="text-4xl font-black text-slate-900 mb-1 tracking-tighter">
+                    <p className="text-2xl sm:text-4xl font-black text-slate-900 mb-1 tracking-tighter">
                         {stats.todayMovements}
                     </p>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Movimentações Hoje</p>
+                    <p className="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest leading-tight">Hoje</p>
                 </div>
 
                 <div
                     onClick={() => navigate('/produtos')}
-                    className="glass-card rounded-[2rem] p-8 relative overflow-hidden group cursor-pointer hover:border-orange-200 hover:shadow-lg transition-all"
+                    className="glass-card rounded-xl sm:rounded-[2rem] p-3 sm:p-8 relative overflow-hidden group cursor-pointer hover:border-orange-200 hover:shadow-lg transition-all"
                 >
                     <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/5 rounded-full blur-2xl group-hover:bg-orange-500/10 transition-colors" />
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center shadow-sm ring-1 ring-orange-100/50">
-                            <AlertTriangle className="w-6 h-6 text-orange-500" />
+                    <div className="flex items-center justify-between mb-3 sm:mb-6">
+                        <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-orange-50 flex items-center justify-center shadow-sm ring-1 ring-orange-100/50">
+                            <AlertTriangle className="w-4 h-4 sm:w-6 sm:h-6 text-orange-500" />
                         </div>
                     </div>
-                    <p className="text-4xl font-black text-slate-900 mb-1 tracking-tighter">
+                    <p className="text-2xl sm:text-4xl font-black text-slate-900 mb-1 tracking-tighter">
                         {stats.lowStockCount}
                     </p>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Alertas de Estoque</p>
+                    <p className="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest leading-tight">Alertas</p>
                 </div>
             </div>
 
             {/* Ações Rápidas */}
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4">
                 <button
                     onClick={() => navigate('/romaneio')}
-                    className="flex-1 min-w-[200px] h-20 bg-white border border-slate-100 rounded-2xl p-5 flex items-center gap-4 hover:border-brand-200 hover:shadow-lg transition-all group overflow-hidden relative"
+                    className="flex-1 sm:min-w-[200px] h-14 sm:h-20 bg-white border border-slate-200 sm:border-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center gap-3 sm:gap-4 hover:border-brand-200 hover:shadow-lg transition-all group overflow-hidden relative"
                 >
                     <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-brand-500/5 rounded-full blur-xl group-hover:bg-brand-500/10 transition-colors" />
-                    <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-all shrink-0">
-                        <ArrowRightLeft className="w-5 h-5" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-brand-50 flex items-center justify-center text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-all shrink-0">
+                        <ArrowRightLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                     <div className="text-left">
-                        <p className="text-sm font-black text-slate-900 leading-tight">Montar Romaneio</p>
+                        <p className="text-[13px] sm:text-sm font-black text-slate-900 leading-tight">Montar Romaneio</p>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Saída Rápida</p>
                     </div>
                 </button>
 
                 <button
                     onClick={() => navigate('/clientes')}
-                    className="flex-1 min-w-[200px] h-20 bg-white border border-slate-100 rounded-2xl p-5 flex items-center gap-4 hover:border-emerald-200 hover:shadow-lg transition-all group overflow-hidden relative"
+                    className="flex-1 sm:min-w-[200px] h-14 sm:h-20 bg-white border border-slate-200 sm:border-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center gap-3 sm:gap-4 hover:border-emerald-200 hover:shadow-lg transition-all group overflow-hidden relative"
                 >
                     <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition-colors" />
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all shrink-0">
-                        <Plus className="w-5 h-5" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all shrink-0">
+                        <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                     <div className="text-left">
-                        <p className="text-sm font-black text-slate-900 leading-tight">Novo Cliente</p>
+                        <p className="text-[13px] sm:text-sm font-black text-slate-900 leading-tight">Novo Cliente</p>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cadastro Ágil</p>
                     </div>
                 </button>
 
                 <button
                     onClick={() => navigate('/produtos')}
-                    className="flex-1 min-w-[200px] h-20 bg-white border border-slate-100 rounded-2xl p-5 flex items-center gap-4 hover:border-blue-200 hover:shadow-lg transition-all group overflow-hidden relative"
+                    className="flex-1 sm:min-w-[200px] h-14 sm:h-20 bg-white border border-slate-200 sm:border-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center gap-3 sm:gap-4 hover:border-blue-200 hover:shadow-lg transition-all group overflow-hidden relative"
                 >
                     <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-blue-500/5 rounded-full blur-xl group-hover:bg-blue-500/10 transition-colors" />
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
-                        <Boxes className="w-5 h-5" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
+                        <Boxes className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                     <div className="text-left">
-                        <p className="text-sm font-black text-slate-900 leading-tight">Produtos</p>
+                        <p className="text-[13px] sm:text-sm font-black text-slate-900 leading-tight">Produtos</p>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Gerenciar Estoque</p>
                     </div>
                 </button>

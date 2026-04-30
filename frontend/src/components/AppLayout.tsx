@@ -253,7 +253,7 @@ export default function AppLayout() {
                     <button
                         onClick={handleLogout}
                         title={isCollapsed ? "Sair" : ""}
-                        className={`flex items-center w-full text-[13px] font-semibold text-slate-400 hover:text-red-500 hover:bg-red-50/50 rounded-xl transition-all border border-transparent hover:border-red-100 ${isCollapsed ? 'justify-center p-3' : 'gap-2.5 px-3 py-2.5'}`}
+                        className={`flex items-center w-full text-[13px] font-semibold text-red-500 hover:text-red-600 hover:bg-red-50/50 rounded-xl transition-all border border-transparent hover:border-red-100 ${isCollapsed ? 'justify-center p-3' : 'gap-2.5 px-3 py-2.5'}`}
                     >
                         <LogOut className="w-4 h-4 shrink-0" />
                         {!isCollapsed && <span className="whitespace-nowrap animate-in fade-in duration-300">Sair</span>}
@@ -271,7 +271,7 @@ export default function AppLayout() {
             {/* Main */}
             <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
                 {/* Top bar mobile */}
-                <header className="md:hidden h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 flex items-center justify-between sticky top-0 z-30">
+                <header className="md:hidden h-14 bg-white/90 backdrop-blur-md border-b border-slate-200 px-3 flex items-center justify-between sticky top-0 z-30">
                     <div className="flex items-center gap-2.5 group cursor-pointer" onClick={() => {
                         if (isLockEnabled) {
                             navigate('/perfil?tab=subscription')
@@ -279,17 +279,16 @@ export default function AppLayout() {
                             navigate('/dashboard')
                         }
                     }}>
-                        <div className="h-7 flex items-center justify-center">
-                            <img src={logo} alt="Logo" className="h-6 object-contain" />
+                        <div className="h-8 flex items-center justify-center">
+                            <img src={logo} alt="Logo" className="h-15 object-contain" />
                         </div>
-                        <span className="text-sm font-bold text-slate-900">Romaneio<span className="text-brand-600"> Rápido</span></span>
                     </div>
                     <button
                         onClick={() => setMobileMenuOpen(true)}
-                        className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                        className="w-9 h-9 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                         aria-label="Abrir menu"
                     >
-                        <Menu className="w-6 h-6" />
+                        <Menu className="w-5 h-5" />
                     </button>
                 </header>
 
@@ -299,10 +298,10 @@ export default function AppLayout() {
                             className="absolute inset-0 bg-slate-900/30"
                             onClick={() => setMobileMenuOpen(false)}
                         />
-                        <div className="absolute inset-0 bg-white shadow-2xl border border-slate-100 overflow-hidden flex flex-col">
-                            <div className="flex items-center justify-between px-5 py-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center text-sm font-bold text-brand-600 overflow-hidden">
+                        <div className="absolute inset-0 bg-white overflow-hidden flex flex-col">
+                            <div className="flex items-center justify-between px-4 py-3">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-600 overflow-hidden shrink-0">
                                         {user?.photo_base64 ? (
                                             <img src={user.photo_base64} alt="Avatar" className="w-full h-full object-cover" />
                                         ) : (
@@ -310,13 +309,13 @@ export default function AppLayout() {
                                         )}
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-sm font-bold text-slate-900 truncate">{user?.full_name || 'Conta'}</p>
+                                        <p className="text-[13px] font-bold text-slate-900 truncate">{user?.full_name || 'Conta'}</p>
                                         <p className="text-[11px] font-semibold text-slate-400 truncate">Menu</p>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => setMobileMenuOpen(false)}
-                                    className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
+                                    className="w-9 h-9 flex items-center justify-center text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
                                     aria-label="Fechar menu"
                                 >
                                     <X className="w-5 h-5" />
@@ -331,7 +330,7 @@ export default function AppLayout() {
                                             key={item.to}
                                             onClick={() => handleMobileMenuNavigate(item.to)}
                                             disabled={isDisabled}
-                                            className={`flex flex-col items-center gap-2 px-2 py-5 rounded-2xl border text-center transition-all min-h-24 ${isDisabled
+                                            className={`flex flex-col items-center gap-2 px-2 py-5 rounded-2xl border text-center transition-all min-h-[6.25rem] ${isDisabled
                                                 ? 'border-slate-100 text-slate-300'
                                                 : 'border-slate-100 text-slate-700 hover:border-brand-200 hover:text-brand-700 hover:bg-brand-50/50'
                                                 }`}
@@ -343,20 +342,20 @@ export default function AppLayout() {
                                 })}
                                 <button
                                     onClick={() => handleMobileMenuNavigate('/perfil')}
-                                    className="flex flex-col items-center gap-2 px-2 py-5 rounded-2xl border border-slate-100 text-slate-700 hover:border-brand-200 hover:text-brand-700 hover:bg-brand-50/50 transition-all min-h-24 col-start-2"
+                                    className="flex flex-col items-center gap-2 px-2 py-5 rounded-2xl border border-slate-100 text-slate-700 hover:border-brand-200 hover:text-brand-700 hover:bg-brand-50/50 transition-all min-h-[6.25rem] col-start-2"
                                 >
                                     <User className="w-5 h-5" />
                                     <span className="text-[11px] font-semibold">Perfil</span>
                                 </button>
                             </div>
 
-                            <div className="px-5 pb-5 pt-2 border-t border-slate-100 space-y-2">
+                            <div className="p-4 grid grid-cols-2 gap-2">
                                 <a
                                     href={getWhatsAppLink('Olá! Preciso de suporte com o Romaneio Rápido.')}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={() => setMobileMenuOpen(false)}
-                                    className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-slate-100 text-slate-600 hover:border-brand-200 hover:text-brand-700 hover:bg-brand-50/50 transition-all text-sm font-semibold"
+                                    className="flex items-center justify-center gap-2 w-full h-10 rounded-xl border border-slate-200 text-slate-600 hover:border-brand-200 hover:text-brand-700 hover:bg-brand-50/50 transition-all text-xs font-semibold"
                                 >
                                     <LifeBuoy className="w-4 h-4" />
                                     Suporte
@@ -366,7 +365,7 @@ export default function AppLayout() {
                                         setMobileMenuOpen(false)
                                         handleLogout()
                                     }}
-                                    className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-slate-100 text-slate-500 hover:border-red-200 hover:text-red-600 hover:bg-red-50/50 transition-all text-sm font-semibold"
+                                    className="flex items-center justify-center gap-2 w-full h-10 rounded-xl border border-red-100 bg-red-50/60 text-red-600 hover:border-red-200 hover:text-red-700 hover:bg-red-100/70 transition-all text-xs font-semibold"
                                 >
                                     <LogOut className="w-4 h-4" />
                                     Sair
@@ -376,7 +375,7 @@ export default function AppLayout() {
                     </div>
                 )}
 
-                <main className="flex-1 p-4 md:p-8 lg:p-10">
+                <main className="flex-1 p-3 sm:p-4 md:p-8 lg:p-10">
                     {/* Bloqueio estrito de renderização de conteúdo se as condições de lock forem atendidas */}
                     {isLockEnabled && window.location.pathname !== '/perfil' ? (
                         <div className="h-full flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in zoom-in-95 duration-500">

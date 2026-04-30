@@ -368,8 +368,8 @@ export default function ClientsPage() {
             </div>
 
             {/* LIST */}
-            <div className="glass-card rounded-[2rem]">
-                <div className="overflow-x-auto min-h-[400px] scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+            <div className="glass-card rounded-xl sm:rounded-[2rem] overflow-hidden">
+                <div className="hidden md:block overflow-x-auto min-h-[400px] scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="bg-slate-50/50">
@@ -480,7 +480,7 @@ export default function ClientsPage() {
                             )}
                         </tbody>
                     </table>
-                    {clients.length > 0 && <div className="h-32 md:h-20" />}
+                    {clients.length > 0 && <div className="h-20" />}
                 </div>
 
                 {/* Mobile View - Cards */}
@@ -493,11 +493,11 @@ export default function ClientsPage() {
                         clients.map((c) => (
                             <div
                                 key={c.id}
-                                className="p-6 space-y-4 active:bg-slate-50 transition-colors border-b border-slate-100/50"
+                                className="p-4 space-y-3 active:bg-slate-50 transition-colors border-b border-slate-100/50"
                             >
                                 <div className="flex justify-between items-start">
                                     <div className="space-y-1 min-w-0" onClick={() => openEdit(c)}>
-                                        <h3 className="font-bold text-slate-800 text-base truncate">{c.name}</h3>
+                                        <h3 className="font-bold text-slate-800 text-sm truncate">{c.name}</h3>
                                         <p className="font-mono text-[10px] font-bold text-slate-400 uppercase tracking-widest">{c.document || 'Sem Documento'}</p>
                                     </div>
                                     <div className="relative">
@@ -531,7 +531,7 @@ export default function ClientsPage() {
                                         )}
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4 pt-2">
+                                <div className="grid grid-cols-2 gap-3 pt-1">
                                     <div className="space-y-1">
                                         <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter">Contato</p>
                                         <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">

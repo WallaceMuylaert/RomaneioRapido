@@ -292,3 +292,88 @@
   --tw-shadow-colored: 0 0 #0000 !important;
   box-shadow: none !important;
 }
+
+@media (max-width: 640px) {
+  :root {
+    --app-radius-xl: 4px;
+    --app-radius-2xl: 6px;
+    --app-radius-3xl: 8px;
+  }
+
+  body {
+    background: #f8fafc;
+  }
+
+  :where(button, a, input, select, textarea) {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :where(
+    button[class*="h-12"],
+    button[class*="h-14"],
+    button[class*="h-16"],
+    a[class*="h-12"],
+    a[class*="h-14"],
+    input[class*="h-12"],
+    input[class*="h-14"],
+    select[class*="h-12"],
+    select[class*="h-14"]
+  ) {
+    min-height: 40px !important;
+    height: 40px !important;
+  }
+
+  :where(button[class*="px-8"], a[class*="px-8"]) {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  :where(button[class*="px-6"], a[class*="px-6"]) {
+    padding-left: 0.875rem !important;
+    padding-right: 0.875rem !important;
+  }
+
+  :where(.p-8, .p-10, .p-12) {
+    padding: 1rem !important;
+  }
+
+  :where(.px-8, .px-10, .px-12) {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  :where(.py-8, .py-10, .py-12) {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  :where(.gap-6, .gap-8, .space-y-8 > :not([hidden]) ~ :not([hidden])) {
+    gap: 1rem !important;
+  }
+
+  :where(.text-3xl, .text-4xl) {
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
+  }
+
+  :where(.tracking-\[0\.2em\], .tracking-\[0\.15em\], .tracking-widest) {
+    letter-spacing: 0.04em !important;
+  }
+
+  :where(.rounded-\[2rem\], .rounded-\[2\.5rem\], .rounded-\[32px\], .rounded-3xl) {
+    border-radius: var(--app-radius-2xl) !important;
+  }
+
+  :where(.fixed .max-w-md, .fixed .max-w-lg, .fixed .max-w-sm) {
+    max-width: calc(100vw - 1.5rem) !important;
+  }
+
+  :where(.fixed form .grid-cols-2, .fixed form .grid-cols-3) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  :where(table th, table td) {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+}
