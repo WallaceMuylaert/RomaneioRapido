@@ -671,17 +671,17 @@ export default function ProductsPage() {
                     <h1 className="text-xl font-bold text-gray-900">Produtos</h1>
                     <p className="text-sm text-gray-400 mt-0.5">{totalProducts} produto{totalProducts !== 1 ? 's' : ''} cadastrado{totalProducts !== 1 ? 's' : ''}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:items-center">
                     <button
                         onClick={() => setCameraOpen(true)}
-                        className="h-9 px-4 text-[13px] font-semibold border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                        className="flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-[12px] font-bold text-gray-700 transition-colors hover:bg-gray-50 sm:h-9 sm:px-4 sm:text-[13px]"
                     >
                         <Camera className="w-4 h-4" /> Leitura rápida
                     </button>
-                    <div className="relative">
+                    <div className="relative min-w-0">
                         <button
                             onClick={() => setReportMenuOpen(!reportMenuOpen)}
-                            className="h-9 px-4 text-[13px] font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2"
+                            className="flex h-10 w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 text-[12px] font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 sm:h-9 sm:px-4 sm:text-[13px]"
                         >
                             <Download className="w-4 h-4" /> Relatório <ChevronDown className={`w-3 h-3 transition-transform ${reportMenuOpen ? 'rotate-180' : ''}`} />
                         </button>
@@ -708,7 +708,7 @@ export default function ProductsPage() {
                     </div>
                     <button
                         onClick={() => openCreate()}
-                        className="h-9 px-4 text-[13px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
+                        className="col-span-2 flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-[13px] font-bold text-white shadow-sm transition-colors hover:bg-blue-700 sm:col-span-1 sm:h-9"
                     >
                         <Plus className="w-4 h-4" /> Novo Produto
                     </button>
@@ -716,8 +716,8 @@ export default function ProductsPage() {
             </div>
 
             {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
-                <div className="md:col-span-2 relative">
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="relative sm:col-span-2">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
                     <input
                         type="text"
@@ -728,7 +728,7 @@ export default function ProductsPage() {
                         className="w-full h-10 pl-10 pr-4 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-300"
                     />
                 </div>
-                <div>
+                <div className="sm:col-span-2 lg:col-span-1">
                     <select
                         value={categoryFilter}
                         onChange={(e) => setCategoryFilter(e.target.value)}
@@ -740,7 +740,7 @@ export default function ProductsPage() {
                         ))}
                     </select>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:col-span-2 lg:col-span-1">
                     <input
                         type="text"
                         placeholder="Cor..."
@@ -771,7 +771,89 @@ export default function ProductsPage() {
                     <p className="text-xs text-gray-300 mt-1">Clique em "Novo Produto" para começar</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
+                <div className="space-y-3">
+                    <div className="grid gap-3 md:hidden">
+                        {products.map(p => {
+                            const status = getStockStatus(p)
+                            return (
+                                <div key={p.id} className="rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
+                                    <div className="flex items-start gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => openEdit(p)}
+                                            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-100"
+                                        >
+                                            {p.image_base64 ? (
+                                                <img src={p.image_base64} alt={p.name} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <ImageIcon className="h-4 w-4 text-gray-400" />
+                                            )}
+                                        </button>
+
+                                        <button type="button" onClick={() => openEdit(p)} className="min-w-0 flex-1 text-left">
+                                            <p className="line-clamp-2 text-sm font-black leading-snug text-slate-900">{p.name}</p>
+                                            <div className="mt-1 flex flex-wrap gap-1">
+                                                {(p.color || p.size) && (
+                                                    <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">
+                                                        {[p.color, p.size].filter(Boolean).join(' / ')}
+                                                    </span>
+                                                )}
+                                                {p.category_id && (
+                                                    <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-600">
+                                                        {getCategoryName(p.category_id)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {(p.sku || p.barcode) && (
+                                                <p className="mt-1 truncate font-mono text-[10px] text-slate-400">
+                                                    {p.sku || p.barcode}
+                                                </p>
+                                            )}
+                                        </button>
+
+                                        <div className="relative shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setOpenMenuId(openMenuId === p.id ? null : p.id)
+                                                }}
+                                                className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all ${openMenuId === p.id ? 'bg-brand-50 text-brand-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-900'}`}
+                                                aria-label="Ações do produto"
+                                            >
+                                                <MoreVertical className="h-5 w-5" />
+                                            </button>
+                                            {renderActionsMenu(p)}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-3 grid grid-cols-3 gap-2 border-t border-gray-100 pt-3">
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase text-slate-400">Estoque</p>
+                                            <p className="mt-0.5 text-sm font-black text-slate-800">
+                                                {p.stock_quantity} <span className="text-[10px] font-bold uppercase text-slate-400">{p.unit}</span>
+                                                {p.stock_quantity < p.min_stock && p.min_stock > 0 && (
+                                                    <AlertTriangle className="ml-1 inline h-3 w-3 text-amber-500" />
+                                                )}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase text-slate-400">Preço</p>
+                                            <p className="mt-0.5 text-sm font-black text-slate-800">R$ {p.price.toFixed(2)}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[9px] font-black uppercase text-slate-400">Status</p>
+                                            <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${status.class}`}>
+                                                {status.label}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+
+                    <div className="hidden rounded-xl border border-gray-100 bg-white shadow-sm md:block">
                     <div className="overflow-x-auto min-h-[400px] pb-32">
                         <table className="w-full text-sm">
                             <thead>
@@ -824,7 +906,7 @@ export default function ProductsPage() {
                                     return (
                                         <tr
                                             key={p.id}
-                                            className={`transition - colors ${focusedIndex === index ? 'bg-blue-50 border-l-4 border-blue-500 shadow-inner' : 'hover:bg-gray-50/50'} `}
+                                            className={`transition-colors ${focusedIndex === index ? 'bg-blue-50 border-l-4 border-blue-500 shadow-inner' : 'hover:bg-gray-50/50'} `}
                                             onClick={() => openEdit(p)}
                                         >
                                             <td className="px-4 py-3">
@@ -871,7 +953,7 @@ export default function ProductsPage() {
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                <span className={`px - 2 py - 0.5 rounded - full text - [10px] font - semibold ${status.class} `}>
+                                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${status.class}`}>
                                                     {status.label}
                                                 </span>
                                             </td>
@@ -882,7 +964,7 @@ export default function ProductsPage() {
                                                             e.stopPropagation();
                                                             setOpenMenuId(openMenuId === p.id ? null : p.id);
                                                         }}
-                                                        className={`p - 2.5 rounded - xl transition - all ${openMenuId === p.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'} `}
+                                                        className={`rounded-xl p-2.5 transition-all ${openMenuId === p.id ? 'bg-brand-50 text-brand-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-900'} `}
                                                     >
                                                         <MoreVertical className="w-5 h-5" />
                                                     </button>
@@ -919,7 +1001,7 @@ export default function ProductsPage() {
                                                 {i > 0 && arr[i - 1] !== p - 1 && <span className="text-gray-300 px-0.5">…</span>}
                                                 <button
                                                     onClick={() => fetchProducts(p)}
-                                                    className={`w - 8 h - 8 text - xs font - semibold rounded - lg transition - colors ${p === page
+                                                    className={`h-8 w-8 rounded-lg text-xs font-semibold transition-colors ${p === page
                                                         ? 'bg-blue-600 text-white shadow-sm'
                                                         : 'text-gray-500 hover:bg-gray-100'
                                                         } `}
@@ -938,6 +1020,29 @@ export default function ProductsPage() {
                                     →
                                 </button>
                             </div>
+                        </div>
+                    )}
+                    </div>
+
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-3 shadow-sm md:hidden">
+                            <button
+                                onClick={() => fetchProducts(page - 1)}
+                                disabled={page <= 1}
+                                className="h-10 rounded-xl border border-gray-200 px-4 text-xs font-bold text-slate-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+                            >
+                                Anterior
+                            </button>
+                            <span className="text-xs font-bold text-gray-400">
+                                {page} de {totalPages}
+                            </span>
+                            <button
+                                onClick={() => fetchProducts(page + 1)}
+                                disabled={page >= totalPages}
+                                className="h-10 rounded-xl border border-gray-200 px-4 text-xs font-bold text-slate-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+                            >
+                                Proxima
+                            </button>
                         </div>
                     )}
                 </div>

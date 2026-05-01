@@ -98,6 +98,7 @@ def get_movements(
     movement_type: MovementType = None,
     start_date: str = None,
     end_date: str = None,
+    include_cancelled: bool = False,
     skip: int = 0, 
     limit: int = 1000
 ):
@@ -105,6 +106,9 @@ def get_movements(
         joinedload(InventoryMovement.product),
         joinedload(InventoryMovement.client)
     )
+
+    if not include_cancelled:
+        query = query.filter(InventoryMovement.is_cancelled.isnot(True))
     
     if product_id:
         query = query.filter(InventoryMovement.product_id == product_id)
@@ -220,6 +224,7 @@ def get_dashboard_summary(db: Session, user_id: int):
     # 1. Contar romaneios únicos do dia
     romaneios_count = db.query(sql_func.count(distinct(InventoryMovement.romaneio_id))).filter(
         InventoryMovement.created_by == user_id,
+        InventoryMovement.is_cancelled.isnot(True),
         InventoryMovement.created_at >= start_of_day_utc,
         InventoryMovement.created_at <= end_of_day_utc,
         InventoryMovement.romaneio_id.isnot(None)
@@ -228,6 +233,7 @@ def get_dashboard_summary(db: Session, user_id: int):
     # 2. Contar movimentações avulsas (sem romaneio) do dia
     single_movements_count = db.query(sql_func.count(InventoryMovement.id)).filter(
         InventoryMovement.created_by == user_id,
+        InventoryMovement.is_cancelled.isnot(True),
         InventoryMovement.created_at >= start_of_day_utc,
         InventoryMovement.created_at <= end_of_day_utc,
         InventoryMovement.romaneio_id.is_(None)
@@ -253,7 +259,7 @@ def get_daily_reports(db: Session, user_id: int, start_date=None, end_date=None,
     
     query = db.query(InventoryMovement).filter(
         InventoryMovement.created_by == user_id,
-        InventoryMovement.is_cancelled == False
+        InventoryMovement.is_cancelled.isnot(True)
     )
     
     if movement_type:

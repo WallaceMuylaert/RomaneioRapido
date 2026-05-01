@@ -42,6 +42,7 @@ def list_movements(
     movement_type: Optional[MovementType] = Query(None),
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
+    include_cancelled: bool = Query(False),
     skip: int = 0,
     limit: int = 1000,
     db: Session = Depends(get_db),
@@ -56,6 +57,7 @@ def list_movements(
             movement_type=movement_type, 
             start_date=start_date,
             end_date=end_date,
+            include_cancelled=include_cancelled,
             skip=skip, 
             limit=limit
         )

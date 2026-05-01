@@ -1380,9 +1380,9 @@ export default function RomaneioPage() {
                         </div>
                     </div>
 
-                    <div className="grid gap-3 p-4 md:hidden">
+                    <div className="grid min-w-0 gap-3 p-3 sm:p-4 md:hidden">
                         {currentEstoqueItems.map(s => (
-                            <div key={s.product_id} className="rounded-2xl border border-gray-100 bg-white p-3">
+                            <div key={s.product_id} className="min-w-0 rounded-2xl border border-gray-100 bg-white p-3">
                                 <div className="mb-3 flex items-start justify-between gap-3">
                                     <div className="min-w-0">
                                         <p className="line-clamp-2 text-sm font-black text-slate-900">{s.product_name}</p>
@@ -1401,8 +1401,8 @@ export default function RomaneioPage() {
                                         </p>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-[1fr_auto] gap-2 border-t border-gray-100 pt-3">
-                                    <div className="flex items-center justify-center rounded-xl border border-gray-200 bg-white p-0.5">
+                                <div className="grid min-w-0 grid-cols-1 gap-2 border-t border-gray-100 pt-3 min-[380px]:grid-cols-[minmax(0,1fr)_auto]">
+                                    <div className="flex min-w-0 items-center justify-center rounded-xl border border-gray-200 bg-white p-0.5">
                                         <button
                                             onClick={() => {
                                                 const q = parseFloat(stockQuantities[s.product_id] || '1')
@@ -1440,10 +1440,10 @@ export default function RomaneioPage() {
                                             setStockQuantities(p => ({ ...p, [s.product_id]: '' }))
                                             setActiveTab('romaneio')
                                         }}
-                                        className="flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white transition-all active:scale-95"
+                                        className="flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 text-xs font-bold text-white transition-all active:scale-95 min-[380px]:w-32"
                                     >
-                                        <Plus className="h-4 w-4" />
-                                        Adicionar
+                                        <Plus className="h-4 w-4 shrink-0" />
+                                        <span className="truncate">Adicionar</span>
                                     </button>
                                 </div>
                             </div>

@@ -539,7 +539,8 @@ export default function MovementsPage() {
                 skip: (page - 1) * perPage,
                 limit: perPage,
                 start_date: reportPeriod.start,
-                end_date: reportPeriod.end
+                end_date: reportPeriod.end,
+                include_cancelled: true
             }
             if (debouncedSearch) params.search = debouncedSearch
             if (typeFilter) params.movement_type = typeFilter
@@ -750,7 +751,7 @@ export default function MovementsPage() {
                                 : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`}
                         >
                             <Settings2 className="w-3.5 h-3.5" />
-                            Lista
+                            Relatório
                         </button>
                         <button
                             onClick={() => {
