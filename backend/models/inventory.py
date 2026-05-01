@@ -31,6 +31,7 @@ class InventoryMovement(Base):
     product_color_snapshot = Column(String, nullable=True)
     product_size_snapshot = Column(String, nullable=True)
     discount_snapshot = Column(Float, nullable=True, default=0.0)
+    stock_before_snapshot = Column(Float, nullable=True)
     romaneio_id = Column(String, nullable=True, index=True)
     pending_romaneio_id = Column(Integer, ForeignKey("pending_romaneios.id", ondelete="CASCADE"), nullable=True, index=True)
 

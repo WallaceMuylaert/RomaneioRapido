@@ -4,6 +4,13 @@ from backend.server import app
 
 client = TestClient(app)
 
+
+@pytest.fixture(scope="module", autouse=True)
+def cleanup_test_client():
+    yield
+    client.close()
+
+
 def test_health_check():
     """Valida se o servidor está ativo"""
     response = client.get("/health")

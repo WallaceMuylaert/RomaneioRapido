@@ -5,8 +5,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, File, UploadFile
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
-from backend.core.security import get_current_user
-from backend.core.trial_utils import require_active_plan
+from backend.core.security import get_current_user_flexible
+from backend.core.trial_utils import require_active_plan_flexible
 from backend.core.limiter import limiter
 from backend.models.users import User
 from backend.schemas.products import ProductCreate, ProductUpdate, ProductResponse, ProductSlimResponse, ProductPaginatedResponse
@@ -32,7 +32,7 @@ def list_products(
     order: str = Query("asc", description="Ordem: asc ou desc"),
     include_images: Optional[bool] = Query(None, description="Incluir imagens base64"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_flexible)
 ):
     try:
         # Se não especificado, incluir imagens apenas se for uma listagem pequena (ex: página de produtos)
@@ -67,7 +67,7 @@ def list_products(
 
 @router.get("/barcode/{barcode}", response_model=ProductResponse)
 @limiter.limit("200/minute")
-def get_product_by_barcode(request: Request, barcode: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_product_by_barcode(request: Request, barcode: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user_flexible)):
     try:
         product = crud.get_product_by_barcode(db, barcode, user_id=current_user.id)
         if not product:
@@ -82,7 +82,7 @@ def get_product_by_barcode(request: Request, barcode: str, db: Session = Depends
 
 @router.get("/{product_id}", response_model=ProductResponse)
 @limiter.limit("200/minute")
-def get_product(request: Request, product_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_product(request: Request, product_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user_flexible)):
     try:
         product = crud.get_product(db, product_id, user_id=current_user.id)
         if not product:
@@ -97,7 +97,7 @@ def get_product(request: Request, product_id: int, db: Session = Depends(get_db)
 
 @router.post("/", response_model=ProductResponse)
 @limiter.limit("30/minute")
-def create_product(request: Request, product: ProductCreate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
+def create_product(request: Request, product: ProductCreate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan_flexible)):
     try:
         # Validação de Limite do Plano
         plan = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["trial"])
@@ -128,7 +128,7 @@ def create_product(request: Request, product: ProductCreate, db: Session = Depen
 
 @router.put("/{product_id}", response_model=ProductResponse)
 @limiter.limit("60/minute")
-def update_product(request: Request, product_id: int, product: ProductUpdate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
+def update_product(request: Request, product_id: int, product: ProductUpdate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan_flexible)):
     try:
         logger.info(f"Usuário {current_user.email} modificou o produto ID={product_id}")
         updated = crud.update_product(db, product_id, product, user_id=current_user.id)
@@ -145,7 +145,7 @@ def update_product(request: Request, product_id: int, product: ProductUpdate, db
 
 @router.delete("/{product_id}", response_model=ProductResponse)
 @limiter.limit("30/minute")
-def delete_product(request: Request, product_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
+def delete_product(request: Request, product_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan_flexible)):
     try:
         logger.warning(f"Usuário {current_user.email} solicitou exclusão do produto ID={product_id}")
         deleted = crud.delete_product(db, product_id, user_id=current_user.id)

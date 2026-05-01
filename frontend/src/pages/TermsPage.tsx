@@ -30,14 +30,14 @@ export default function TermsPage() {
                         <section>
                             <h2 className="text-xl font-bold text-slate-900 mb-4 tracking-tight">1. Aceitação dos Termos</h2>
                             <p className="leading-relaxed">
-                                Ao acessar e usar a plataforma RomaneioRapido, você aceita e concorda em cumprir estes Termos de Uso. Se você não concordar com qualquer parte destes termos, você não deve usar nossos serviços de gestão.
+                                Ao acessar e usar a plataforma Romaneio Rápido, você aceita e concorda em cumprir estes Termos de Uso. Se você não concordar com qualquer parte destes termos, você não deve usar nossos serviços de gestão.
                             </p>
                         </section>
 
                         <section>
                             <h2 className="text-xl font-bold text-slate-900 mb-4 tracking-tight">2. Descrição do Serviço</h2>
                             <p className="leading-relaxed">
-                                O RomaneioRapido fornece uma plataforma de gestão online que permite aos usuários administrar produtos, separar pedidos com romaneios interativos e organizar clientes. Nós fornecemos apenas a mecânica do software, sendo a integridade física e o manuseio dos estoques de sua responsabilidade exclusiva.
+                                O Romaneio Rápido fornece uma plataforma de gestão online que permite aos usuários administrar produtos, separar pedidos com romaneios interativos e organizar clientes. Nós fornecemos apenas a mecânica do software, sendo a integridade física e o manuseio dos estoques de sua responsabilidade exclusiva.
                             </p>
                         </section>
 

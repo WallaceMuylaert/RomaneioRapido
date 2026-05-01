@@ -133,9 +133,9 @@ export default function LandingPage() {
                 {/* Header */}
             <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
                 <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-                    <a href="/" className="flex items-center gap-2.5 group">
+                    <a href="/" className="flex items-center gap-1 group">
                         <div className="h-8 flex items-center justify-center">
-                            <img src={logo} alt="Logo" className="h-7 object-contain" />
+                            <img src={logo} alt="Logo" className="h-12 object-contain" />
                         </div>
                         <span className="text-lg font-bold text-gray-900">Romaneio<span className="text-blue-600">Rapido</span></span>
                     </a>
@@ -354,7 +354,7 @@ export default function LandingPage() {
                             viewport={{ once: true, amount: 0.3 }}
                             className="text-center mb-20"
                         >
-                            <motion.h2 variants={itemVariants} className="text-sm font-bold text-blue-600 uppercase tracking-[0.2em] mb-4">A Experiência RomaneioRapido</motion.h2>
+                            <motion.h2 variants={itemVariants} className="text-sm font-bold text-blue-600 uppercase tracking-[0.2em] mb-4">A Experiência Romaneio Rápido</motion.h2>
                             <motion.h3 variants={itemVariants} className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
                                 Tudo o que você precisa para <span className="text-blue-600">vender mais rápido</span>
                             </motion.h3>
@@ -580,7 +580,7 @@ export default function LandingPage() {
                                     Simplifique seu estoque <span className="text-blue-500">agora mesmo</span>
                                 </h2>
                                 <p className="text-slate-400 mb-10 max-w-lg mx-auto text-lg font-medium leading-relaxed">
-                                    Junte-se a centenas de empresas que já transformaram sua logística com o RomaneioRapido.
+                                    Junte-se a centenas de empresas que já transformaram sua logística com o Romaneio Rápido.
                                 </p>
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                                     <button
@@ -604,7 +604,7 @@ export default function LandingPage() {
                                     <div className="h-7 flex items-center justify-center">
                                         <img src={logo} alt="Logo" className="h-6 object-contain" />
                                     </div>
-                                    <span className="text-sm font-bold text-gray-900">RomaneioRapido</span>
+                                    <span className="text-sm font-bold text-gray-900">Romaneio Rápido</span>
                                 </div>
                                 <p className="text-xs text-gray-400 max-w-xs leading-relaxed">
                                     Sistema de gestão de estoque para empresas que querem crescer com organização e eficiência.
@@ -647,7 +647,7 @@ export default function LandingPage() {
                         </div>
 
                         <div className="mt-10 pt-6 border-t border-gray-100 text-[11px] text-gray-300 text-center">
-                            © 2026 RomaneioRapido
+                            © 2026 Romaneio Rápido
                         </div>
                     </div>
                 </footer>

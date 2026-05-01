@@ -19,7 +19,9 @@ import {
     Save,
     Clock,
     Printer,
-    HelpCircle
+    HelpCircle,
+    ChevronDown,
+    ChevronUp
 } from 'lucide-react'
 import BarcodeScanner from '../components/BarcodeScanner'
 import RomaneioExportModal from '../components/RomaneioExportModal'
@@ -149,24 +151,47 @@ export default function RomaneioPage() {
     // Desconto
     const [showDiscountModal, setShowDiscountModal] = useState(false)
     const [discountPercentage, setDiscountPercentage] = useState<number>(0)
+    const [mobileSummaryExpanded, setMobileSummaryExpanded] = useState(false)
+    const [showEmpenhoHelp, setShowEmpenhoHelp] = useState(false)
 
     // Estado para feedback em tempo real do scanner
     const [scanStatus, setScanStatus] = useState<'idle' | 'searching' | 'success' | 'error'>('idle')
 
+    const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const isAutoSavingRef = useRef(false)
+    const hasInitializedRef = useRef(false)
+    const isFinalizingRef = useRef(false)
+
+    const clearAutoSaveTimer = () => {
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current)
+            autoSaveTimerRef.current = null
+        }
+    }
+
+    const waitForAutoSaveToFinish = async () => {
+        for (let attempt = 0; attempt < 30 && isAutoSavingRef.current; attempt += 1) {
+            await new Promise(resolve => setTimeout(resolve, 100))
+        }
+    }
+
     // Bloqueador de Navegação do React Router (Para rotas externas)
     const blocker = useBlocker(
         ({ currentLocation, nextLocation }) =>
-            cartItems.length > 0 && currentLocation.pathname !== nextLocation.pathname
+            cartItems.length > 0 && !showExportModal && !isFinalizingRef.current && currentLocation.pathname !== nextLocation.pathname
     );
 
     // Pedidos Pendentes (Separação)
     const [pendingRomaneios, setPendingRomaneios] = useState<PendingRomaneio[]>([])
     const [isSavingPending, setIsSavingPending] = useState(false)
     const [empenharAoDigitar, setEmpenharAoDigitar] = useState(true)
-    const [activePendingId, setActivePendingId] = useState<number | null>(null)
-    const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-    const isAutoSavingRef = useRef(false)
-    const hasInitializedRef = useRef(false)
+    const [activePendingId, setActivePendingIdState] = useState<number | null>(null)
+    const activePendingIdRef = useRef<number | null>(null)
+
+    const setActivePendingId = (value: number | null) => {
+        activePendingIdRef.current = value
+        setActivePendingIdState(value)
+    }
 
     // Fechar dropdowns ao clicar fora
     useEffect(() => {
@@ -429,10 +454,7 @@ export default function RomaneioPage() {
 
     const handleBlockerSave = async () => {
         // Interromper qualquer auto-save agendado para rodar o manual agora
-        if (autoSaveTimerRef.current) {
-            clearTimeout(autoSaveTimerRef.current);
-            autoSaveTimerRef.current = null;
-        }
+        clearAutoSaveTimer()
 
         await handleSavePending();
         blocker.proceed?.();
@@ -440,10 +462,7 @@ export default function RomaneioPage() {
 
     const handleDiscardAndExit = async () => {
         // Interromper auto-save
-        if (autoSaveTimerRef.current) {
-            clearTimeout(autoSaveTimerRef.current);
-            autoSaveTimerRef.current = null;
-        }
+        clearAutoSaveTimer()
 
         try {
             // Se houver rascunho salvo no banco, deletamos para descarte real
@@ -518,10 +537,7 @@ export default function RomaneioPage() {
             cancelText: 'Cancelar',
             onConfirm: async () => {
                 // Cancelar auto-save imediatamente para evitar recriação fantasma
-                if (autoSaveTimerRef.current) {
-                    clearTimeout(autoSaveTimerRef.current);
-                    autoSaveTimerRef.current = null;
-                }
+                clearAutoSaveTimer()
 
                 try {
                     await api.delete(`/pending/${id}`)
@@ -606,14 +622,14 @@ export default function RomaneioPage() {
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (cartItems.length > 0) {
+            if (cartItems.length > 0 && !showExportModal && !isFinalizingRef.current) {
                 e.preventDefault()
                 e.returnValue = ''
             }
         }
         window.addEventListener('beforeunload', handleBeforeUnload)
         return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-    }, [cartItems])
+    }, [cartItems, showExportModal])
 
 
 
@@ -623,14 +639,14 @@ export default function RomaneioPage() {
         if (!hasInitializedRef.current) return;
 
         // Limpar timer anterior
-        if (autoSaveTimerRef.current) {
-            clearTimeout(autoSaveTimerRef.current);
-        }
+        clearAutoSaveTimer()
 
         // Se carrinho estiver vazio, não faz auto-save
         if (cartItems.length === 0) return;
+        if (submitting || showExportModal || isFinalizingRef.current) return;
 
         autoSaveTimerRef.current = setTimeout(async () => {
+            if (submitting || showExportModal || isFinalizingRef.current) return;
             if (isAutoSavingRef.current) return;
             isAutoSavingRef.current = true;
 
@@ -668,11 +684,9 @@ export default function RomaneioPage() {
         }, 3000);
 
         return () => {
-            if (autoSaveTimerRef.current) {
-                clearTimeout(autoSaveTimerRef.current);
-            }
+            clearAutoSaveTimer()
         };
-    }, [cartItems, customerName, customerPhone, selectedClientId, empenharAoDigitar, discountPercentage]);
+    }, [cartItems, customerName, customerPhone, selectedClientId, empenharAoDigitar, discountPercentage, activePendingId, submitting, showExportModal]);
 
 
     const addToCart = (product: any, quantityOverride?: number) => {
@@ -806,13 +820,23 @@ export default function RomaneioPage() {
     const handleFinalizeRomaneio = async () => {
         if (cartItems.length === 0) return
         const errors: any[] = []
-        cartItems.forEach(item => {
-            const stockItem = stockLevels.find(s => s.product_id === item.id)
-            if (stockItem && item.quantity > stockItem.stock_quantity) {
+        const requestedByProduct = cartItems.reduce((acc, item) => {
+            acc[item.id] = (acc[item.id] || 0) + item.quantity
+            return acc
+        }, {} as Record<number, number>)
+
+        Object.entries(requestedByProduct).forEach(([productId, requested]) => {
+            const numericProductId = Number(productId)
+            const item = cartItems.find(i => i.id === numericProductId)
+            const stockItem = stockLevels.find(s => s.product_id === numericProductId)
+            const reservedInActiveDraft = activePendingId && empenharAoDigitar ? requested : 0
+            const available = (stockItem?.stock_quantity || 0) + reservedInActiveDraft
+
+            if (item && stockItem && requested > available) {
                 errors.push({
                     productName: item.name,
-                    available: stockItem.stock_quantity,
-                    requested: item.quantity,
+                    available,
+                    requested,
                     unit: item.unit
                 })
             }
@@ -821,62 +845,56 @@ export default function RomaneioPage() {
             setStockValidationError(errors)
             return
         }
-        executeFinalize()
+        executeFinalize(false)
     }
 
-    const executeFinalize = async () => {
+    const executeFinalize = async (allowNegativeStock = false) => {
+        clearAutoSaveTimer()
+        isFinalizingRef.current = true
         setSubmitting(true)
+        let finalizedSuccessfully = false
         try {
-            // Se houver empenho ativo, deletamos o rascunho para liberar o estoque antes da movimentação final
-            if (activePendingId) {
-                try {
-                    await api.delete(`/pending/${activePendingId}`);
-                    setActivePendingId(null);
-                } catch (err) {
-                    console.error('Erro ao limpar rascunho antes de finalizar:', err);
-                }
-            }
+            await waitForAutoSaveToFinish()
+            const pendingIdToFinalize = activePendingIdRef.current
 
-            const romaneioBatchId = `ROM-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
-            const currentSubtotal = cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
-            const currentDiscountAmount = currentSubtotal * (discountPercentage / 100);
-
-            for (const item of cartItems) {
-                const itemTotal = item.price * item.quantity;
-                const itemDiscount = currentSubtotal > 0 ? (itemTotal / currentSubtotal) * currentDiscountAmount : 0;
-
-                await api.post('/inventory/movements', {
+            await api.post('/inventory/romaneios/finalize', {
+                customer_name: customerName || null,
+                client_id: selectedClientId,
+                pending_romaneio_id: pendingIdToFinalize,
+                discount_percentage: discountPercentage,
+                allow_negative_stock: allowNegativeStock,
+                items: cartItems.map(item => ({
                     product_id: item.id,
                     quantity: item.quantity,
-                    movement_type: 'OUT',
-                    notes: customerName ? `Romaneio: ${customerName} ` : 'Não identificado pelo operador',
-                    romaneio_id: romaneioBatchId,
-                    client_id: selectedClientId,
                     product_name_snapshot: item.name,
                     product_barcode_snapshot: item.barcode,
                     unit_price_snapshot: item.price,
                     unit_snapshot: item.unit,
-                    discount_snapshot: Number(itemDiscount.toFixed(2))
-                })
-            }
+                    product_color_snapshot: item.color,
+                    product_size_snapshot: item.size
+                }))
+            })
+
+            setActivePendingId(null)
             setShowExportModal(true)
             soundEffects.playSuccess()
             toast.success('Romaneio registrado com sucesso!', { id: 'finalize-romaneio' })
             fetchStockLevels()
             fetchPendingRomaneios() // Atualiza a lista de separações para garantir que o rascunho sumiu
+            finalizedSuccessfully = true
         } catch (err: any) {
             toast.error(translateError(err.response?.data?.detail) || 'Erro ao registrar movimentações do romaneio!', { id: 'romaneio-error' })
         } finally {
+            if (!finalizedSuccessfully) {
+                isFinalizingRef.current = false
+            }
             setSubmitting(false)
         }
     }
 
     const resetCart = () => {
         // Cancelar qualquer auto-save pendente antes de resetar
-        if (autoSaveTimerRef.current) {
-            clearTimeout(autoSaveTimerRef.current);
-            autoSaveTimerRef.current = null;
-        }
+        clearAutoSaveTimer()
         setCartItems([])
         setCustomerName('')
         setCustomerPhone(null)
@@ -887,6 +905,7 @@ export default function RomaneioPage() {
         setActivePendingId(null)
         setEmpenharAoDigitar(true) // Reset para o padrão seguro
         isAutoSavingRef.current = false;
+        isFinalizingRef.current = false;
     }
 
     const romaneioSubtotal = cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
@@ -897,15 +916,15 @@ export default function RomaneioPage() {
     const currentEstoqueItems = stockLevels
 
     return (
-        <div className="pb-10">
-            <div className="mb-6">
+        <div className="pb-32 lg:pb-10">
+            <div className="mb-4 sm:mb-6">
                 <h1 className="text-xl font-bold text-gray-900">Romaneio</h1>
                 <p className="text-sm text-gray-400 mt-0.5">{loading ? 'Carregando dados...' : 'Gestão de estoque e vendas rápidas'}</p>
             </div>
 
-            <div className="flex bg-white border border-gray-100 rounded-xl p-1 mb-6 shadow-sm max-w-fit flex-wrap gap-1">
-                <button onClick={() => setActiveTab('romaneio')} className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'romaneio' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Romaneio</button>
-                <button onClick={() => setActiveTab('separacao')} className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all relative ${activeTab === 'separacao' ? 'bg-amber-500 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
+            <div className="grid grid-cols-3 bg-white border border-gray-100 rounded-xl p-1 mb-4 sm:mb-6 shadow-sm w-full sm:flex sm:max-w-fit gap-1">
+                <button onClick={() => setActiveTab('romaneio')} className={`px-2 sm:px-4 py-2 sm:py-1.5 text-[11px] sm:text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'romaneio' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Romaneio</button>
+                <button onClick={() => setActiveTab('separacao')} className={`px-2 sm:px-4 py-2 sm:py-1.5 text-[11px] sm:text-[13px] font-semibold rounded-lg transition-all relative ${activeTab === 'separacao' ? 'bg-amber-500 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
                     Em Separação
                     {pendingRomaneios.length > 0 && (
                         <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white animate-pulse">
@@ -913,25 +932,35 @@ export default function RomaneioPage() {
                         </span>
                     )}
                 </button>
-                <button onClick={() => setActiveTab('estoque')} className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'estoque' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Estoque</button>
+                <button onClick={() => setActiveTab('estoque')} className={`px-2 sm:px-4 py-2 sm:py-1.5 text-[11px] sm:text-[13px] font-semibold rounded-lg transition-all ${activeTab === 'estoque' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Estoque</button>
             </div>
 
             {activeTab === 'romaneio' && (
+                <>
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px] gap-6">
                     <div className="flex flex-col gap-6">
-                        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Plus className="w-4 h-4 text-blue-600" /> Montar Romaneio</h2>
-                                <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 shadow-inner">
+                        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 shadow-sm">
+                            <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-4">
+                                <h2 className="text-sm font-black text-gray-900 flex items-center gap-2"><Plus className="w-4 h-4 text-blue-600" /> Montar Romaneio</h2>
+                                <div className="flex items-center gap-2">
                                     <div className="group relative flex items-center">
-                                        <HelpCircle className="w-3.5 h-3.5 text-slate-300 hover:text-blue-500 transition-colors cursor-help" />
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-white text-[10px] leading-relaxed rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100] shadow-2xl text-center">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowEmpenhoHelp((value) => !value)}
+                                            onBlur={() => setShowEmpenhoHelp(false)}
+                                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-300 transition-colors hover:bg-slate-50 hover:text-blue-500"
+                                            aria-label="Explicar empenho de estoque"
+                                            aria-expanded={showEmpenhoHelp}
+                                        >
+                                            <HelpCircle className="w-3.5 h-3.5" />
+                                        </button>
+                                        <div className={`absolute bottom-full right-0 mb-2 w-48 p-2 bg-slate-800 text-white text-[10px] leading-relaxed rounded-lg transition-opacity pointer-events-none z-[100] shadow-2xl text-center ${showEmpenhoHelp ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                             <p className="font-bold mb-1 text-blue-300">Reserva em Tempo Real</p>
                                             Ao ativar, o estoque é reduzido imediatamente ao adicionar itens. Se cancelar, o estoque volta.
-                                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800"></div>
+                                            <div className="absolute top-full right-3 border-8 border-transparent border-t-slate-800"></div>
                                         </div>
                                     </div>
-                                    <span className={`text-[10px] font-black uppercase tracking-wider ${empenharAoDigitar ? 'text-blue-600' : 'text-slate-400'}`}>
+                                    <span className={`hidden sm:inline text-[10px] font-black uppercase tracking-wider ${empenharAoDigitar ? 'text-blue-600' : 'text-slate-400'}`}>
                                         {empenharAoDigitar ? 'Empenho Ativo' : 'Empenho Desativado'}
                                     </span>
                                     <button
@@ -942,10 +971,12 @@ export default function RomaneioPage() {
                                     </button>
                                 </div>
                             </div>
-                            <div className="space-y-4">
+                            <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                                 <div ref={clientSearchContainerRef} className="relative">
-                                    <label className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 block">Cliente</label>
-                                    <div className="flex justify-between items-end mb-1.5"><button onClick={() => setClientModalOpen(true)} className="text-[11px] font-black text-white bg-emerald-500 hover:bg-emerald-600 px-3 py-1.5 rounded-lg transition-all shadow-sm flex items-center gap-1 uppercase tracking-wider"><Plus className="w-3 h-3" />Cadastrar / Novo Cliente</button></div>
+                                    <div className="mb-2 flex h-7 items-center justify-between gap-3">
+                                        <label className="text-slate-400 text-[10px] font-black uppercase tracking-[0.12em] block">Cliente</label>
+                                        <button onClick={() => setClientModalOpen(true)} className="text-[10px] font-black text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1 uppercase tracking-wider border border-emerald-100"><Plus className="w-3 h-3" />Novo</button>
+                                    </div>
                                     <div className="relative">
                                         <UserCircle2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
                                         <input type="text" placeholder="Buscar cliente..." value={customerName} onChange={(e) => handleSearchClient(e.target.value)} onFocus={() => setShowClientDropdown(true)} onKeyDown={handleClientKeyDown} className="w-full h-11 pl-10 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-900 font-semibold" />
@@ -959,8 +990,13 @@ export default function RomaneioPage() {
                                     </div>
                                 </div>
                                 <div ref={productSearchContainerRef} className="relative">
-                                    <label className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 block">Adicionar Produto</label>
-                                    <div className="flex gap-2">
+                                    <div className="mb-2 flex h-7 items-center justify-between gap-3">
+                                        <label className="text-slate-400 text-[10px] font-black uppercase tracking-[0.12em] block">Adicionar Produto</label>
+                                        <span className={`sm:hidden text-[10px] font-black uppercase ${empenharAoDigitar ? 'text-blue-600' : 'text-slate-400'}`}>
+                                            {empenharAoDigitar ? 'Empenho ativo' : 'Sem empenho'}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row gap-2">
                                         <div className="relative flex-1">
                                             <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
                                             <input type="text" placeholder="Busca por nome, código ou SKU..." value={barcodeInput} onChange={(e) => handleBarcodeSearch(e.target.value)} onKeyDown={handleProductKeyDown} className="w-full h-11 pl-10 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-900 font-medium" />
@@ -972,7 +1008,7 @@ export default function RomaneioPage() {
                                                 </div>
                                             )}
                                         </div>
-                                        <button onClick={() => setCameraOpen(true)} className="h-11 px-4 bg-blue-50 border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all flex items-center justify-center shrink-0 gap-2 font-bold text-xs"><Camera className="w-5 h-5" /><span className="hidden sm:inline uppercase tracking-widest">Leitor</span></button>
+                                        <button onClick={() => setCameraOpen(true)} className="h-11 sm:w-12 px-4 sm:px-0 bg-blue-50 border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all flex items-center justify-center shrink-0 gap-2 font-bold text-xs" title="Escanear código"><Camera className="w-5 h-5" /><span className="sm:hidden uppercase tracking-widest">Escanear</span></button>
                                     </div>
                                 </div>
                             </div>
@@ -997,13 +1033,13 @@ export default function RomaneioPage() {
                                     <p className="text-xs mt-1 px-4">Bipe os produtos ou busque manualmente.</p>
                                 </div>
                             ) : (
-                                <div className="space-y-3 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
+                                <div className="space-y-2 sm:space-y-3 overflow-y-auto max-h-[500px] sm:pr-2 custom-scrollbar">
                                     {cartItems.map((item, idx) => (
-                                        <div key={item.selectedKey} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gray-50/50 hover:bg-white border hover:border-gray-200 rounded-2xl transition-all">
+                                        <div key={item.selectedKey} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 p-3 bg-gray-50/50 hover:bg-white border hover:border-gray-200 rounded-2xl transition-all">
                                             <div className="flex-1 min-w-0 pr-0 sm:pr-4">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-[10px] font-bold text-gray-400 w-5 shrink-0">{idx + 1}.</span>
-                                                    <p className="text-sm font-bold text-gray-900 truncate">{item.name}</p>
+                                                    <p className="text-sm font-bold text-gray-900 line-clamp-2 sm:truncate">{item.name}</p>
                                                 </div>
                                                 {(item.color || item.size) && (
                                                     <div className="flex flex-wrap items-center gap-1.5 ml-7 mt-0.5">
@@ -1011,7 +1047,7 @@ export default function RomaneioPage() {
                                                         {item.size && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-200 text-gray-700 uppercase">{item.size}</span>}
                                                     </div>
                                                 )}
-                                                <div className="flex items-center gap-3 ml-7 mt-1">
+                                                <div className="flex flex-wrap items-center gap-2 sm:gap-3 ml-7 mt-1">
                                                     <p className="text-[10px] text-gray-400 font-mono">{item.barcode || 'Sem código'}</p>
                                                     <span className="text-[10px] text-gray-300">|</span>
                                                     <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100/50 rounded-lg px-2 py-0.5 group/price hover:border-emerald-200 transition-all shadow-sm">
@@ -1027,10 +1063,10 @@ export default function RomaneioPage() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
-                                                <div className="text-left sm:text-right w-24 sm:w-32 shrink-0">
+                                            <div className="grid grid-cols-[1fr_auto_auto] sm:flex sm:items-center sm:justify-end gap-2 sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+                                                <div className="text-left sm:text-right min-w-0 sm:w-32 shrink-0">
                                                     <p className="text-[9px] text-gray-400 uppercase font-black">Total</p>
-                                                    <p className="text-[14px] sm:text-[15px] font-black text-slate-800">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}</p>
+                                                    <p className="text-[13px] sm:text-[15px] font-black text-slate-800 truncate">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}</p>
                                                 </div>
                                                 <div className="flex items-center bg-white border border-gray-200 rounded-xl p-0.5 shadow-sm">
                                                     <button
@@ -1067,7 +1103,7 @@ export default function RomaneioPage() {
                             )}
                         </div>
                     </div>
-                    <div className="flex flex-col">
+                    <div className="hidden lg:flex flex-col">
                         <div className="bg-slate-900 rounded-2xl p-6 shadow-xl lg:sticky lg:top-24">
                             <h2 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
                                 <CheckCircle2 className="w-5 h-5 text-emerald-400" /> Resumo
@@ -1151,6 +1187,112 @@ export default function RomaneioPage() {
                         </div>
                     </div>
                 </div>
+                <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 backdrop-blur lg:hidden">
+                    <div className="mx-auto max-w-lg">
+                        {mobileSummaryExpanded && (
+                            <div className="mb-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="text-xs font-semibold text-slate-500">Cliente</span>
+                                        <span className="truncate text-xs font-bold text-slate-900">{customerName || 'Consumidor'}</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="rounded-xl bg-white p-2">
+                                            <p className="text-[9px] font-black uppercase text-slate-400">Linhas</p>
+                                            <p className="text-sm font-black text-slate-900">{cartItems.length}</p>
+                                        </div>
+                                        <div className="rounded-xl bg-white p-2">
+                                            <p className="text-[9px] font-black uppercase text-slate-400">Unidades</p>
+                                            <p className="text-sm font-black text-slate-900">{cartItems.reduce((acc, i) => acc + i.quantity, 0)}</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1 border-t border-slate-200 pt-2">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <span className="text-xs text-slate-500">Subtotal</span>
+                                            <span className="text-xs font-bold text-slate-800">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(romaneioSubtotal)}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <span className="text-xs text-slate-500">Desconto {discountPercentage > 0 ? `(${discountPercentage.toFixed(2)}%)` : ''}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowDiscountModal(true)}
+                                                className="text-xs font-bold text-red-500"
+                                            >
+                                                {discountAmount > 0 ? `- ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(discountAmount)}` : 'R$ 0,00'}
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-3 pt-1">
+                                            <span className="text-sm font-black text-slate-800">Valor Total</span>
+                                            <span className="text-base font-black text-emerald-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(romaneioTotal)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mb-2 grid grid-cols-[1fr_auto_auto] items-end">
+                            <div className="min-w-0">
+                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                    {cartItems.length} {cartItems.length === 1 ? 'item' : 'itens'} / {cartItems.reduce((acc, i) => acc + i.quantity, 0)} un.
+                                </p>
+                                <p className="truncate text-xl font-black text-slate-900">
+                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(romaneioTotal)}
+                                </p>
+                            </div>
+                            {discountAmount > 0 && (
+                                <button
+                                    onClick={() => setShowDiscountModal(true)}
+                                    className="h-9 rounded-xl border border-red-100 bg-red-50 px-3 text-xs font-bold text-red-600"
+                                >
+                                    -{discountPercentage.toFixed(0)}%
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setMobileSummaryExpanded((value) => !value)}
+                                className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500"
+                                aria-label={mobileSummaryExpanded ? 'Recolher resumo' : 'Expandir resumo'}
+                                title={mobileSummaryExpanded ? 'Recolher resumo' : 'Expandir resumo'}
+                            >
+                                {mobileSummaryExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2">
+                            <button
+                                onClick={handleFinalizeRomaneio}
+                                disabled={submitting || cartItems.length === 0}
+                                className="h-11 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white transition-all disabled:bg-slate-200 disabled:text-slate-400"
+                            >
+                                {submitting ? 'Registrando...' : 'Finalizar'}
+                            </button>
+                            <button
+                                onClick={() => setShowDiscountModal(true)}
+                                disabled={cartItems.length === 0}
+                                className="h-11 w-11 rounded-xl border border-slate-200 bg-white text-xs font-black text-slate-600 disabled:opacity-40"
+                                title="Desconto"
+                            >
+                                %
+                            </button>
+                            <button
+                                onClick={handleSavePending}
+                                disabled={isSavingPending || cartItems.length === 0}
+                                className="flex h-11 w-11 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-600 disabled:opacity-40"
+                                title="Salvar separação"
+                            >
+                                <Save className="h-4 w-4" />
+                            </button>
+                            <button
+                                onClick={() => setShowDraftModal(true)}
+                                disabled={cartItems.length === 0}
+                                className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 disabled:opacity-40"
+                                title="Imprimir rascunho"
+                            >
+                                <Printer className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                </>
             )}
             {activeTab === 'separacao' && (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
@@ -1253,7 +1395,77 @@ export default function RomaneioPage() {
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    <div className="grid min-w-0 gap-3 p-3 sm:p-4 md:hidden">
+                        {currentEstoqueItems.map(s => (
+                            <div key={s.product_id} className="min-w-0 rounded-2xl border border-gray-100 bg-white p-3">
+                                <div className="mb-3 flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className="line-clamp-2 text-sm font-black text-slate-900">{s.product_name}</p>
+                                        <p className="mt-1 truncate font-mono text-[10px] text-slate-400">{s.barcode || 'Sem código'}</p>
+                                        {(s.color || s.size) && (
+                                            <div className="mt-2 flex flex-wrap gap-1">
+                                                {s.color && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-slate-500">{s.color}</span>}
+                                                {s.size && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-slate-500">{s.size}</span>}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="shrink-0 text-right">
+                                        <p className="text-[9px] font-black uppercase text-slate-400">Estoque</p>
+                                        <p className={`text-sm font-black ${s.is_low_stock ? 'text-amber-600' : 'text-slate-800'}`}>
+                                            {s.stock_quantity} <span className="text-[10px] uppercase text-slate-300">{s.unit}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="grid min-w-0 grid-cols-1 gap-2 border-t border-gray-100 pt-3 min-[380px]:grid-cols-[minmax(0,1fr)_auto]">
+                                    <div className="flex min-w-0 items-center justify-center rounded-xl border border-gray-200 bg-white p-0.5">
+                                        <button
+                                            onClick={() => {
+                                                const q = parseFloat(stockQuantities[s.product_id] || '1')
+                                                const step = isIntegerUnit(s.unit) ? 1 : 0.1
+                                                setStockQuantities(p => ({ ...p, [s.product_id]: String(Math.max(step, q - step).toFixed(isIntegerUnit(s.unit) ? 0 : 2)) }))
+                                            }}
+                                            className="flex h-9 w-10 items-center justify-center rounded-lg text-gray-400 hover:text-blue-600"
+                                        >
+                                            <Minus className="h-3.5 w-3.5" />
+                                        </button>
+                                        <input
+                                            type="number"
+                                            value={stockQuantities[s.product_id] || ''}
+                                            onChange={(e) => setStockQuantities(p => ({ ...p, [s.product_id]: e.target.value }))}
+                                            placeholder="1"
+                                            className="h-9 min-w-0 flex-1 border-none px-0 text-center text-sm font-bold focus:ring-0"
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                const q = parseFloat(stockQuantities[s.product_id] || '0')
+                                                const step = isIntegerUnit(s.unit) ? 1 : 0.1
+                                                setStockQuantities(p => ({ ...p, [s.product_id]: String((q + step).toFixed(isIntegerUnit(s.unit) ? 0 : 2)) }))
+                                            }}
+                                            className="flex h-9 w-10 items-center justify-center rounded-lg text-gray-400 hover:text-blue-600"
+                                        >
+                                            <Plus className="h-3.5 w-3.5" />
+                                        </button>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            const qStr = stockQuantities[s.product_id] || '1'
+                                            let q = parseFloat(qStr)
+                                            if (isNaN(q) || q <= 0) q = 1
+                                            addToCart({ id: s.product_id, name: s.product_name, barcode: s.barcode, unit: s.unit, price: s.price, color: s.color, size: s.size }, q)
+                                            setStockQuantities(p => ({ ...p, [s.product_id]: '' }))
+                                            setActiveTab('romaneio')
+                                        }}
+                                        className="flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 text-xs font-bold text-white transition-all active:scale-95 min-[380px]:w-32"
+                                    >
+                                        <Plus className="h-4 w-4 shrink-0" />
+                                        <span className="truncate">Adicionar</span>
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="hidden overflow-x-auto md:block">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-gray-50/80 border-b border-gray-100">
                                 <tr>
@@ -1385,7 +1597,7 @@ export default function RomaneioPage() {
                         <div className="p-8 space-y-4 max-h-[300px] overflow-y-auto">{stockValidationError.map((err, idx) => (
                             <div key={idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-100"><p className="font-bold text-sm text-slate-900">{err.productName}</p><div className="flex justify-between mt-3 text-[10px] font-bold uppercase tracking-wider"><span className="text-slate-400">Pedido: {err.requested}</span><span className="text-red-600">Livre: {err.available}</span></div></div>
                         ))}</div>
-                        <div className="p-8 pt-0 flex flex-col gap-3"><button onClick={() => { setStockValidationError(null); executeFinalize(); }} className="w-full h-14 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black text-sm active:scale-95 transition-all">Sair Mesmo Assim</button><button onClick={() => setStockValidationError(null)} className="w-full h-14 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-sm active:scale-95 transition-all">Ajustar</button></div>
+                        <div className="p-8 pt-0 flex flex-col gap-3"><button onClick={() => { setStockValidationError(null); executeFinalize(true); }} className="w-full h-14 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black text-sm active:scale-95 transition-all">Sair Mesmo Assim</button><button onClick={() => setStockValidationError(null)} className="w-full h-14 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-sm active:scale-95 transition-all">Ajustar</button></div>
                     </div>
                 </div>
             )}

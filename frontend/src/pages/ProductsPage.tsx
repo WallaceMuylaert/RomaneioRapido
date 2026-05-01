@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, type FormEvent } from 'react'
+import { useState, useEffect, useRef, type FormEvent, type MouseEvent } from 'react'
+import { createPortal } from 'react-dom'
 import api from '../services/api'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
@@ -74,6 +75,8 @@ export default function ProductsPage() {
     const [saving, setSaving] = useState(false)
     const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
     const [openMenuId, setOpenMenuId] = useState<number | null>(null)
+    const [openMenuSource, setOpenMenuSource] = useState<'mobile' | 'desktop' | null>(null)
+    const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null)
     const [sortBy, setSortBy] = useState('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [cameraOpen, setCameraOpen] = useState(false)
@@ -117,6 +120,10 @@ export default function ProductsPage() {
     const [categoryFilter, setCategoryFilter] = useState('')
     const [logoBase64, setLogoBase64] = useState<string>('')
     const [reportMenuOpen, setReportMenuOpen] = useState(false)
+    const [stockModalOpen, setStockModalOpen] = useState(false)
+    const [stockProduct, setStockProduct] = useState<Product | null>(null)
+    const [stockQuantity, setStockQuantity] = useState('')
+    const [stockSaving, setStockSaving] = useState(false)
 
     useEffect(() => {
         getBase64FromUrl(logoImg).then(setLogoBase64).catch(console.error)
@@ -393,32 +400,122 @@ export default function ProductsPage() {
 
     const getStockStatus = (p: Product) => {
         if (p.stock_quantity <= 0) return { label: 'Zerado', class: 'bg-red-50 text-red-600' }
-        if (p.stock_quantity < p.min_stock) return { label: 'Baixo', class: 'bg-amber-50 text-amber-600' }
+        if (p.stock_quantity <= p.min_stock) return { label: 'Baixo', class: 'bg-amber-50 text-amber-600' }
         return { label: 'OK', class: 'bg-emerald-50 text-emerald-600' }
     }
 
-    const renderActionsMenu = (p: Product) => {
-        if (openMenuId !== p.id) return null
+    const closeActionsMenu = () => {
+        setOpenMenuId(null)
+        setOpenMenuSource(null)
+        setMenuPosition(null)
+    }
 
-        return (
+    const updateActionsMenuPosition = (button: HTMLButtonElement) => {
+        if (window.innerWidth < 640) {
+            setMenuPosition(null)
+            return
+        }
+
+        const rect = button.getBoundingClientRect()
+        const menuWidth = 176
+        const menuHeight = 168
+        const gap = 8
+        const edgePadding = 12
+
+        const left = Math.min(
+            Math.max(edgePadding, rect.right - menuWidth),
+            window.innerWidth - menuWidth - edgePadding
+        )
+        const hasRoomBelow = window.innerHeight - rect.bottom >= menuHeight + gap
+        const top = hasRoomBelow
+            ? Math.min(rect.bottom + gap, window.innerHeight - menuHeight - edgePadding)
+            : Math.max(edgePadding, rect.top - menuHeight - gap)
+
+        setMenuPosition({ top, left })
+    }
+
+    const toggleActionsMenu = (e: MouseEvent<HTMLButtonElement>, productId: number, source: 'mobile' | 'desktop') => {
+        e.stopPropagation()
+
+        if (openMenuId === productId && openMenuSource === source) {
+            closeActionsMenu()
+            return
+        }
+
+        updateActionsMenuPosition(e.currentTarget)
+        setOpenMenuId(productId)
+        setOpenMenuSource(source)
+    }
+
+    const renderActionsMenu = (p: Product, source: 'mobile' | 'desktop') => {
+        if (openMenuId !== p.id || openMenuSource !== source) return null
+        if (typeof document === 'undefined') return null
+
+        return createPortal(
             <>
-                <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                <div className="absolute right-0 top-10 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right overflow-hidden">
+                <div className="fixed inset-0 z-[90]" onClick={closeActionsMenu} />
+                <div
+                    style={menuPosition ? { top: menuPosition.top, left: menuPosition.left } : undefined}
+                    className="fixed w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-[100] py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right overflow-hidden max-sm:left-3 max-sm:right-3 max-sm:bottom-4 max-sm:top-auto max-sm:w-auto max-sm:origin-bottom"
+                    onClick={(e) => e.stopPropagation()}
+                >
                     <button
-                        onClick={(e) => { e.stopPropagation(); openEdit(p); setOpenMenuId(null); }}
+                        onClick={() => { openAddStock(p); closeActionsMenu(); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-emerald-600 hover:bg-emerald-50 transition-colors text-left"
+                    >
+                        <Plus className="w-4 h-4" /> Adicionar estoque
+                    </button>
+                    <button
+                        onClick={() => { openEdit(p); closeActionsMenu(); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors text-left"
                     >
                         <Pencil className="w-4 h-4" /> Editar Produto
                     </button>
                     <button
-                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(p.id); setOpenMenuId(null); }}
+                        onClick={() => { setDeleteConfirm(p.id); closeActionsMenu(); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors text-left border-t border-slate-50"
                     >
                         <Trash2 className="w-4 h-4" /> Excluir Registro
                     </button>
                 </div>
-            </>
+            </>,
+            document.body
         )
+    }
+
+    const openAddStock = (p: Product) => {
+        setStockProduct(p)
+        setStockQuantity('')
+        setStockModalOpen(true)
+    }
+
+    const handleAddStock = async (e: FormEvent) => {
+        e.preventDefault()
+        if (!stockProduct) return
+
+        const quantity = parseFloat(stockQuantity)
+        if (!Number.isFinite(quantity) || quantity <= 0) {
+            toast.error('Informe uma quantidade válida.', { id: 'stock-error' })
+            return
+        }
+
+        setStockSaving(true)
+        try {
+            await api.post('/inventory/movements', {
+                product_id: stockProduct.id,
+                quantity,
+                movement_type: 'IN',
+                notes: 'Reposição rápida'
+            })
+            toast.success('Estoque atualizado com sucesso!', { id: 'stock-success' })
+            setStockModalOpen(false)
+            setStockProduct(null)
+            fetchProducts()
+        } catch (err: any) {
+            toast.error(translateError(err.response?.data?.detail) || 'Erro ao adicionar estoque', { id: 'stock-error' })
+        } finally {
+            setStockSaving(false)
+        }
     }
 
     const handleExportStockPDF = async (includePrices: boolean = true) => {
@@ -671,17 +768,17 @@ export default function ProductsPage() {
                     <h1 className="text-xl font-bold text-gray-900">Produtos</h1>
                     <p className="text-sm text-gray-400 mt-0.5">{totalProducts} produto{totalProducts !== 1 ? 's' : ''} cadastrado{totalProducts !== 1 ? 's' : ''}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:items-center">
                     <button
                         onClick={() => setCameraOpen(true)}
-                        className="h-9 px-4 text-[13px] font-semibold border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                        className="flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-[12px] font-bold text-gray-700 transition-colors hover:bg-gray-50 sm:h-9 sm:px-4 sm:text-[13px]"
                     >
                         <Camera className="w-4 h-4" /> Leitura rápida
                     </button>
-                    <div className="relative">
+                    <div className="relative min-w-0">
                         <button
                             onClick={() => setReportMenuOpen(!reportMenuOpen)}
-                            className="h-9 px-4 text-[13px] font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2"
+                            className="flex h-10 w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 text-[12px] font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 sm:h-9 sm:px-4 sm:text-[13px]"
                         >
                             <Download className="w-4 h-4" /> Relatório <ChevronDown className={`w-3 h-3 transition-transform ${reportMenuOpen ? 'rotate-180' : ''}`} />
                         </button>
@@ -708,7 +805,7 @@ export default function ProductsPage() {
                     </div>
                     <button
                         onClick={() => openCreate()}
-                        className="h-9 px-4 text-[13px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
+                        className="col-span-2 flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-[13px] font-bold text-white shadow-sm transition-colors hover:bg-blue-700 sm:col-span-1 sm:h-9"
                     >
                         <Plus className="w-4 h-4" /> Novo Produto
                     </button>
@@ -716,8 +813,8 @@ export default function ProductsPage() {
             </div>
 
             {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
-                <div className="md:col-span-2 relative">
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="relative sm:col-span-2">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
                     <input
                         type="text"
@@ -728,7 +825,7 @@ export default function ProductsPage() {
                         className="w-full h-10 pl-10 pr-4 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all placeholder-gray-300"
                     />
                 </div>
-                <div>
+                <div className="sm:col-span-2 lg:col-span-1">
                     <select
                         value={categoryFilter}
                         onChange={(e) => setCategoryFilter(e.target.value)}
@@ -740,7 +837,7 @@ export default function ProductsPage() {
                         ))}
                     </select>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:col-span-2 lg:col-span-1">
                     <input
                         type="text"
                         placeholder="Cor..."
@@ -771,8 +868,87 @@ export default function ProductsPage() {
                     <p className="text-xs text-gray-300 mt-1">Clique em "Novo Produto" para começar</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
-                    <div className="overflow-x-auto min-h-[400px] pb-32">
+                <div className="space-y-3">
+                    <div className="grid gap-3 md:hidden">
+                        {products.map(p => {
+                            const status = getStockStatus(p)
+                            return (
+                                <div key={p.id} className="rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
+                                    <div className="flex items-start gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => openEdit(p)}
+                                            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-100"
+                                        >
+                                            {p.image_base64 ? (
+                                                <img src={p.image_base64} alt={p.name} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <ImageIcon className="h-4 w-4 text-gray-400" />
+                                            )}
+                                        </button>
+
+                                        <button type="button" onClick={() => openEdit(p)} className="min-w-0 flex-1 text-left">
+                                            <p className="line-clamp-2 text-sm font-black leading-snug text-slate-900">{p.name}</p>
+                                            <div className="mt-1 flex flex-wrap gap-1">
+                                                {(p.color || p.size) && (
+                                                    <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">
+                                                        {[p.color, p.size].filter(Boolean).join(' / ')}
+                                                    </span>
+                                                )}
+                                                {p.category_id && (
+                                                    <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-600">
+                                                        {getCategoryName(p.category_id)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {(p.sku || p.barcode) && (
+                                                <p className="mt-1 truncate font-mono text-[10px] text-slate-400">
+                                                    {p.sku || p.barcode}
+                                                </p>
+                                            )}
+                                        </button>
+
+                                        <div className="relative shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={(e) => toggleActionsMenu(e, p.id, 'mobile')}
+                                                className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all ${openMenuId === p.id ? 'bg-brand-50 text-brand-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-900'}`}
+                                                aria-label="Ações do produto"
+                                            >
+                                                <MoreVertical className="h-5 w-5" />
+                                            </button>
+                                            {renderActionsMenu(p, 'mobile')}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-3 grid grid-cols-3 gap-2 border-t border-gray-100 pt-3">
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase text-slate-400">Estoque</p>
+                                            <p className="mt-0.5 text-sm font-black text-slate-800">
+                                                {p.stock_quantity} <span className="text-[10px] font-bold uppercase text-slate-400">{p.unit}</span>
+                                                {p.stock_quantity <= p.min_stock && p.min_stock > 0 && (
+                                                    <AlertTriangle className="ml-1 inline h-3 w-3 text-amber-500" />
+                                                )}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase text-slate-400">Preço</p>
+                                            <p className="mt-0.5 text-sm font-black text-slate-800">R$ {p.price.toFixed(2)}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[9px] font-black uppercase text-slate-400">Status</p>
+                                            <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${status.class}`}>
+                                                {status.label}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+
+                    <div className="hidden rounded-xl border border-gray-100 bg-white shadow-sm md:block">
+                    <div className="overflow-x-auto min-h-[400px] pb-5">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-gray-50/80 border-b border-gray-100">
@@ -824,7 +1000,7 @@ export default function ProductsPage() {
                                     return (
                                         <tr
                                             key={p.id}
-                                            className={`transition - colors ${focusedIndex === index ? 'bg-blue-50 border-l-4 border-blue-500 shadow-inner' : 'hover:bg-gray-50/50'} `}
+                                            className={`transition-colors ${focusedIndex === index ? 'bg-blue-50 border-l-4 border-blue-500 shadow-inner' : 'hover:bg-gray-50/50'} `}
                                             onClick={() => openEdit(p)}
                                         >
                                             <td className="px-4 py-3">
@@ -866,28 +1042,25 @@ export default function ProductsPage() {
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 <span className="font-semibold text-gray-800">{p.stock_quantity} <span className="text-[10px] text-gray-400 font-medium uppercase">{p.unit}</span></span>
-                                                {p.stock_quantity < p.min_stock && p.min_stock > 0 && (
+                                                {p.stock_quantity <= p.min_stock && p.min_stock > 0 && (
                                                     <AlertTriangle className="w-3 h-3 text-amber-500 inline ml-1" />
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                <span className={`px - 2 py - 0.5 rounded - full text - [10px] font - semibold ${status.class} `}>
+                                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${status.class}`}>
                                                     {status.label}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 <div className="relative flex justify-center">
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setOpenMenuId(openMenuId === p.id ? null : p.id);
-                                                        }}
-                                                        className={`p - 2.5 rounded - xl transition - all ${openMenuId === p.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'} `}
+                                                        onClick={(e) => toggleActionsMenu(e, p.id, 'desktop')}
+                                                        className={`rounded-xl p-2.5 transition-all ${openMenuId === p.id ? 'bg-brand-50 text-brand-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-900'} `}
                                                     >
                                                         <MoreVertical className="w-5 h-5" />
                                                     </button>
 
-                                                    {renderActionsMenu(p)}
+                                                    {renderActionsMenu(p, 'desktop')}
                                                 </div>
                                             </td>
                                         </tr>
@@ -919,7 +1092,7 @@ export default function ProductsPage() {
                                                 {i > 0 && arr[i - 1] !== p - 1 && <span className="text-gray-300 px-0.5">…</span>}
                                                 <button
                                                     onClick={() => fetchProducts(p)}
-                                                    className={`w - 8 h - 8 text - xs font - semibold rounded - lg transition - colors ${p === page
+                                                    className={`h-8 w-8 rounded-lg text-xs font-semibold transition-colors ${p === page
                                                         ? 'bg-blue-600 text-white shadow-sm'
                                                         : 'text-gray-500 hover:bg-gray-100'
                                                         } `}
@@ -938,6 +1111,29 @@ export default function ProductsPage() {
                                     →
                                 </button>
                             </div>
+                        </div>
+                    )}
+                    </div>
+
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-3 shadow-sm md:hidden">
+                            <button
+                                onClick={() => fetchProducts(page - 1)}
+                                disabled={page <= 1}
+                                className="h-10 rounded-xl border border-gray-200 px-4 text-xs font-bold text-slate-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+                            >
+                                Anterior
+                            </button>
+                            <span className="text-xs font-bold text-gray-400">
+                                {page} de {totalPages}
+                            </span>
+                            <button
+                                onClick={() => fetchProducts(page + 1)}
+                                disabled={page >= totalPages}
+                                className="h-10 rounded-xl border border-gray-200 px-4 text-xs font-bold text-slate-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+                            >
+                                Proxima
+                            </button>
                         </div>
                     )}
                 </div>
@@ -1201,6 +1397,64 @@ export default function ProductsPage() {
                                 >
                                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                     {editingProduct ? 'Salvar' : 'Criar'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {stockModalOpen && stockProduct && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setStockModalOpen(false)} />
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+                        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                            <div>
+                                <h3 className="text-sm font-bold text-gray-900">Adicionar estoque</h3>
+                                <p className="text-[11px] text-gray-400">{stockProduct.name}</p>
+                            </div>
+                            <button
+                                onClick={() => setStockModalOpen(false)}
+                                className="rounded-lg p-1 text-gray-400 hover:text-gray-600"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleAddStock} className="px-5 py-4 space-y-4">
+                            <div>
+                                <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Quantidade</label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="number"
+                                        step={stockProduct.unit === 'UN' ? '1' : '0.01'}
+                                        value={stockQuantity}
+                                        onChange={(e) => setStockQuantity(e.target.value)}
+                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all font-semibold"
+                                        placeholder="0"
+                                    />
+                                    <span className="text-xs font-bold text-gray-400 uppercase">{stockProduct.unit}</span>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setStockModalOpen(false)}
+                                    disabled={stockSaving}
+                                    className="flex-1 h-10 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={stockSaving}
+                                    className="flex-1 h-10 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {stockSaving && (
+                                        <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    )}
+                                    Adicionar
                                 </button>
                             </div>
                         </form>

@@ -774,7 +774,7 @@ export default function ProfilePage() {
                                             <div className="flex-1 text-center sm:text-left">
                                                 <h4 className="text-lg font-extrabold text-slate-800 mb-1">Recurso exclusivo do plano API Especialista</h4>
                                                 <p className="text-sm font-medium text-slate-500 leading-relaxed">
-                                                    Gere chaves de API para integrar o RomaneioRapido com outros sistemas. Faça upgrade para o plano especialista para desbloquear esse recurso.
+                                                    Gere chaves de API para integrar o RomaneioRápido com outros sistemas. Faça upgrade para o plano especialista para desbloquear esse recurso.
                                                 </p>
                                             </div>
                                             <button

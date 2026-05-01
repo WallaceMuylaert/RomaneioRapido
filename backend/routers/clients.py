@@ -3,8 +3,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
-from backend.core.security import get_current_user
-from backend.core.trial_utils import require_active_plan
+from backend.core.security import get_current_user_flexible
+from backend.core.trial_utils import require_active_plan_flexible
 from backend.core.limiter import limiter
 from backend.models.users import User
 from backend.schemas.clients import ClientCreate, ClientUpdate, ClientResponse
@@ -20,7 +20,7 @@ def create_client(
     request: Request,
     client: ClientCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_active_plan)
+    current_user: User = Depends(require_active_plan_flexible)
 ):
     try:
         logger.info(f"Usuário {current_user.email} está criando o cliente {client.name}")
@@ -39,7 +39,7 @@ def list_clients(
     per_page: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_flexible)
 ):
     try:
         skip = (page - 1) * per_page
@@ -66,7 +66,7 @@ def update_client(
     client_id: int,
     client: ClientUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_active_plan)
+    current_user: User = Depends(require_active_plan_flexible)
 ):
     try:
         db_client = crud.update_client(db, client_id, client, user_id=current_user.id)
@@ -88,7 +88,7 @@ def delete_client(
     request: Request,
     client_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_active_plan)
+    current_user: User = Depends(require_active_plan_flexible)
 ):
     try:
         db_client = crud.delete_client(db, client_id, user_id=current_user.id)

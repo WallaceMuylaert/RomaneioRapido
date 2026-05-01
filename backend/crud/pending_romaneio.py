@@ -1,4 +1,6 @@
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from backend.models.clients import Client
 from backend.models.pending_romaneio import PendingRomaneio
 from backend.schemas.pending_romaneio import PendingRomaneioCreate, PendingRomaneioUpdate
 from backend.models.inventory import InventoryMovement, MovementType
@@ -16,18 +18,53 @@ def get_pending_romaneio(db: Session, pending_id: int, user_id: int):
     ).first()
 
 
+def _validate_pending_payload(db: Session, pending, user_id: int) -> None:
+    if pending.client_id is not None:
+        client = db.query(Client).filter(Client.id == pending.client_id, Client.user_id == user_id).first()
+        if not client:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Cliente não encontrado",
+            )
+
+    product_ids = {item.product_id for item in pending.items if item.product_id}
+    if not product_ids:
+        return
+
+    owned_product_ids = {
+        product_id
+        for product_id, in db.query(Product.id).filter(
+            Product.id.in_(product_ids),
+            Product.user_id == user_id,
+            Product.is_active == True,
+        ).all()
+    }
+
+    if product_ids != owned_product_ids:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Produto não encontrado",
+        )
+
+
 def create_pending_romaneio(db: Session, pending: PendingRomaneioCreate, user_id: int):
+    _validate_pending_payload(db, pending, user_id)
     db_pending = PendingRomaneio(
         **pending.model_dump(),
         user_id=user_id
     )
     db.add(db_pending)
-    db.commit()
-    db.refresh(db_pending)
-    
-    # Sync stock if needed
-    if db_pending.empenhar_estoque:
-        sync_pending_romaneio_stock(db, db_pending)
+    try:
+        db.flush()
+        # Sync stock if needed
+        if db_pending.empenhar_estoque:
+            sync_pending_romaneio_stock(db, db_pending)
+        else:
+            db.commit()
+        db.refresh(db_pending)
+    except Exception:
+        db.rollback()
+        raise
         
     return db_pending
 
@@ -36,16 +73,20 @@ def update_pending_romaneio(db: Session, pending_id: int, pending: PendingRomane
     db_pending = get_pending_romaneio(db, pending_id, user_id)
     if not db_pending:
         return None
+
+    _validate_pending_payload(db, pending, user_id)
     
     update_data = pending.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_pending, key, value)
     
-    db.commit()
-    db.refresh(db_pending)
-    
-    # Sync stock always (it handles empenhar_estoque toggle inside)
-    sync_pending_romaneio_stock(db, db_pending)
+    try:
+        # Sync stock always (it handles empenhar_estoque toggle inside)
+        sync_pending_romaneio_stock(db, db_pending)
+        db.refresh(db_pending)
+    except Exception:
+        db.rollback()
+        raise
     
     return db_pending
 
@@ -72,13 +113,17 @@ def sync_pending_romaneio_stock(db: Session, db_pending: PendingRomaneio):
     """
     # 1. Buscar movimentos existentes para este rascunho
     existing_movements = db.query(InventoryMovement).filter(
-        InventoryMovement.pending_romaneio_id == db_pending.id
+        InventoryMovement.pending_romaneio_id == db_pending.id,
+        InventoryMovement.created_by == db_pending.user_id
     ).all()
     
     if not db_pending.empenhar_estoque:
         # Se empenho desativado, remover todos e devolver ao estoque
         for m in existing_movements:
-            product = db.query(Product).filter(Product.id == m.product_id).first()
+            product = db.query(Product).filter(
+                Product.id == m.product_id,
+                Product.user_id == db_pending.user_id,
+            ).first()
             if product:
                 if m.movement_type == MovementType.OUT:
                     product.stock_quantity += m.quantity
@@ -99,10 +144,37 @@ def sync_pending_romaneio_stock(db: Session, db_pending: PendingRomaneio):
     
     # Mapear movimentos antigos por product_id
     old_movements_map = {m.product_id: m for m in existing_movements}
+
+    insufficient = []
+    for pid, new_qty in new_items_map.items():
+        product = db.query(Product).filter(
+            Product.id == pid,
+            Product.user_id == db_pending.user_id,
+            Product.is_active == True,
+        ).first()
+        if not product:
+            continue
+
+        old_qty = old_movements_map.get(pid).quantity if pid in old_movements_map else 0
+        diff = new_qty - old_qty
+        if diff > 0 and diff > product.stock_quantity:
+            insufficient.append(
+                f"{product.name}: disponivel {product.stock_quantity}, solicitado adicional {diff}"
+            )
+
+    if insufficient:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Estoque insuficiente para empenho: " + "; ".join(insufficient),
+        )
     
     # Processar atualizações e novos empenhos
     for pid, new_qty in new_items_map.items():
-        product = db.query(Product).filter(Product.id == pid).first()
+        product = db.query(Product).filter(
+            Product.id == pid,
+            Product.user_id == db_pending.user_id,
+            Product.is_active == True,
+        ).first()
         if not product:
             continue
             
@@ -137,7 +209,10 @@ def sync_pending_romaneio_stock(db: Session, db_pending: PendingRomaneio):
             
     # Remover movimentos de produtos que saíram do romaneio
     for pid, m in old_movements_map.items():
-        product = db.query(Product).filter(Product.id == pid).first()
+        product = db.query(Product).filter(
+            Product.id == pid,
+            Product.user_id == db_pending.user_id,
+        ).first()
         if product:
             product.stock_quantity += m.quantity
         db.delete(m)

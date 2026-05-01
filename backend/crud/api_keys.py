@@ -5,6 +5,7 @@ from typing import Optional, List
 
 from sqlalchemy.orm import Session
 from backend.models.api_keys import ApiKey
+from backend.core.plans_config import PLANS_WITH_API_ACCESS
 
 
 def _generate_raw_key() -> str:
@@ -102,6 +103,9 @@ def get_user_by_api_key(db: Session, raw_key: str):
     from backend.models.users import User
     user = db.query(User).filter(User.id == api_key.user_id).first()
     if not user or not user.is_active:
+        return None
+
+    if not (getattr(user, "is_admin", False) or getattr(user, "is_unlimited", False) or user.plan_id in PLANS_WITH_API_ACCESS):
         return None
 
     return user, api_key

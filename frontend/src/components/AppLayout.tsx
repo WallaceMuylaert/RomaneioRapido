@@ -11,6 +11,7 @@ import {
     Menu,
     X,
     Users,
+    User,
     ChevronLeft,
     ChevronRight,
     ArrowRightLeft,
@@ -40,6 +41,7 @@ export default function AppLayout() {
     const navigate = useNavigate()
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [isCollapsed, setIsCollapsed] = useState(false)
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const { isSubscribing, handleSubscribe } = useSubscription()
 
     const subscriptionStatus = user?.subscription_status || 'active'
@@ -70,12 +72,24 @@ export default function AppLayout() {
         navigate('/login')
     }
 
+    const handleMobileMenuNavigate = (to: string) => {
+        if (isLockEnabled && to !== '/perfil') {
+            toast.error(
+                isUnpaidLocked
+                    ? 'Sua assinatura está suspensa. Regularize o pagamento.'
+                    : 'Seu teste expirou. Assine um plano para continuar.'
+            )
+            return
+        }
+        navigate(to)
+        setMobileMenuOpen(false)
+    }
+
     return (
         <div className="min-h-screen bg-slate-50/50 flex transition-colors duration-500">
             {/* Sidebar */}
             <aside className={`
         fixed inset-y-0 left-0 z-50 bg-white/80 backdrop-blur-xl border-r border-slate-100 flex flex-col
-        shadow-[20px_0_40px_rgba(0,0,0,0.02)]
         transform transition-all duration-300 ease-in-out md:translate-x-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         ${isCollapsed ? 'md:w-20' : 'md:w-64'}
@@ -91,7 +105,7 @@ export default function AppLayout() {
 
                 {/* Logo */}
                 <div 
-                    className={`h-16 flex items-center border-b border-slate-100/50 group cursor-pointer transition-all ${isCollapsed ? 'justify-center px-0' : 'px-6 gap-3'}`} 
+                    className={`h-16 flex items-center group cursor-pointer transition-all ${isCollapsed ? 'justify-center px-0' : 'px-6 gap-3'}`} 
                     onClick={() => {
                         if (isLockEnabled) {
                             navigate('/perfil?tab=subscription')
@@ -104,12 +118,12 @@ export default function AppLayout() {
                         <img
                             src={logo}
                             alt="RomaneioRápido"
-                            className={`transition-all duration-300 object-contain ${isCollapsed ? 'h-8 w-8' : 'h-8'}`}
+                            className={`transition-all duration-300 object-contain ${isCollapsed ? 'h-12 w-12' : 'h-12'}`}
                         />
                     </div>
                     {!isCollapsed && (
                         <span className="text-base font-bold text-slate-900 tracking-tight whitespace-nowrap animate-in fade-in duration-300">
-                            Romaneio<span className="text-brand-600">Rapido</span>
+                            Romaneio<span className="text-brand-600"> Rápido</span>
                         </span>
                     )}
                     <button className="md:hidden ml-auto p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors" onClick={() => setSidebarOpen(false)}>
@@ -239,7 +253,7 @@ export default function AppLayout() {
                     <button
                         onClick={handleLogout}
                         title={isCollapsed ? "Sair" : ""}
-                        className={`flex items-center w-full text-[13px] font-semibold text-slate-400 hover:text-red-500 hover:bg-red-50/50 rounded-xl transition-all border border-transparent hover:border-red-100 ${isCollapsed ? 'justify-center p-3' : 'gap-2.5 px-3 py-2.5'}`}
+                        className={`flex items-center w-full text-[13px] font-semibold text-red-500 hover:text-red-600 hover:bg-red-50/50 rounded-xl transition-all border border-transparent hover:border-red-100 ${isCollapsed ? 'justify-center p-3' : 'gap-2.5 px-3 py-2.5'}`}
                     >
                         <LogOut className="w-4 h-4 shrink-0" />
                         {!isCollapsed && <span className="whitespace-nowrap animate-in fade-in duration-300">Sair</span>}
@@ -257,10 +271,7 @@ export default function AppLayout() {
             {/* Main */}
             <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
                 {/* Top bar mobile */}
-                <header className="md:hidden h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 flex items-center justify-between sticky top-0 z-30">
-                    <button onClick={() => setSidebarOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
-                        <Menu className="w-6 h-6" />
-                    </button>
+                <header className="md:hidden h-14 bg-white/90 backdrop-blur-md border border-slate-200 rounded-2xl mx-2 mt-2 px-2 flex items-center justify-between sticky top-3 z-30">
                     <div className="flex items-center gap-2.5 group cursor-pointer" onClick={() => {
                         if (isLockEnabled) {
                             navigate('/perfil?tab=subscription')
@@ -268,15 +279,109 @@ export default function AppLayout() {
                             navigate('/dashboard')
                         }
                     }}>
-                        <div className="h-7 flex items-center justify-center">
-                            <img src={logo} alt="Logo" className="h-6 object-contain" />
+                        <div className="h-8 flex items-center justify-center">
+                            <img src={logo} alt="Logo" className="h-12 object-contain" />
                         </div>
-                        <span className="text-sm font-bold text-slate-900">Romaneio<span className="text-brand-600">Rapido</span></span>
                     </div>
-                    <div className="w-10"></div> {/* Spacer for symmetry */}
+                    <button
+                        onClick={() => setMobileMenuOpen(true)}
+                        className="w-9 h-9 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        aria-label="Abrir menu"
+                    >
+                        <Menu className="w-5 h-5" />
+                    </button>
                 </header>
 
-                <main className="flex-1 p-4 md:p-8 lg:p-10">
+                {mobileMenuOpen && (
+                    <div className="fixed inset-0 z-50 md:hidden">
+                        <div
+                            className="absolute inset-0 bg-slate-900/30"
+                            onClick={() => setMobileMenuOpen(false)}
+                        />
+                        <div className="absolute inset-x-3 top-20 bottom-auto max-h-[78vh] bg-white border border-slate-200 rounded-2xl overflow-visible flex flex-col z-50 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200 origin-top-right">
+                            <div
+                                className="absolute -top-1.5 right-4 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45 pointer-events-none"
+                                aria-hidden="true"
+                            />
+                            <div className="rounded-2xl overflow-hidden flex flex-col bg-white">
+                            <div className="flex items-center justify-between px-4 py-3">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-600 overflow-hidden shrink-0">
+                                        {user?.photo_base64 ? (
+                                            <img src={user.photo_base64} alt="Avatar" className="w-full h-full object-cover" />
+                                        ) : (
+                                            user?.full_name?.charAt(0)?.toUpperCase()
+                                        )}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[13px] font-bold text-slate-900 truncate">{user?.full_name || 'Conta'}</p>
+                                        <p className="text-[11px] font-semibold text-slate-400 truncate">Menu</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="w-9 h-9 flex items-center justify-center text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+                                    aria-label="Fechar menu"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4 p-5 flex-1 content-start">
+                                {navItems.map((item) => {
+                                    const isDisabled = isLockEnabled && item.to !== '/perfil'
+                                    return (
+                                        <button
+                                            key={item.to}
+                                            onClick={() => handleMobileMenuNavigate(item.to)}
+                                            disabled={isDisabled}
+                                            className={`flex flex-col items-center gap-2 px-2 py-5 rounded-2xl border text-center transition-all min-h-[6.25rem] ${isDisabled
+                                                ? 'border-slate-100 text-slate-300'
+                                                : 'border-slate-100 text-slate-700 hover:border-brand-200 hover:text-brand-700 hover:bg-brand-50/50'
+                                                }`}
+                                        >
+                                            <item.icon className="w-5 h-5" />
+                                            <span className="text-[11px] font-semibold">{item.label}</span>
+                                        </button>
+                                    )
+                                })}
+                                <button
+                                    onClick={() => handleMobileMenuNavigate('/perfil')}
+                                    className="flex flex-col items-center gap-2 px-2 py-5 rounded-2xl border border-slate-100 text-slate-700 hover:border-brand-200 hover:text-brand-700 hover:bg-brand-50/50 transition-all min-h-[6.25rem] col-start-2"
+                                >
+                                    <User className="w-5 h-5" />
+                                    <span className="text-[11px] font-semibold">Perfil</span>
+                                </button>
+                            </div>
+
+                            <div className="p-4 grid grid-cols-2 gap-2">
+                                <a
+                                    href={getWhatsAppLink('Olá! Preciso de suporte com o Romaneio Rápido.')}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="flex items-center justify-center gap-2 w-full h-10 rounded-xl border border-slate-200 text-slate-600 hover:border-brand-200 hover:text-brand-700 hover:bg-brand-50/50 transition-all text-xs font-semibold"
+                                >
+                                    <LifeBuoy className="w-4 h-4" />
+                                    Suporte
+                                </a>
+                                <button
+                                    onClick={() => {
+                                        setMobileMenuOpen(false)
+                                        handleLogout()
+                                    }}
+                                    className="flex items-center justify-center gap-2 w-full h-10 rounded-xl border border-red-100 bg-red-50/60 text-red-600 hover:border-red-200 hover:text-red-700 hover:bg-red-100/70 transition-all text-xs font-semibold"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    Sair
+                                </button>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <main className="flex-1 p-3 sm:p-4 md:p-8 lg:p-10">
                     {/* Bloqueio estrito de renderização de conteúdo se as condições de lock forem atendidas */}
                     {isLockEnabled && window.location.pathname !== '/perfil' ? (
                         <div className="h-full flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in zoom-in-95 duration-500">

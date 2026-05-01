@@ -51,7 +51,6 @@ export default function RomaneioExportModal({
     discount = 0,
     isDraft = false
 }: RomaneioExportModalProps) {
-    if (!isOpen) return null
     const { user } = useAuth()
 
     // Estados para edição/cadastro de telefone
@@ -90,6 +89,8 @@ export default function RomaneioExportModal({
         message: '',
         type: 'info'
     })
+
+    if (!isOpen) return null
 
     const totalsByUnit = items.reduce((acc, item) => {
         const unit = (item.unit || 'UN').toUpperCase();

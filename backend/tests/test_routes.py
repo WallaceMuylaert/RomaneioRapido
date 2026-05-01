@@ -23,6 +23,14 @@ app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
 
+
+@pytest.fixture(scope="module", autouse=True)
+def cleanup_test_client():
+    yield
+    client.close()
+    engine.dispose()
+
+
 def test_health():
     """Verifica se a API está online respondendo no endpoint de healthcheck"""
     response = client.get("/health")

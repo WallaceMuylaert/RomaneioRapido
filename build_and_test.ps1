@@ -6,18 +6,29 @@ Write-Host "===============================================" -ForegroundColor Cy
 Write-Host " Iniciando Processo de Build e Validacao (Testes)" -ForegroundColor Cyan
 Write-Host "===============================================" -ForegroundColor Cyan
 
-# 1. Testar Rotas do Backend
-Write-Host "`n[1/2] Verificando integridade das rotas no backend..." -ForegroundColor Yellow
+# 1. Testar Backend
+Write-Host "`n[1/2] Verificando todos os testes do backend..." -ForegroundColor Yellow
 
-# Executa o pytest rodando dentro do container Docker do backend onde httpx e dependências estão instaladas
-docker exec -e PYTHONPATH=/app $BackendContainer python -m pytest backend/test_routes.py -v
+# Executa cada arquivo de teste em um processo separado dentro do container.
+# O loop fica no PowerShell para evitar problemas de aspas entre Windows, Docker e sh.
+$backendTests = Get-ChildItem -Path ".\backend\tests" -Filter "test_*.py" | Sort-Object Name
+
+foreach ($test in $backendTests) {
+    $containerTestPath = "backend/tests/$($test.Name)"
+    Write-Host "Running $containerTestPath" -ForegroundColor DarkCyan
+    docker exec -e TESTING=1 -e PYTHONPATH=/app $BackendContainer python -m pytest $containerTestPath -v
+
+    if ($LASTEXITCODE -ne 0) {
+        break
+    }
+}
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "`n[ERRO] Os testes de rota falharam! Verifique os logs acima." -ForegroundColor Red
+    Write-Host "`n[ERRO] Os testes de backend falharam! Verifique os logs acima." -ForegroundColor Red
     Write-Host "Build abortado por questoes de integridade da API." -ForegroundColor Red
     exit 1
 } else {
-    Write-Host "[OK] Testes de rota e healthcheck aprovados!" -ForegroundColor Green
+    Write-Host "[OK] Todos os testes de backend aprovados!" -ForegroundColor Green
 }
 
 # 2. Buildar o Frontend (React/Vite)

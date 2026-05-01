@@ -453,7 +453,7 @@ export default function CategoryProductsPage() {
                                                     {openMenuId === p.id && (
                                                         <>
                                                             <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                                                            <div className="absolute right-0 top-10 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                                                            <div className="absolute right-0 top-10 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-4 max-sm:top-auto max-sm:w-auto max-sm:origin-bottom">
                                                                 <button
                                                                     onClick={() => { openEdit(p); setOpenMenuId(null); }}
                                                                     className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors text-left"

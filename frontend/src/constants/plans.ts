@@ -114,7 +114,8 @@ export const PLANS: Plan[] = [
         limit_categories: 999999,
         limit_api_keys: 10,
         api_rate_limit: '500/minuto',
-        color: 'brand'
+        color: 'brand',
+        hidden: true
     },
     {
         id: 'enterprise',

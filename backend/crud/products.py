@@ -1,5 +1,6 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session, defer
+from fastapi import HTTPException
 from backend.models.products import Product
 from backend.schemas.products import ProductCreate, ProductUpdate
 
@@ -113,6 +114,24 @@ def update_product(db: Session, product_id: int, product: ProductUpdate, user_id
     
     old_stock = db_product.stock_quantity
     update_data = product.model_dump(exclude_unset=True)
+
+    if update_data.get("barcode"):
+        existing = db.query(Product).filter(
+            Product.user_id == user_id,
+            Product.barcode == update_data["barcode"],
+            Product.id != product_id,
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Código de barras já cadastrado")
+
+    if update_data.get("sku"):
+        existing = db.query(Product).filter(
+            Product.user_id == user_id,
+            Product.sku == update_data["sku"],
+            Product.id != product_id,
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="SKU já cadastrado")
     
     for key, value in update_data.items():
         setattr(db_product, key, value)

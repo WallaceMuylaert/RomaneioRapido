@@ -30,7 +30,7 @@ export default function PrivacyPage() {
                         <section>
                             <h2 className="text-xl font-bold text-slate-900 mb-4 tracking-tight">1. Coleta e Uso de Dados</h2>
                             <p className="leading-relaxed">
-                                No RomaneioRapido, nossa prioridade e arquitetura são baseadas 100% na segurança. Ao criar sua conta, guardamos e protegemos dados essenciais (como e-mail, nome e preferências de operação) apenas com a finalidade de viabilizar a entrada no sistema e otimizar as métricas dos painéis da sua empresa.
+                                No Romaneio Rápido, nossa prioridade e arquitetura são baseadas 100% na segurança. Ao criar sua conta, guardamos e protegemos dados essenciais (como e-mail, nome e preferências de operação) apenas com a finalidade de viabilizar a entrada no sistema e otimizar as métricas dos painéis da sua empresa.
                             </p>
                         </section>
 
