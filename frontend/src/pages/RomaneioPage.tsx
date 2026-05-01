@@ -157,10 +157,22 @@ export default function RomaneioPage() {
     // Estado para feedback em tempo real do scanner
     const [scanStatus, setScanStatus] = useState<'idle' | 'searching' | 'success' | 'error'>('idle')
 
+    const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const isAutoSavingRef = useRef(false)
+    const hasInitializedRef = useRef(false)
+    const isFinalizingRef = useRef(false)
+
+    const clearAutoSaveTimer = () => {
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current)
+            autoSaveTimerRef.current = null
+        }
+    }
+
     // Bloqueador de Navegação do React Router (Para rotas externas)
     const blocker = useBlocker(
         ({ currentLocation, nextLocation }) =>
-            cartItems.length > 0 && currentLocation.pathname !== nextLocation.pathname
+            cartItems.length > 0 && !showExportModal && !isFinalizingRef.current && currentLocation.pathname !== nextLocation.pathname
     );
 
     // Pedidos Pendentes (Separação)
@@ -168,9 +180,6 @@ export default function RomaneioPage() {
     const [isSavingPending, setIsSavingPending] = useState(false)
     const [empenharAoDigitar, setEmpenharAoDigitar] = useState(true)
     const [activePendingId, setActivePendingId] = useState<number | null>(null)
-    const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-    const isAutoSavingRef = useRef(false)
-    const hasInitializedRef = useRef(false)
 
     // Fechar dropdowns ao clicar fora
     useEffect(() => {
@@ -433,10 +442,7 @@ export default function RomaneioPage() {
 
     const handleBlockerSave = async () => {
         // Interromper qualquer auto-save agendado para rodar o manual agora
-        if (autoSaveTimerRef.current) {
-            clearTimeout(autoSaveTimerRef.current);
-            autoSaveTimerRef.current = null;
-        }
+        clearAutoSaveTimer()
 
         await handleSavePending();
         blocker.proceed?.();
@@ -444,10 +450,7 @@ export default function RomaneioPage() {
 
     const handleDiscardAndExit = async () => {
         // Interromper auto-save
-        if (autoSaveTimerRef.current) {
-            clearTimeout(autoSaveTimerRef.current);
-            autoSaveTimerRef.current = null;
-        }
+        clearAutoSaveTimer()
 
         try {
             // Se houver rascunho salvo no banco, deletamos para descarte real
@@ -522,10 +525,7 @@ export default function RomaneioPage() {
             cancelText: 'Cancelar',
             onConfirm: async () => {
                 // Cancelar auto-save imediatamente para evitar recriação fantasma
-                if (autoSaveTimerRef.current) {
-                    clearTimeout(autoSaveTimerRef.current);
-                    autoSaveTimerRef.current = null;
-                }
+                clearAutoSaveTimer()
 
                 try {
                     await api.delete(`/pending/${id}`)
@@ -610,14 +610,14 @@ export default function RomaneioPage() {
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (cartItems.length > 0) {
+            if (cartItems.length > 0 && !showExportModal && !isFinalizingRef.current) {
                 e.preventDefault()
                 e.returnValue = ''
             }
         }
         window.addEventListener('beforeunload', handleBeforeUnload)
         return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-    }, [cartItems])
+    }, [cartItems, showExportModal])
 
 
 
@@ -627,14 +627,14 @@ export default function RomaneioPage() {
         if (!hasInitializedRef.current) return;
 
         // Limpar timer anterior
-        if (autoSaveTimerRef.current) {
-            clearTimeout(autoSaveTimerRef.current);
-        }
+        clearAutoSaveTimer()
 
         // Se carrinho estiver vazio, não faz auto-save
         if (cartItems.length === 0) return;
+        if (submitting || showExportModal || isFinalizingRef.current) return;
 
         autoSaveTimerRef.current = setTimeout(async () => {
+            if (submitting || showExportModal || isFinalizingRef.current) return;
             if (isAutoSavingRef.current) return;
             isAutoSavingRef.current = true;
 
@@ -672,11 +672,9 @@ export default function RomaneioPage() {
         }, 3000);
 
         return () => {
-            if (autoSaveTimerRef.current) {
-                clearTimeout(autoSaveTimerRef.current);
-            }
+            clearAutoSaveTimer()
         };
-    }, [cartItems, customerName, customerPhone, selectedClientId, empenharAoDigitar, discountPercentage]);
+    }, [cartItems, customerName, customerPhone, selectedClientId, empenharAoDigitar, discountPercentage, activePendingId, submitting, showExportModal]);
 
 
     const addToCart = (product: any, quantityOverride?: number) => {
@@ -829,7 +827,10 @@ export default function RomaneioPage() {
     }
 
     const executeFinalize = async () => {
+        clearAutoSaveTimer()
+        isFinalizingRef.current = true
         setSubmitting(true)
+        let finalizedSuccessfully = false
         try {
             // Se houver empenho ativo, deletamos o rascunho para liberar o estoque antes da movimentação final
             if (activePendingId) {
@@ -868,19 +869,20 @@ export default function RomaneioPage() {
             toast.success('Romaneio registrado com sucesso!', { id: 'finalize-romaneio' })
             fetchStockLevels()
             fetchPendingRomaneios() // Atualiza a lista de separações para garantir que o rascunho sumiu
+            finalizedSuccessfully = true
         } catch (err: any) {
             toast.error(translateError(err.response?.data?.detail) || 'Erro ao registrar movimentações do romaneio!', { id: 'romaneio-error' })
         } finally {
+            if (!finalizedSuccessfully) {
+                isFinalizingRef.current = false
+            }
             setSubmitting(false)
         }
     }
 
     const resetCart = () => {
         // Cancelar qualquer auto-save pendente antes de resetar
-        if (autoSaveTimerRef.current) {
-            clearTimeout(autoSaveTimerRef.current);
-            autoSaveTimerRef.current = null;
-        }
+        clearAutoSaveTimer()
         setCartItems([])
         setCustomerName('')
         setCustomerPhone(null)
@@ -891,6 +893,7 @@ export default function RomaneioPage() {
         setActivePendingId(null)
         setEmpenharAoDigitar(true) // Reset para o padrão seguro
         isAutoSavingRef.current = false;
+        isFinalizingRef.current = false;
     }
 
     const romaneioSubtotal = cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
