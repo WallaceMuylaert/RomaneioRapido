@@ -13,7 +13,7 @@ class ProductBase(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     price: float = Field(0.0, ge=0)
     cost_price: Optional[float] = Field(0.0, ge=0)
-    stock_quantity: float = Field(0.0)
+    stock_quantity: float = Field(0.0, ge=0)
     min_stock: float = Field(0.0, ge=0)
     unit: str = Field("UN", max_length=20)
     category_id: Optional[int] = None
@@ -34,7 +34,7 @@ class ProductUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     price: Optional[float] = Field(None, ge=0)
     cost_price: Optional[float] = Field(None, ge=0)
-    stock_quantity: Optional[float] = Field(None)
+    stock_quantity: Optional[float] = Field(None, ge=0)
     min_stock: Optional[float] = Field(None, ge=0)
     unit: Optional[str] = Field(None, max_length=20)
     category_id: Optional[int] = None
@@ -46,6 +46,7 @@ class ProductUpdate(BaseModel):
 
 class ProductResponse(ProductBase):
     id: int
+    stock_quantity: float = Field(0.0)
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

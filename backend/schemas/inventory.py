@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from typing import Optional, Any, List
 from datetime import datetime
 from backend.models.inventory import MovementType
@@ -6,7 +6,7 @@ from backend.models.inventory import MovementType
 
 class InventoryMovementBase(BaseModel):
     product_id: int = Field(..., gt=0)
-    quantity: float = Field(..., gt=0, le=999_999_999)
+    quantity: float = Field(..., ge=0, le=999_999_999)
     movement_type: MovementType
     notes: Optional[str] = Field(None, max_length=1000)
     product_name_snapshot: Optional[str] = Field(None, max_length=250)
@@ -19,6 +19,12 @@ class InventoryMovementBase(BaseModel):
     romaneio_id: Optional[str] = Field(None, max_length=100)
     client_id: Optional[int] = None
     pending_romaneio_id: Optional[int] = None
+
+    @model_validator(mode="after")
+    def validate_quantity_for_type(self):
+        if self.movement_type in (MovementType.IN, MovementType.OUT) and self.quantity <= 0:
+            raise ValueError("Quantidade deve ser maior que zero para entrada ou saída.")
+        return self
 
 
 class InventoryMovementCreate(InventoryMovementBase):
@@ -41,6 +47,7 @@ class InventoryMovementResponse(InventoryMovementBase):
     product_name: Optional[str] = None
     client: Optional[ClientInfo] = None
     product_price: Optional[float] = None
+    stock_before_snapshot: Optional[float] = None
 
     @field_validator('is_cancelled', mode='before')
     @classmethod
@@ -79,3 +86,31 @@ class StockLevelPaginatedResponse(BaseModel):
     total: int
     page: int
     per_page: int
+
+
+class RomaneioFinalizeItem(BaseModel):
+    product_id: int = Field(..., gt=0)
+    quantity: float = Field(..., gt=0, le=999_999_999)
+    product_name_snapshot: Optional[str] = Field(None, max_length=250)
+    product_barcode_snapshot: Optional[str] = Field(None, max_length=100)
+    unit_price_snapshot: Optional[float] = Field(None, ge=0)
+    unit_snapshot: Optional[str] = Field(None, max_length=20)
+    product_color_snapshot: Optional[str] = Field(None, max_length=50)
+    product_size_snapshot: Optional[str] = Field(None, max_length=50)
+
+
+class RomaneioFinalizeRequest(BaseModel):
+    items: List[RomaneioFinalizeItem] = Field(..., min_length=1, max_length=500)
+    customer_name: Optional[str] = Field(None, max_length=150)
+    client_id: Optional[int] = Field(None, gt=0)
+    pending_romaneio_id: Optional[int] = Field(None, gt=0)
+    discount_percentage: float = Field(0.0, ge=0, le=100)
+    allow_negative_stock: bool = False
+
+
+class RomaneioFinalizeResponse(BaseModel):
+    romaneio_id: str
+    movement_ids: List[int]
+    subtotal: float
+    discount_amount: float
+    total_value: float

@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
-from backend.core.security import get_current_user
+from backend.core.security import get_current_user, get_current_user_flexible
 from backend.core.plans_config import PLANS_CONFIG
 
 
@@ -43,7 +43,7 @@ def get_trial_days_remaining(user) -> Optional[int]:
     return max(remaining, 0)
 
 
-def require_active_plan(current_user=Depends(get_current_user)):
+def _require_active_plan_for_user(current_user):
     """
     FastAPI dependency: bloqueia ações de escrita se o trial expirou
     ou se a assinatura está inadimplente (unpaid).
@@ -79,3 +79,11 @@ def require_active_plan(current_user=Depends(get_current_user)):
         )
     
     return current_user
+
+
+def require_active_plan(current_user=Depends(get_current_user)):
+    return _require_active_plan_for_user(current_user)
+
+
+def require_active_plan_flexible(current_user=Depends(get_current_user_flexible)):
+    return _require_active_plan_for_user(current_user)

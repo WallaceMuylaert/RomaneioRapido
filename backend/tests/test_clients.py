@@ -31,10 +31,12 @@ def setup_database():
         os.remove("./test_db.sqlite")
         
     Base.metadata.create_all(bind=engine)
+    app.dependency_overrides[get_db] = override_get_db
     yield
     # Cleanup after session
     client.close()
     engine.dispose()
+    app.dependency_overrides.pop(get_db, None)
     if os.path.exists("./test_db.sqlite"):
         os.remove("./test_db.sqlite")
 

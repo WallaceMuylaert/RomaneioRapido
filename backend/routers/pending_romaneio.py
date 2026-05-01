@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from backend.core.database import get_db
-from backend.core.security import get_current_user
+from backend.core.security import get_current_user_flexible
+from backend.core.trial_utils import require_active_plan_flexible
 from backend.schemas.pending_romaneio import PendingRomaneio, PendingRomaneioCreate, PendingRomaneioUpdate
 from backend.crud import pending_romaneio as crud
 
@@ -12,7 +13,7 @@ router = APIRouter(prefix="/pending", tags=["pending"])
 @router.get("/", response_model=List[PendingRomaneio])
 def read_pending_romaneios(
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_user_flexible)
 ):
     return crud.get_pending_romaneios(db, user_id=current_user.id)
 
@@ -21,7 +22,7 @@ def read_pending_romaneios(
 def read_pending_romaneio(
     pending_id: int,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_user_flexible)
 ):
     db_pending = crud.get_pending_romaneio(db, pending_id=pending_id, user_id=current_user.id)
     if not db_pending:
@@ -33,7 +34,7 @@ def read_pending_romaneio(
 def create_pending_romaneio(
     pending: PendingRomaneioCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(require_active_plan_flexible)
 ):
     return crud.create_pending_romaneio(db=db, pending=pending, user_id=current_user.id)
 
@@ -43,7 +44,7 @@ def update_pending_romaneio(
     pending_id: int,
     pending: PendingRomaneioUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(require_active_plan_flexible)
 ):
     db_pending = crud.update_pending_romaneio(db=db, pending_id=pending_id, pending=pending, user_id=current_user.id)
     if not db_pending:
@@ -55,7 +56,7 @@ def update_pending_romaneio(
 def delete_pending_romaneio(
     pending_id: int,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(require_active_plan_flexible)
 ):
     success = crud.delete_pending_romaneio(db=db, pending_id=pending_id, user_id=current_user.id)
     if not success:

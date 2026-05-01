@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import api from '../services/api'
 
 export interface User {
@@ -30,60 +30,91 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
+const TOKEN_REFRESH_INTERVAL_MS = 10 * 60 * 1000
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
     const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
     const [isLoading, setIsLoading] = useState(true)
+    const validatingTokenRef = useRef<string | null>(null)
 
     useEffect(() => {
-        if (token && !user) {
-            api.get('/auth/me')
+        if (!token) {
+            setIsLoading(false)
+            return
+        }
+
+        const tokenBeingValidated = token
+
+        if (!user) {
+            if (validatingTokenRef.current === tokenBeingValidated) {
+                return
+            }
+
+            validatingTokenRef.current = tokenBeingValidated
+            api.get('/auth/me', {
+                headers: { Authorization: `Bearer ${tokenBeingValidated}` },
+                skipAuthRedirect: true,
+            } as any)
                 .then((res) => setUser(res.data))
                 .catch((err) => {
                     if (err.response?.status === 401) {
-                        console.error('[Auth] Token inválido ou expirado. Limpando sessão.');
-                        localStorage.removeItem('token')
-                        setToken(null)
+                        if (localStorage.getItem('token') === tokenBeingValidated) {
+                            console.error('[Auth] Token invalido ou expirado. Limpando sessao.')
+                            localStorage.removeItem('token')
+                            setToken(null)
+                        } else {
+                            console.warn('[Auth] 401 de validacao antiga ignorado; token atual foi mantido.')
+                        }
                     } else {
-                        console.warn('[Auth] Erro ao validar usuário (infraestrutura). Mantendo token.', err.response?.status || err.code);
+                        console.warn('[Auth] Erro ao validar usuario (infraestrutura). Mantendo token.', err.response?.status || err.code)
                     }
                 })
-                .finally(() => setIsLoading(false))
-
-            // Auto-Refresh: Renova o token a cada 1 hora silenciosamente
-            const interval = setInterval(async () => {
-                try {
-                    const res = await api.post('/auth/refresh')
-                    if (res.data?.access_token) {
-                        localStorage.setItem('token', res.data.access_token)
-                        setToken(res.data.access_token)
+                .finally(() => {
+                    if (validatingTokenRef.current === tokenBeingValidated) {
+                        validatingTokenRef.current = null
                     }
-                } catch (err) {
-                    console.error('Falha na renovação silenciosa do token', err)
-                }
-            }, 60 * 60 * 1000)
-
-            return () => clearInterval(interval)
+                    setIsLoading(false)
+                })
         } else {
             setIsLoading(false)
         }
-    }, [token])
+
+        // Auto-refresh: renova antes de tokens curtos expirarem.
+        const interval = setInterval(async () => {
+            try {
+                const res = await api.post('/auth/refresh')
+                if (res.data?.access_token) {
+                    localStorage.setItem('token', res.data.access_token)
+                    setToken(res.data.access_token)
+                }
+            } catch (err) {
+                console.error('Falha na renovacao silenciosa do token', err)
+            }
+        }, TOKEN_REFRESH_INTERVAL_MS)
+
+        return () => clearInterval(interval)
+    }, [token, user])
 
     const login = async (email: string, password: string) => {
         const res = await api.post('/auth/login', { email, password })
         const { access_token } = res.data
         localStorage.setItem('token', access_token)
-        setToken(access_token)
         const userRes = await api.get('/auth/me', {
-            headers: { Authorization: `Bearer ${access_token}` }
-        })
+            headers: { Authorization: `Bearer ${access_token}` },
+            skipAuthRedirect: true,
+        } as any)
         setUser(userRes.data)
+        setToken(access_token)
     }
 
     const refreshUser = async () => {
         try {
-            const res = await api.get('/auth/me')
+            const currentToken = localStorage.getItem('token')
+            const res = await api.get('/auth/me', {
+                headers: currentToken ? { Authorization: `Bearer ${currentToken}` } : undefined,
+                skipAuthRedirect: true,
+            } as any)
             setUser(res.data)
         } catch {
             // silently fail

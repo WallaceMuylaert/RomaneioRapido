@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from backend.models.categories import Category
+from backend.models.products import Product
 from backend.schemas.categories import CategoryCreate, CategoryUpdate
 
 
@@ -39,6 +40,10 @@ def delete_category(db: Session, category_id: int, user_id: int):
     db_category = db.query(Category).filter(Category.id == category_id, Category.user_id == user_id).first()
     if not db_category:
         return None
+    db.query(Product).filter(
+        Product.user_id == user_id,
+        Product.category_id == category_id,
+    ).update({Product.category_id: None}, synchronize_session=False)
     db.delete(db_category)
     db.commit()
     return db_category

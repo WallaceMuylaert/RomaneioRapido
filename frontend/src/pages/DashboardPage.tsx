@@ -133,7 +133,7 @@ export default function DashboardPage() {
 
     const stockHealth = useMemo(() => {
         const outOfStock = stockLevels.filter((item) => item.stock_quantity <= 0).length
-        const lowStock = stockLevels.filter((item) => item.stock_quantity > 0 && item.stock_quantity < item.min_stock).length
+        const lowStock = stockLevels.filter((item) => item.stock_quantity > 0 && item.stock_quantity <= item.min_stock).length
         const healthy = Math.max(stockLevels.length - lowStock - outOfStock, 0)
         const total = Math.max(stockLevels.length, 1)
 

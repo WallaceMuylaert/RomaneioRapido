@@ -69,7 +69,7 @@ export default function MovementsPage() {
     const [perPage] = useState(15)
     const [search, setSearch] = useState('')
     const navigate = useNavigate()
-    const [typeFilter, setTypeFilter] = useState<string>('')
+    const [typeFilter, setTypeFilter] = useState<string>('OUT')
     const [viewMode, setViewMode] = useState<'movements' | 'romaneios'>('romaneios')
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [sharingMovement, setSharingMovement] = useState<Movement | null>(null)
@@ -137,8 +137,33 @@ export default function MovementsPage() {
         getBase64FromUrl(logoImg).then(setLogoBase64).catch(console.error)
     }, [])
 
-    // Helper para obter o preço efetivo (snapshot ou preço atual do produto)
-    const getEffectivePrice = (item: any) => item.unit_price_snapshot ?? item.product_price ?? 0
+    // Helper para obter o preço efetivo (preco atual do produto, com fallback no snapshot)
+    const getEffectivePrice = (item: any) => item.product_price ?? item.unit_price_snapshot ?? 0
+
+    const getProductName = (item: any) => item?.product_name || item?.product_name_snapshot || 'Produto'
+
+    const getUniqueProductNames = (items: any[]) => {
+        return Array.from(new Set(items.map(getProductName).filter(Boolean)))
+    }
+
+    const getProductSummary = (items: any[]) => {
+        const names = getUniqueProductNames(items)
+        if (names.length === 0) return 'Produto'
+        if (names.length === 1) return names[0]
+
+        const extraCount = names.length - 1
+        return `${names[0]} +${extraCount} produto${extraCount > 1 ? 's' : ''}`
+    }
+
+    const getProductMeta = (item: any, productCount: number) => {
+        if (productCount > 1) return `${productCount} produtos no romaneio`
+
+        const variant = [
+            item?.product_color_snapshot || item?.product_color,
+            item?.product_size_snapshot || item?.product_size
+        ].filter(Boolean).join(' / ')
+        return variant || item?.product_barcode_snapshot || item?.barcode || 'SEM SKU'
+    }
 
     // Relatórios
     const [reportData, setReportData] = useState<{
@@ -171,7 +196,8 @@ export default function MovementsPage() {
 
         movements.forEach(m => {
             const effectivePrice = getEffectivePrice(m)
-            const itemValue = m.is_cancelled ? 0 : (Math.abs(Number(m.quantity) || 0) * effectivePrice)
+            const grossValue = Math.abs(Number(m.quantity) || 0) * effectivePrice
+            const itemValue = m.is_cancelled ? 0 : Math.max(0, grossValue - (m.discount_snapshot || 0))
 
             if (m.romaneio_id) {
                 if (!groups[m.romaneio_id]) {
@@ -461,7 +487,7 @@ export default function MovementsPage() {
                                     ${g.isGroup ? g.items.length + ' itens' : g.quantity + ' ' + (g.unit_snapshot || 'UN')}
                                 </td>
                                 <td class="row-val">
-                                    ${g.isGroup ? '-' : formatCurrency(g.unit_price_snapshot ?? g.product_price ?? 0)}
+                                    ${g.isGroup ? '-' : formatCurrency(getEffectivePrice(g))}
                                 </td>
                                 <td style="text-align: center;">
                                     ${g.isGroup ? '-' : ((g.product_color_snapshot || g.product_size_snapshot) ? `${g.product_color_snapshot || ''} ${g.product_size_snapshot || ''}`.trim() : '-')}
@@ -780,22 +806,21 @@ export default function MovementsPage() {
                                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] sticky left-0 z-10">Data/Hora</th>
                                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] shrink-0">{viewMode === 'romaneios' ? 'Cliente / Romaneio' : 'Produto'}</th>
                                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-center">Tipo</th>
-                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right">Qtd.</th>
-                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Notas/Variantes</th>
+                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">{viewMode === 'romaneios' ? 'Produto / Variantes' : 'Notas/Variantes'}</th>
                                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right sticky right-0 z-10">Ações</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100/50 relative">
                                 {loading && (
                                     <tr className="bg-white/50 backdrop-blur-[1px]">
-                                        <td colSpan={6} className="py-20 flex items-center justify-center w-full">
+                                        <td colSpan={5} className="py-20 flex items-center justify-center w-full">
                                             <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
                                         </td>
                                     </tr>
                                 )}
                                 {(viewMode === 'romaneios' ? groupedMovementsForReport : movements).length === 0 && !loading ? (
                                     <tr>
-                                        <td colSpan={6} className="py-20 text-center text-sm font-bold text-slate-400 italic">
+                                        <td colSpan={5} className="py-20 text-center text-sm font-bold text-slate-400 italic">
                                             Nenhuma movimentação encontrada.
                                         </td>
                                     </tr>
@@ -807,7 +832,10 @@ export default function MovementsPage() {
                                         const menuId = String(m.id);
                                         const rowTotalValue = isGroup
                                             ? (m as any).totalValue
-                                            : (cancelled ? 0 : Math.abs(Number(m.quantity) || 0) * getEffectivePrice(m));
+                                            : (cancelled ? 0 : Math.max(0, Math.abs(Number(m.quantity) || 0) * getEffectivePrice(m) - (m.discount_snapshot || 0)));
+                                        const productItems = isGroup ? ((m as any).items || []) : [m];
+                                        const primaryProduct = productItems[0] || m;
+                                        const productNames = getUniqueProductNames(productItems);
 
                                         return (
                                             <tr key={isGroup ? `group-${m.id}` : m.id} className={`hover:bg-slate-50/50 transition-colors group ${cancelled ? 'opacity-60 bg-slate-50/30' : ''}`}>
@@ -856,35 +884,39 @@ export default function MovementsPage() {
                                                         {styles.label}
                                                     </span>
                                                 </td>
-                                                <td className="px-8 py-5 text-right">
-                                                    <div className="flex flex-col items-end">
-                                                        <div className="flex items-baseline justify-end gap-1">
-                                                            <span className={`font-black text-sm ${cancelled ? 'text-slate-400 line-through' : (m.movement_type === 'OUT' ? 'text-rose-600' : m.movement_type === 'IN' ? 'text-emerald-600' : 'text-slate-900')}`}>
-                                                                {!isGroup && (m.movement_type === 'OUT' ? '-' : m.movement_type === 'IN' ? '+' : '')}
-                                                                {isGroup ? (((m as any).totalQuantity % 1 === 0) ? (m as any).totalQuantity : (m as any).totalQuantity.toFixed(2)) : (m.quantity % 1 === 0 ? m.quantity : m.quantity.toFixed(2))}
-                                                            </span>
-                                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
-                                                                {isGroup ? 'ITENS' : (m.unit_snapshot || 'UN')}
-                                                            </span>
-                                                        </div>
-                                                        <span className="text-[10px] font-bold text-emerald-600">
-                                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rowTotalValue)}
-                                                        </span>
-                                                    </div>
-                                                </td>
                                                 <td className="px-8 py-5">
-                                                    <div className="flex flex-col gap-1">
-                                                        {!isGroup && (m.product_color_snapshot || m.product_size_snapshot) && (
-                                                            <div className="flex items-center gap-1">
-                                                                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold">
-                                                                    {m.product_color_snapshot || '-'} / {m.product_size_snapshot || '-'}
-                                                                </span>
+                                                    {viewMode === 'romaneios' ? (
+                                                        <div className="flex max-w-[280px] items-center gap-3" title={productNames.join(', ')}>
+                                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50 shadow-sm">
+                                                                {primaryProduct?.product_image ? (
+                                                                    <img src={primaryProduct.product_image} alt={getProductName(primaryProduct)} className="h-full w-full object-cover" />
+                                                                ) : (
+                                                                    <Package className="h-4 w-4 text-slate-300" />
+                                                                )}
                                                             </div>
-                                                        )}
-                                                        <p className="text-xs font-medium text-slate-500 max-w-[200px] truncate" title={isGroup ? 'Itens do Romaneio' : (m.notes || '')}>
-                                                            {isGroup ? (m as any).items.map((i: any) => i.product_name).join(', ') : (m.notes || '-')}
-                                                        </p>
-                                                    </div>
+                                                            <div className="min-w-0">
+                                                                <p className={`line-clamp-1 text-sm font-bold ${cancelled ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-800'}`}>
+                                                                    {getProductSummary(productItems)}
+                                                                </p>
+                                                                <p className="truncate text-[10px] font-black uppercase tracking-tight text-slate-400">
+                                                                    {getProductMeta(primaryProduct, productNames.length)}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col gap-1">
+                                                            {!isGroup && (m.product_color_snapshot || m.product_size_snapshot) && (
+                                                                <div className="flex items-center gap-1">
+                                                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold">
+                                                                        {m.product_color_snapshot || '-'} / {m.product_size_snapshot || '-'}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                            <p className="text-xs font-medium text-slate-500 max-w-[200px] truncate" title={isGroup ? 'Itens do Romaneio' : (m.notes || '')}>
+                                                                {isGroup ? (m as any).items.map((i: any) => i.product_name).join(', ') : (m.notes || '-')}
+                                                            </p>
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td className="px-8 py-5 text-right relative">
                                                     <div className="flex justify-end">

@@ -169,6 +169,12 @@ export default function RomaneioPage() {
         }
     }
 
+    const waitForAutoSaveToFinish = async () => {
+        for (let attempt = 0; attempt < 30 && isAutoSavingRef.current; attempt += 1) {
+            await new Promise(resolve => setTimeout(resolve, 100))
+        }
+    }
+
     // Bloqueador de Navegação do React Router (Para rotas externas)
     const blocker = useBlocker(
         ({ currentLocation, nextLocation }) =>
@@ -179,7 +185,13 @@ export default function RomaneioPage() {
     const [pendingRomaneios, setPendingRomaneios] = useState<PendingRomaneio[]>([])
     const [isSavingPending, setIsSavingPending] = useState(false)
     const [empenharAoDigitar, setEmpenharAoDigitar] = useState(true)
-    const [activePendingId, setActivePendingId] = useState<number | null>(null)
+    const [activePendingId, setActivePendingIdState] = useState<number | null>(null)
+    const activePendingIdRef = useRef<number | null>(null)
+
+    const setActivePendingId = (value: number | null) => {
+        activePendingIdRef.current = value
+        setActivePendingIdState(value)
+    }
 
     // Fechar dropdowns ao clicar fora
     useEffect(() => {
@@ -808,13 +820,23 @@ export default function RomaneioPage() {
     const handleFinalizeRomaneio = async () => {
         if (cartItems.length === 0) return
         const errors: any[] = []
-        cartItems.forEach(item => {
-            const stockItem = stockLevels.find(s => s.product_id === item.id)
-            if (stockItem && item.quantity > stockItem.stock_quantity) {
+        const requestedByProduct = cartItems.reduce((acc, item) => {
+            acc[item.id] = (acc[item.id] || 0) + item.quantity
+            return acc
+        }, {} as Record<number, number>)
+
+        Object.entries(requestedByProduct).forEach(([productId, requested]) => {
+            const numericProductId = Number(productId)
+            const item = cartItems.find(i => i.id === numericProductId)
+            const stockItem = stockLevels.find(s => s.product_id === numericProductId)
+            const reservedInActiveDraft = activePendingId && empenharAoDigitar ? requested : 0
+            const available = (stockItem?.stock_quantity || 0) + reservedInActiveDraft
+
+            if (item && stockItem && requested > available) {
                 errors.push({
                     productName: item.name,
-                    available: stockItem.stock_quantity,
-                    requested: item.quantity,
+                    available,
+                    requested,
                     unit: item.unit
                 })
             }
@@ -823,47 +845,37 @@ export default function RomaneioPage() {
             setStockValidationError(errors)
             return
         }
-        executeFinalize()
+        executeFinalize(false)
     }
 
-    const executeFinalize = async () => {
+    const executeFinalize = async (allowNegativeStock = false) => {
         clearAutoSaveTimer()
         isFinalizingRef.current = true
         setSubmitting(true)
         let finalizedSuccessfully = false
         try {
-            // Se houver empenho ativo, deletamos o rascunho para liberar o estoque antes da movimentação final
-            if (activePendingId) {
-                try {
-                    await api.delete(`/pending/${activePendingId}`);
-                    setActivePendingId(null);
-                } catch (err) {
-                    console.error('Erro ao limpar rascunho antes de finalizar:', err);
-                }
-            }
+            await waitForAutoSaveToFinish()
+            const pendingIdToFinalize = activePendingIdRef.current
 
-            const romaneioBatchId = `ROM-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
-            const currentSubtotal = cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
-            const currentDiscountAmount = currentSubtotal * (discountPercentage / 100);
-
-            for (const item of cartItems) {
-                const itemTotal = item.price * item.quantity;
-                const itemDiscount = currentSubtotal > 0 ? (itemTotal / currentSubtotal) * currentDiscountAmount : 0;
-
-                await api.post('/inventory/movements', {
+            await api.post('/inventory/romaneios/finalize', {
+                customer_name: customerName || null,
+                client_id: selectedClientId,
+                pending_romaneio_id: pendingIdToFinalize,
+                discount_percentage: discountPercentage,
+                allow_negative_stock: allowNegativeStock,
+                items: cartItems.map(item => ({
                     product_id: item.id,
                     quantity: item.quantity,
-                    movement_type: 'OUT',
-                    notes: customerName ? `Romaneio: ${customerName} ` : 'Não identificado pelo operador',
-                    romaneio_id: romaneioBatchId,
-                    client_id: selectedClientId,
                     product_name_snapshot: item.name,
                     product_barcode_snapshot: item.barcode,
                     unit_price_snapshot: item.price,
                     unit_snapshot: item.unit,
-                    discount_snapshot: Number(itemDiscount.toFixed(2))
-                })
-            }
+                    product_color_snapshot: item.color,
+                    product_size_snapshot: item.size
+                }))
+            })
+
+            setActivePendingId(null)
             setShowExportModal(true)
             soundEffects.playSuccess()
             toast.success('Romaneio registrado com sucesso!', { id: 'finalize-romaneio' })
@@ -1585,7 +1597,7 @@ export default function RomaneioPage() {
                         <div className="p-8 space-y-4 max-h-[300px] overflow-y-auto">{stockValidationError.map((err, idx) => (
                             <div key={idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-100"><p className="font-bold text-sm text-slate-900">{err.productName}</p><div className="flex justify-between mt-3 text-[10px] font-bold uppercase tracking-wider"><span className="text-slate-400">Pedido: {err.requested}</span><span className="text-red-600">Livre: {err.available}</span></div></div>
                         ))}</div>
-                        <div className="p-8 pt-0 flex flex-col gap-3"><button onClick={() => { setStockValidationError(null); executeFinalize(); }} className="w-full h-14 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black text-sm active:scale-95 transition-all">Sair Mesmo Assim</button><button onClick={() => setStockValidationError(null)} className="w-full h-14 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-sm active:scale-95 transition-all">Ajustar</button></div>
+                        <div className="p-8 pt-0 flex flex-col gap-3"><button onClick={() => { setStockValidationError(null); executeFinalize(true); }} className="w-full h-14 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black text-sm active:scale-95 transition-all">Sair Mesmo Assim</button><button onClick={() => setStockValidationError(null)} className="w-full h-14 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-sm active:scale-95 transition-all">Ajustar</button></div>
                     </div>
                 </div>
             )}

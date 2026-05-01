@@ -2,8 +2,8 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
-from backend.core.security import get_current_user
-from backend.core.trial_utils import require_active_plan
+from backend.core.security import get_current_user_flexible
+from backend.core.trial_utils import require_active_plan_flexible
 from backend.core.limiter import limiter
 from backend.models.users import User
 from backend.schemas.categories import CategoryCreate, CategoryUpdate, CategoryResponse, ReorderRequest
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/categories")
 
 @router.get("/", response_model=List[CategoryResponse])
 @limiter.limit("200/minute")
-def list_categories(request: Request, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def list_categories(request: Request, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user_flexible)):
     try:
         return crud.get_categories(db, user_id=current_user.id, skip=skip, limit=limit)
     except HTTPException:
@@ -31,7 +31,7 @@ def list_categories(request: Request, skip: int = 0, limit: int = 100, db: Sessi
 
 @router.get("/{category_id}", response_model=CategoryResponse)
 @limiter.limit("200/minute")
-def get_category(request: Request, category_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_category(request: Request, category_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user_flexible)):
     try:
         category = crud.get_category(db, category_id, user_id=current_user.id)
         if not category:
@@ -46,7 +46,7 @@ def get_category(request: Request, category_id: int, db: Session = Depends(get_d
 
 @router.post("/", response_model=CategoryResponse)
 @limiter.limit("30/minute")
-def create_category(request: Request, category: CategoryCreate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
+def create_category(request: Request, category: CategoryCreate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan_flexible)):
     try:
         # Validação de Limite do Plano
         plan = PLANS_CONFIG.get(current_user.plan_id, PLANS_CONFIG["trial"])
@@ -69,7 +69,7 @@ def create_category(request: Request, category: CategoryCreate, db: Session = De
 
 @router.post("/reorder")
 @limiter.limit("60/minute")
-def reorder_categories(request: Request, reorder_request: ReorderRequest, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
+def reorder_categories(request: Request, reorder_request: ReorderRequest, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan_flexible)):
     try:
         logger.info(f"Usuário {current_user.email} reordenou {len(reorder_request.items)} categorias")
         crud.reorder_categories(db, reorder_request.items, user_id=current_user.id)
@@ -84,7 +84,7 @@ def reorder_categories(request: Request, reorder_request: ReorderRequest, db: Se
 
 @router.put("/{category_id}", response_model=CategoryResponse)
 @limiter.limit("60/minute")
-def update_category(request: Request, category_id: int, category: CategoryUpdate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
+def update_category(request: Request, category_id: int, category: CategoryUpdate, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan_flexible)):
     try:
         logger.info(f"Usuário {current_user.email} atualizou categoria ID={category_id}")
         updated = crud.update_category(db, category_id, category, user_id=current_user.id)
@@ -101,7 +101,7 @@ def update_category(request: Request, category_id: int, category: CategoryUpdate
 
 @router.delete("/{category_id}", response_model=CategoryResponse)
 @limiter.limit("30/minute")
-def delete_category(request: Request, category_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan)):
+def delete_category(request: Request, category_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_active_plan_flexible)):
     try:
         logger.warning(f"Usuário {current_user.email} deletou a categoria ID={category_id}")
         deleted = crud.delete_category(db, category_id, user_id=current_user.id)

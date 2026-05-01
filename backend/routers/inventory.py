@@ -2,11 +2,11 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
-from backend.core.security import get_current_user
-from backend.core.trial_utils import require_active_plan
+from backend.core.security import get_current_user_flexible
+from backend.core.trial_utils import require_active_plan_flexible
 from backend.core.limiter import limiter
 from backend.models.users import User
-from backend.schemas.inventory import InventoryMovementCreate, InventoryMovementResponse, StockLevel, InventoryMovementPaginatedResponse, MovementType, StockLevelPaginatedResponse
+from backend.schemas.inventory import InventoryMovementCreate, InventoryMovementResponse, StockLevel, InventoryMovementPaginatedResponse, MovementType, StockLevelPaginatedResponse, RomaneioFinalizeRequest, RomaneioFinalizeResponse
 from backend.crud import inventory as crud
 from backend.config.logger import get_dynamic_logger
 
@@ -20,7 +20,7 @@ def create_movement(
     request: Request,
     movement: InventoryMovementCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_active_plan)
+    current_user: User = Depends(require_active_plan_flexible)
 ):
     try:
         logger.info(f"Usuário {current_user.email} registrou movimentação de {movement.quantity} para o produto ID={movement.product_id} do tipo {movement.movement_type}")
@@ -30,6 +30,25 @@ def create_movement(
     except Exception as e:
         db.rollback()
         logger.exception("Erro crítico ao criar movimentação de estoque")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+
+@router.post("/romaneios/finalize", response_model=RomaneioFinalizeResponse)
+@limiter.limit("60/minute")
+def finalize_romaneio(
+    request: Request,
+    romaneio: RomaneioFinalizeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_active_plan_flexible)
+):
+    try:
+        logger.info(f"Usuario {current_user.email} finalizou romaneio com {len(romaneio.items)} item(ns)")
+        return crud.finalize_romaneio(db, romaneio, user_id=current_user.id)
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        logger.exception("Erro critico ao finalizar romaneio")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
 
 
@@ -46,7 +65,7 @@ def list_movements(
     skip: int = 0,
     limit: int = 1000,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_flexible)
 ):
     try:
         items, total = crud.get_movements(
@@ -84,7 +103,7 @@ def get_stock_levels(
     sort_by: str = Query("product_name"),
     order: str = Query("asc"),
     db: Session = Depends(get_db), 
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_flexible)
 ):
     try:
         items, total = crud.get_stock_levels(
@@ -114,7 +133,7 @@ def get_stock_levels(
 def dashboard_summary(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_flexible)
 ):
     """Endpoint leve para o Dashboard — retorna apenas contagens, sem dados pesados."""
     try:
@@ -132,7 +151,7 @@ def get_daily_reports(
     end_date: Optional[str] = Query(None),
     movement_type: Optional[MovementType] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_flexible)
 ):
     try:
         return crud.get_daily_reports(
@@ -152,7 +171,7 @@ def cancel_movement(
     request: Request,
     movement_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_active_plan_flexible)
 ):
     try:
         db_movement = crud.cancel_movement(db, movement_id, user_id=current_user.id)

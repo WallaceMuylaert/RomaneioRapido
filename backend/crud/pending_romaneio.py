@@ -54,12 +54,17 @@ def create_pending_romaneio(db: Session, pending: PendingRomaneioCreate, user_id
         user_id=user_id
     )
     db.add(db_pending)
-    db.commit()
-    db.refresh(db_pending)
-    
-    # Sync stock if needed
-    if db_pending.empenhar_estoque:
-        sync_pending_romaneio_stock(db, db_pending)
+    try:
+        db.flush()
+        # Sync stock if needed
+        if db_pending.empenhar_estoque:
+            sync_pending_romaneio_stock(db, db_pending)
+        else:
+            db.commit()
+        db.refresh(db_pending)
+    except Exception:
+        db.rollback()
+        raise
         
     return db_pending
 
@@ -75,11 +80,13 @@ def update_pending_romaneio(db: Session, pending_id: int, pending: PendingRomane
     for key, value in update_data.items():
         setattr(db_pending, key, value)
     
-    db.commit()
-    db.refresh(db_pending)
-    
-    # Sync stock always (it handles empenhar_estoque toggle inside)
-    sync_pending_romaneio_stock(db, db_pending)
+    try:
+        # Sync stock always (it handles empenhar_estoque toggle inside)
+        sync_pending_romaneio_stock(db, db_pending)
+        db.refresh(db_pending)
+    except Exception:
+        db.rollback()
+        raise
     
     return db_pending
 
@@ -137,6 +144,29 @@ def sync_pending_romaneio_stock(db: Session, db_pending: PendingRomaneio):
     
     # Mapear movimentos antigos por product_id
     old_movements_map = {m.product_id: m for m in existing_movements}
+
+    insufficient = []
+    for pid, new_qty in new_items_map.items():
+        product = db.query(Product).filter(
+            Product.id == pid,
+            Product.user_id == db_pending.user_id,
+            Product.is_active == True,
+        ).first()
+        if not product:
+            continue
+
+        old_qty = old_movements_map.get(pid).quantity if pid in old_movements_map else 0
+        diff = new_qty - old_qty
+        if diff > 0 and diff > product.stock_quantity:
+            insufficient.append(
+                f"{product.name}: disponivel {product.stock_quantity}, solicitado adicional {diff}"
+            )
+
+    if insufficient:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Estoque insuficiente para empenho: " + "; ".join(insufficient),
+        )
     
     # Processar atualizações e novos empenhos
     for pid, new_qty in new_items_map.items():
