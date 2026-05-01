@@ -830,9 +830,6 @@ export default function MovementsPage() {
                                         const isGroup = 'isGroup' in m && m.isGroup;
                                         const cancelled = m.is_cancelled;
                                         const menuId = String(m.id);
-                                        const rowTotalValue = isGroup
-                                            ? (m as any).totalValue
-                                            : (cancelled ? 0 : Math.max(0, Math.abs(Number(m.quantity) || 0) * getEffectivePrice(m) - (m.discount_snapshot || 0)));
                                         const productItems = isGroup ? ((m as any).items || []) : [m];
                                         const primaryProduct = productItems[0] || m;
                                         const productNames = getUniqueProductNames(productItems);
