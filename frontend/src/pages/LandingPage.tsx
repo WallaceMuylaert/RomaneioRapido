@@ -5,8 +5,6 @@ import {
     ArrowRight,
     Boxes,
     Check,
-    ChevronLeft,
-    ChevronRight,
     ClipboardList,
     FileText,
     LifeBuoy,
@@ -87,6 +85,9 @@ export default function LandingPage() {
     const navigate = useNavigate()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [carouselIndex, setCarouselIndex] = useState(0)
+    const [isLoaderVisible, setIsLoaderVisible] = useState(true)
+    const [isLoaderLeaving, setIsLoaderLeaving] = useState(false)
+    const [loaderStep, setLoaderStep] = useState<'fast' | 'welcome'>('fast')
 
     const scrollRef = useRef<HTMLDivElement>(null)
     const isHovered = useRef(false)
@@ -110,11 +111,25 @@ export default function LandingPage() {
         return () => window.clearInterval(interval)
     }, [carouselIndex, scrollToPlan, visiblePlans.length])
 
+    useEffect(() => {
+        const welcomeTimer = window.setTimeout(() => setLoaderStep('welcome'), 420)
+        const leaveTimer = window.setTimeout(() => setIsLoaderLeaving(true), 1450)
+        const hideTimer = window.setTimeout(() => setIsLoaderVisible(false), 1220)
+
+        return () => {
+            window.clearTimeout(welcomeTimer)
+            window.clearTimeout(leaveTimer)
+            window.clearTimeout(hideTimer)
+        }
+    }, [])
+
     const closeMenu = () => setIsMenuOpen(false)
     const start = () => navigate('/login')
 
     return (
         <div className="min-h-screen overflow-x-hidden bg-background font-sans text-text-primary selection:bg-brand-100 selection:text-brand-900">
+            {isLoaderVisible && <LandingWelcomeLoader step={loaderStep} isLeaving={isLoaderLeaving} />}
+
             <header
                 className="fixed left-3 right-3 top-3 z-50 mx-auto max-w-[90rem] rounded-2xl border border-border bg-card/95 backdrop-blur-md sm:left-4 sm:right-4"
             >
@@ -573,6 +588,33 @@ export default function LandingPage() {
             >
                 <MessageCircle className="h-6 w-6" />
             </a>
+        </div>
+    )
+}
+
+function LandingWelcomeLoader({ step, isLeaving }: { step: 'fast' | 'welcome'; isLeaving: boolean }) {
+    return (
+        <div
+            className={`fixed inset-0 z-[200] flex items-center justify-center overflow-hidden bg-card transition-all duration-500 ease-out ${isLeaving ? 'pointer-events-none opacity-0 scale-[1.01]' : 'opacity-100 scale-100'}`}
+            role="status"
+            aria-live="polite"
+            aria-label="Carregando landing page"
+        >
+            <div className="relative z-10 h-[16rem] w-[min(34rem,90vw)]">
+                <div className={`absolute inset-0 flex flex-col items-center justify-center px-6 text-center transition-all duration-500 ${step === 'fast' ? 'opacity-100 scale-100' : 'pointer-events-none opacity-0 scale-95 -translate-y-3'}`}>
+                    <img src={logo} alt="" className="mb-6 h-14 w-14 object-contain" />
+                    <p className="text-xs font-black uppercase tracking-[0.08em] text-text-secondary">Carregando</p>
+                    <div className="landing-loader-pass mt-5 h-1 w-full max-w-64 overflow-hidden rounded-xl bg-brand-50" aria-hidden="true">
+                        <span className="landing-loader-pass-bar block h-full rounded-xl bg-primary" />
+                    </div>
+                </div>
+
+                <div className={`absolute inset-0 flex flex-col items-center justify-center px-6 text-center transition-all duration-500 ${step === 'welcome' ? 'opacity-100 scale-100 translate-y-0' : 'pointer-events-none opacity-0 scale-105 translate-y-4'}`}>
+                    <p className="text-[11px] font-black uppercase tracking-[0.08em] text-primary">Romaneio Rapido</p>
+                    <h2 className="mt-4 text-5xl font-black leading-none tracking-tight text-text-primary sm:text-7xl">Bem vindo</h2>
+                    <span className="mt-7 h-1 w-16 rounded-xl bg-primary" aria-hidden="true" />
+                </div>
+            </div>
         </div>
     )
 }

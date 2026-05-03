@@ -192,6 +192,26 @@
   }
 }
 
+@keyframes landing-loader-progress {
+  from {
+    transform: translateX(-102%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes landing-loader-pass {
+  from {
+    transform: translateX(118%);
+  }
+
+  to {
+    transform: translateX(-118%);
+  }
+}
+
 .animate-slide-up {
   animation: slideUp 0.4s ease-out forwards;
 }
@@ -210,6 +230,21 @@
 
 .animate-bounce-slow {
   animation: bounce-slow 2s ease-in-out infinite;
+}
+
+.landing-loader-progress {
+  transform-origin: left;
+  animation: landing-loader-progress 1.55s ease-out forwards;
+}
+
+.landing-loader-progress-fast {
+  transform-origin: left;
+  animation: landing-loader-progress 0.68s ease-out forwards;
+}
+
+.landing-loader-pass-bar {
+  width: 42%;
+  animation: landing-loader-pass 0.42s ease-in-out forwards;
 }
 
 /* Sistema visual global: bordas finas, cantos mais retos e sem sombras pesadas. */
