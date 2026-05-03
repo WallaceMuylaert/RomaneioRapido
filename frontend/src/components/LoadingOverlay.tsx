@@ -1,41 +1,72 @@
-import logo from '../assets/romaneiorapido_logo.png'
-
 interface LoadingOverlayProps {
-    message?: string;
+    message?: string
+    rows?: number
+    compact?: boolean
 }
 
-export default function LoadingOverlay({ message = 'Carregando...' }: LoadingOverlayProps) {
-    return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/60 backdrop-blur-2xl animate-fade-in">
-            {/* Ambient background glows */}
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-[100px] animate-pulse" />
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-600/10 rounded-full blur-[100px] animate-pulse delay-700" />
+const skeletonRows = (rows: number) => Array.from({ length: rows }, (_, index) => index)
 
-            <div className="relative flex flex-col items-center">
-                {/* Logo Container with rotating ring */}
-                <div className="relative w-24 h-24 mb-10">
-                    {/* Inner Glass Card */}
-                    <div className="absolute inset-0 bg-white/80 backdrop-blur-xl rounded-3xl border border-white shadow-2xl flex items-center justify-center z-10 animate-scale-pulse p-4">
-                        <img src={logo} alt="Logo" className="w-full h-full object-contain animate-bounce-slow" />
+export default function LoadingOverlay({ message = 'Carregando', rows = 5, compact = false }: LoadingOverlayProps) {
+    if (compact) {
+        return (
+            <div role="status" aria-label={message} className="w-full max-w-3xl mx-auto animate-pulse space-y-4">
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-border/80" />
+                    <div className="flex-1 space-y-2">
+                        <div className="h-4 w-2/5 rounded-md bg-border/90" />
+                        <div className="h-3 w-3/5 rounded-md bg-border/60" />
                     </div>
-
-                    {/* Rotating Ring */}
-                    <div className="absolute -inset-2 border-t-4 border-brand-500 rounded-full animate-spin transition-all duration-1000" />
-                    <div className="absolute -inset-4 border-t-2 border-brand-200 rounded-full animate-spin-reverse transition-all duration-1500" />
                 </div>
+                <div className="grid grid-cols-3 gap-3">
+                    <div className="h-20 rounded-2xl border border-border bg-card" />
+                    <div className="h-20 rounded-2xl border border-border bg-card" />
+                    <div className="h-20 rounded-2xl border border-border bg-card" />
+                </div>
+                <span className="sr-only">{message}</span>
+            </div>
+        )
+    }
 
-                {/* Loading Text */}
-                <div className="flex flex-col items-center gap-4">
-                    <span className="text-2xl font-black text-slate-900 tracking-tighter uppercase text-center block">
-                        {message}
-                    </span>
-                    <div className="flex gap-2">
-                        <div className="w-2.5 h-2.5 bg-brand-600 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                        <div className="w-2.5 h-2.5 bg-brand-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                        <div className="w-2.5 h-2.5 bg-brand-400 rounded-full animate-bounce" />
-                    </div>
+    return (
+        <div role="status" aria-label={message} className="w-full animate-pulse space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-2">
+                    <div className="h-7 w-48 rounded-lg bg-border/90" />
+                    <div className="h-4 w-72 max-w-full rounded-md bg-border/60" />
+                </div>
+                <div className="h-10 w-full rounded-xl bg-border/70 sm:w-44" />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="h-24 rounded-2xl border border-border bg-card" />
+                <div className="h-24 rounded-2xl border border-border bg-card" />
+                <div className="h-24 rounded-2xl border border-border bg-card" />
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-3 sm:p-4">
+                <div className="mb-4 grid grid-cols-12 gap-3">
+                    <div className="col-span-5 h-4 rounded-md bg-border/80" />
+                    <div className="col-span-2 h-4 rounded-md bg-border/60" />
+                    <div className="col-span-3 h-4 rounded-md bg-border/60" />
+                    <div className="col-span-2 h-4 rounded-md bg-border/60" />
+                </div>
+                <div className="space-y-3">
+                    {skeletonRows(rows).map((row) => (
+                        <div key={row} className="grid grid-cols-12 items-center gap-3 border-t border-border/70 pt-3">
+                            <div className="col-span-2 sm:col-span-1 h-10 w-10 rounded-xl bg-border/70" />
+                            <div className="col-span-7 sm:col-span-5 space-y-2">
+                                <div className="h-4 rounded-md bg-border/80" />
+                                <div className="h-3 w-2/3 rounded-md bg-border/50" />
+                            </div>
+                            <div className="hidden h-4 rounded-md bg-border/60 sm:col-span-2 sm:block" />
+                            <div className="hidden h-4 rounded-md bg-border/60 sm:col-span-2 sm:block" />
+                            <div className="col-span-3 sm:col-span-2 h-8 rounded-xl bg-border/70" />
+                        </div>
+                    ))}
                 </div>
             </div>
+
+            <span className="sr-only">{message}</span>
         </div>
     )
 }

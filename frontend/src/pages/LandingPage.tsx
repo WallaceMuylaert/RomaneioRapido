@@ -1,545 +1,454 @@
+import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useState, useEffect, useRef } from 'react'
-import logo from '../assets/romaneiorapido_logo.png'
 import {
-    Package,
-    BarChart3,
-    ScanBarcode,
-    ArrowRight,
-    Menu,
-    X,
-    Boxes,
-    ClipboardList,
-    Truck,
-    Mail,
-    Shield,
-    Zap,
-    Globe,
-    Star,
-    Check,
     AlertTriangle,
-    ChevronLeft,
-    ChevronRight,
-    MessageCircle
+    ArrowRight,
+    Boxes,
+    Check,
+    ClipboardList,
+    FileText,
+    Mail,
+    Menu,
+    MessageCircle,
+    ScanBarcode,
+    Truck,
+    X
 } from 'lucide-react'
-import { getWhatsAppLink } from '../constants/contacts'
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { PLANS } from '../constants/plans'
+import logo from '@/assets/romaneiorapido_logo.png'
+import heroTeamImage from '@/assets/two-business-partners-working-together-office-computer.jpg'
+import operationImage from '@/assets/colleagues-discussing-their-work-laptop.jpg'
+import personOne from '@/assets/pessoas/pexels-claudio-emanuel-709239809-18935832.jpg'
+import personTwo from '@/assets/pessoas/pexels-ilayda0700-36593091.jpg'
+import personThree from '@/assets/pessoas/pexels-josepheulo-nyc-12311550.jpg'
+import personFour from '@/assets/pessoas/pexels-leonardodourado-14059688.jpg'
+import personFive from '@/assets/pessoas/pexels-marina-endzhirgli-725723515-31510092.jpg'
+import personSix from '@/assets/pessoas/pexels-olly-3778603.jpg'
+import personSeven from '@/assets/pessoas/pexels-sandro-tavares-260503371-15728334.jpg'
+import personEight from '@/assets/pessoas/pexels-silverkblack-36713164.jpg'
+import { getWhatsAppLink } from '@/constants/contacts'
+import { PLANS } from '@/constants/plans'
+
+type IconType = ComponentType<{ className?: string }>
+
+const productStats = [
+    { label: 'Produtos', value: '1.248', icon: Boxes, tone: 'text-primary bg-brand-50 border-brand-100' },
+    { label: 'Saídas hoje', value: '42', icon: Truck, tone: 'text-success bg-success/10 border-success/20' },
+    { label: 'Alertas', value: '3', icon: AlertTriangle, tone: 'text-warning bg-warning/10 border-warning/20' }
+]
+
+const flowSteps = [
+    {
+        icon: ScanBarcode,
+        title: 'Bipe ou busque o produto',
+        desc: 'Use leitor USB, câmera ou busca rápida para montar saídas sem digitação repetida.'
+    },
+    {
+        icon: ClipboardList,
+        title: 'Monte o romaneio',
+        desc: 'Inclua quantidades, cliente e observações em uma tela simples, rápida e pronta para a operação.'
+    },
+    {
+        icon: FileText,
+        title: 'Envie e mantenha histórico',
+        desc: 'Gere romaneios profissionais e preserve o histórico mesmo quando produtos forem editados depois.'
+    }
+]
+
+const resources = [
+    { title: 'Controle de Estoque em Tempo Real', desc: 'Produtos, categorias, unidades e mínimos sempre visíveis em um painel direto para acompanhar o estoque disponível.' },
+    { title: 'Dashboard de Operação', desc: 'Entradas, saídas, saúde do estoque e itens críticos reunidos para decisões rápidas no dia a dia.' },
+    { title: 'Histórico Confiável', desc: 'Snapshots preservam os dados de cada movimento para auditoria, conferência e rastreabilidade.' },
+    { title: 'Rotina Mais Ágil', desc: 'Fluxos pensados para vender, separar e registrar sem travar a operação ou repetir digitação.' },
+    { title: 'Suporte pelo WhatsApp', desc: 'Um canal direto para tirar dúvidas e manter sua operação andando quando precisar.' },
+    { title: 'Cadastro Completo', desc: 'Preço, foto, unidade, estoque mínimo e detalhes importantes organizados por produto.' }
+]
+
+const assurances = [
+    'Teste inicial sem compromisso',
+    'Acesso 100% web',
+    'Planos para operações pequenas e em crescimento'
+]
+
+const userPhotos = [
+    personOne,
+    personTwo,
+    personThree,
+    personFour,
+    personFive,
+    personSix,
+    personSeven,
+    personEight
+]
 
 export default function LandingPage() {
     const navigate = useNavigate()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [carouselIndex, setCarouselIndex] = useState(0)
+    const [isLoaderVisible, setIsLoaderVisible] = useState(true)
+    const [isLoaderLeaving, setIsLoaderLeaving] = useState(false)
+    const [loaderStep, setLoaderStep] = useState<'fast' | 'welcome'>('fast')
 
     const scrollRef = useRef<HTMLDivElement>(null)
-    const visiblePlans = PLANS.filter(p => !p.hidden)
-
-    const nextPlan = () => {
-        if (!scrollRef.current || !scrollRef.current.children[0]) return
-        const nextIndex = (carouselIndex + 1) % visiblePlans.length
-        const cardWidth = (scrollRef.current.children[0] as HTMLElement).offsetWidth + 24
-        scrollRef.current.scrollTo({ left: nextIndex * cardWidth, behavior: 'smooth' })
-        setCarouselIndex(nextIndex)
-    }
-
-    const prevPlan = () => {
-        if (!scrollRef.current || !scrollRef.current.children[0]) return
-        const prevIndex = (carouselIndex - 1 + visiblePlans.length) % visiblePlans.length
-        const cardWidth = (scrollRef.current.children[0] as HTMLElement).offsetWidth + 24
-        scrollRef.current.scrollTo({ left: prevIndex * cardWidth, behavior: 'smooth' })
-        setCarouselIndex(prevIndex)
-    }
-
     const isHovered = useRef(false)
+    const visiblePlans = PLANS.filter((plan) => !plan.hidden)
 
-    // Auto-play (All screens)
+    const scrollToPlan = useCallback((index: number) => {
+        if (!scrollRef.current || !scrollRef.current.children[0]) return
+        const safeIndex = (index + visiblePlans.length) % visiblePlans.length
+        const cardWidth = (scrollRef.current.children[0] as HTMLElement).offsetWidth + 24
+        scrollRef.current.scrollTo({ left: safeIndex * cardWidth, behavior: 'smooth' })
+        setCarouselIndex(safeIndex)
+    }, [visiblePlans.length])
+
     useEffect(() => {
-        const interval = setInterval(() => {
-            if (!isHovered.current) {
-                nextPlan()
+        const interval = window.setInterval(() => {
+            if (!isHovered.current && visiblePlans.length > 1 && window.innerWidth < 1024) {
+                scrollToPlan(carouselIndex + 1)
             }
-        }, 5000)
-        return () => clearInterval(interval)
-    }, [carouselIndex, visiblePlans.length])
+        }, 6500)
 
-
-    const mouseX = useMotionValue(0)
-    const mouseY = useMotionValue(0)
-
-    const springConfig = { damping: 25, stiffness: 100 }
-    const springX = useSpring(mouseX, springConfig)
-    const springY = useSpring(mouseY, springConfig)
+        return () => window.clearInterval(interval)
+    }, [carouselIndex, scrollToPlan, visiblePlans.length])
 
     useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            const { clientX, clientY } = e
-            const { innerWidth, innerHeight } = window
-            mouseX.set((clientX / innerWidth) - 0.5)
-            mouseY.set((clientY / innerHeight) - 0.5)
+        const welcomeTimer = window.setTimeout(() => setLoaderStep('welcome'), 420)
+        const leaveTimer = window.setTimeout(() => setIsLoaderLeaving(true), 1450)
+        const hideTimer = window.setTimeout(() => setIsLoaderVisible(false), 2150)
+
+        return () => {
+            window.clearTimeout(welcomeTimer)
+            window.clearTimeout(leaveTimer)
+            window.clearTimeout(hideTimer)
         }
-        window.addEventListener('mousemove', handleMouseMove)
-        return () => window.removeEventListener('mousemove', handleMouseMove)
     }, [])
 
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.2
-            }
-        }
-    }
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
-    }
+    const closeMenu = () => setIsMenuOpen(false)
+    const start = () => navigate('/login')
 
     return (
-        <div className="min-h-screen bg-white font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden relative">
-            
-            {/* Background Animated Blobs */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-                <motion.div 
-                    style={{ x: useTransform(springX, [-0.5, 0.5], [-50, 50]), y: useTransform(springY, [-0.5, 0.5], [-50, 50]) }}
-                    animate={{ 
-                        scale: [1, 1.2, 1],
-                        rotate: [0, 90, 0]
-                    }}
-                    transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-                    className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-blue-100/40 rounded-full blur-[120px]" 
-                />
-                <motion.div 
-                    style={{ x: useTransform(springX, [-0.5, 0.5], [50, -50]), y: useTransform(springY, [-0.5, 0.5], [50, -50]) }}
-                    animate={{ 
-                        scale: [1.2, 1, 1.2],
-                        rotate: [90, 0, 90]
-                    }}
-                    transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                    className="absolute top-[20%] -right-[10%] w-[45%] h-[45%] bg-teal-50/50 rounded-full blur-[100px]" 
-                />
-                <motion.div 
-                    style={{ x: useTransform(springX, [-0.5, 0.5], [-30, 30]), y: useTransform(springY, [-0.5, 0.5], [30, -30]) }}
-                    animate={{ 
-                        scale: [1, 1.1, 1],
-                    }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                    className="absolute -bottom-[10%] left-[20%] w-[40%] h-[40%] bg-indigo-50/40 rounded-full blur-[110px]" 
-                />
-            </div>
+        <div className="min-h-screen overflow-x-hidden bg-background font-sans text-text-primary selection:bg-brand-100 selection:text-brand-900">
+            {isLoaderVisible && <LandingWelcomeLoader step={loaderStep} isLeaving={isLoaderLeaving} />}
 
-            <div className="relative z-10">
-                {/* Header */}
-            <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
-                <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-                    <a href="/" className="flex items-center gap-1 group">
-                        <div className="h-8 flex items-center justify-center">
-                            <img src={logo} alt="Logo" className="h-12 object-contain" />
-                        </div>
-                        <span className="text-lg font-bold text-gray-900">Romaneio<span className="text-blue-600">Rapido</span></span>
+            <header
+                className="fixed left-3 right-3 top-3 z-50 mx-auto max-w-[90rem] rounded-2xl border border-border bg-card/95 backdrop-blur-md sm:left-4 sm:right-4"
+            >
+                <div className="mx-auto flex h-14 items-center justify-between px-3 sm:px-5 lg:h-16 lg:px-6">
+                    <a href="/" className="flex items-center gap-2" aria-label="Romaneio Rápido">
+                        <img src={logo} alt="Romaneio Rápido" className="h-10 w-10 object-contain lg:h-12 lg:w-12" />
+                        <span className="text-base font-black tracking-tight text-text-primary lg:text-lg">
+                            Romaneio<span className="text-primary"> Rápido</span>
+                        </span>
                     </a>
 
-                    <div className="hidden md:flex items-center gap-8">
-                        <nav className="flex gap-6 text-[13px] font-medium text-gray-500">
-                            <a href="#solucao" className="hover:text-blue-600 hover:-translate-y-0.5 transition-all duration-300">Solução</a>
-                            <a href="#recursos" className="hover:text-blue-600 hover:-translate-y-0.5 transition-all duration-300">Recursos</a>
-                            <a href="#planos" className="hover:text-blue-600 hover:-translate-y-0.5 transition-all duration-300">Planos</a>
-                            <a href="#contato" className="hover:text-blue-600 hover:-translate-y-0.5 transition-all duration-300">Contato</a>
-                            <a 
-                                href={getWhatsAppLink('Olá! Gostaria de tirar algumas dúvidas sobre o Romaneio Rápido.')} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 transition-colors font-bold"
-                            >
-                                <MessageCircle className="w-4 h-4" />
-                                Suporte
-                            </a>
-                        </nav>
+                    <nav className="hidden items-center gap-5 text-[13px] font-bold text-text-secondary md:flex lg:gap-6">
+                        <a href="#solucao" className="hover:text-primary transition-colors">Como funciona</a>
+                        <a href="#recursos" className="hover:text-primary transition-colors">Recursos</a>
+                        <a href="#planos" className="hover:text-primary transition-colors">Planos</a>
+                        <a href="#contato" className="hover:text-primary transition-colors">Contato</a>
+                    </nav>
+
+                    <div className="hidden items-center gap-2 md:flex">
                         <button
                             onClick={() => navigate('/login')}
-                            className="text-[13px] font-semibold text-gray-700 hover:text-blue-600 transition-colors"
+                            className="h-8 px-3 text-[13px] font-bold text-text-secondary hover:text-primary transition-colors lg:h-9"
                         >
-                            Login
+                            Entrar
                         </button>
                         <button
-                            onClick={() => navigate('/login')}
-                            className="h-9 px-5 text-[13px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all shadow-sm"
+                            onClick={start}
+                            className="inline-flex h-8 items-center gap-2 rounded-xl bg-primary px-4 text-[13px] font-black text-card hover:bg-primary-dark active:scale-[0.98] transition-all lg:h-9 lg:px-5"
                         >
-                            Experimentar
+                            Começar
+                            <ArrowRight className="h-4 w-4" />
                         </button>
                     </div>
 
-                    <button className="md:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                        {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                    <button
+                        className="flex h-9 w-9 items-center justify-center rounded-xl text-text-secondary hover:bg-border/45 md:hidden"
+                        onClick={() => setIsMenuOpen((open) => !open)}
+                        aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+                    >
+                        {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                     </button>
                 </div>
 
                 {isMenuOpen && (
-                    <div className="md:hidden bg-white border-t border-gray-100 px-5 py-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <nav className="flex flex-col gap-3 text-sm font-medium text-gray-600">
-                            <a href="#solucao" className="active:text-blue-600" onClick={() => setIsMenuOpen(false)}>Solução</a>
-                            <a href="#recursos" className="active:text-blue-600" onClick={() => setIsMenuOpen(false)}>Recursos</a>
-                            <a href="#planos" className="active:text-blue-600" onClick={() => setIsMenuOpen(false)}>Planos</a>
-                            <a href="#contato" className="active:text-blue-600" onClick={() => setIsMenuOpen(false)}>Contato</a>
+                    <div className="border-t border-border bg-card px-4 py-4 md:hidden">
+                        <nav className="grid gap-2 text-sm font-bold text-text-secondary">
+                            <a href="#solucao" onClick={closeMenu} className="rounded-xl px-3 py-2 hover:bg-background">Como funciona</a>
+                            <a href="#recursos" onClick={closeMenu} className="rounded-xl px-3 py-2 hover:bg-background">Recursos</a>
+                            <a href="#planos" onClick={closeMenu} className="rounded-xl px-3 py-2 hover:bg-background">Planos</a>
+                            <a href="#contato" onClick={closeMenu} className="rounded-xl px-3 py-2 hover:bg-background">Contato</a>
                         </nav>
-                        <div className="flex gap-3 pt-2">
-                            <button onClick={() => navigate('/login')} className="flex-1 h-10 text-sm font-medium border border-gray-200 rounded-lg text-gray-700 active:bg-gray-50 transition-colors">Login</button>
-                            <button onClick={() => navigate('/cadastro')} className="flex-1 h-10 text-sm font-semibold bg-blue-600 text-white rounded-lg active:scale-95 transition-all">Experimentar</button>
+                        <div className="mt-4 grid grid-cols-2 gap-2">
+                            <button onClick={() => navigate('/login')} className="h-10 rounded-xl border border-border text-sm font-bold text-text-secondary">
+                                Entrar
+                            </button>
+                            <button onClick={start} className="h-10 rounded-xl bg-primary text-sm font-black text-card">
+                                Começar
+                            </button>
                         </div>
                     </div>
                 )}
             </header>
 
             <main>
-                {/* Hero - Split Layout */}
-                <section className="pt-32 pb-20 md:pt-40 md:pb-28">
-                    <div className="max-w-6xl mx-auto px-5">
-                        <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
-                            {/* Texto */}
-                            <motion.div 
-                                initial={{ opacity: 0, x: -50 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.8 }}
-                            >
-                                <motion.div 
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.5, delay: 0.2 }}
-                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold mb-6 hover:-translate-y-1 transition-transform cursor-default"
-                                >
-                                    <Star className="w-3 h-3 fill-blue-600 animate-pulse" />
-                                    Sistema ERP para Estoque
-                                </motion.div>
+                <section className="relative overflow-hidden border-b border-border bg-card pt-24 sm:pt-28">
+                    <div className="absolute inset-0 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_42%,#eef6ff_100%)]" />
+                    <div className="relative mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-8">
+                        <div className="grid gap-10 py-12 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:py-16">
+                            <div>
+                                <p className="relative mb-2 inline-flex items-center rounded-2xl border border-brand-100 bg-card px-5 py-2.5 text-sm font-black text-primary-dark">
+                                    Planos a partir de R$99
+                                    <span className="absolute -bottom-1 left-6 h-2.5 w-2.5 rotate-45 border-b border-r border-brand-100 bg-card" />
+                                </p>
+                                <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-text-primary sm:text-4xl lg:text-[2.9rem]">
+                                    <span className="text-primary">Romaneio Rápido</span> para uma operação mais clara.
+                                </h1>
+                                <p className="mt-5 max-w-xl text-sm font-semibold leading-7 text-text-secondary sm:text-base">
+                                    Organize produtos, movimentações e separação de pedidos em uma plataforma web simples, ágil e feita para pequenos negócios venderem com mais controle.
+                                </p>
 
-                                <motion.h1 
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.8, delay: 0.3 }}
-                                    className="text-4xl md:text-[3.25rem] font-extrabold text-gray-900 leading-[1.15] mb-5 tracking-tight"
-                                >
-                                    Gerencie seu estoque
-                                    <br />
-                                    <span className="text-blue-600 inline-block">sem complicação</span>
-                                </motion.h1>
-
-                                <motion.p 
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.8, delay: 0.4 }}
-                                    className="text-gray-500 text-lg leading-relaxed mb-8 max-w-md"
-                                >
-                                    Controle total do inventário com leitura de código de barras,
-                                    interface rápida como planilha e relatórios em tempo real.
-                                </motion.p>
-
-                                <motion.div 
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.8, delay: 0.5 }}
-                                    className="flex flex-col sm:flex-row gap-3 mb-8"
-                                >
+                                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                                     <button
-                                        onClick={() => navigate('/login')}
-                                        className="group h-12 px-7 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 hover:scale-105 transition-all shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2"
+                                        onClick={start}
+                                        className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-black text-card hover:bg-primary-dark active:scale-[0.98] transition-all"
                                     >
-                                        Acessar Sistema <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                        Começar teste
+                                        <ArrowRight className="h-4 w-4" />
                                     </button>
                                     <a
-                                        href="#planos"
-                                        className="h-12 px-7 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-blue-200 hover:text-blue-600 transition-all flex items-center justify-center gap-2"
+                                        href="#solucao"
+                                        className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-card px-6 text-sm font-black text-text-secondary hover:border-brand-200 hover:text-primary-dark transition-colors"
                                     >
-                                        Ver Planos e Preços
+                                        Ver como funciona
                                     </a>
-                                </motion.div>
+                                </div>
 
-                                <motion.div 
-                                    initial={{ opacity: 0 }}
-                                    whileInView={{ opacity: 1 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 1, delay: 0.6 }}
-                                    className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-gray-400 font-medium"
-                                >
-                                    <span className="flex items-center gap-1.5 hover:text-gray-600 transition-colors cursor-default">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div> 100% Web
-                                    </span>
-                                    <span className="flex items-center gap-1.5 hover:text-gray-600 transition-colors cursor-default">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse delay-75"></div> Sem instalação
-                                    </span>
-                                    <span className="flex items-center gap-1.5 hover:text-gray-600 transition-colors cursor-default">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse delay-150"></div> Código de barras
-                                    </span>
-                                </motion.div>
-                            </motion.div>
+                                <div className="mt-7 flex flex-wrap gap-2">
+                                    {assurances.map((item) => (
+                                        <span key={item} className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-bold text-text-secondary">
+                                            <Check className="h-3.5 w-3.5 text-success" />
+                                            {item}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
 
-                            {/* Mockup Visual - Mais Premium */}
-                            <div className="relative group animate-in fade-in zoom-in-95 duration-1000 delay-500 fill-mode-both">
-                                <div className="absolute -inset-10 bg-blue-500/10 rounded-full blur-[120px] -z-10 group-hover:bg-blue-500/20 transition-all duration-700"></div>
-                                <div className="bg-slate-900 rounded-[2.5rem] p-4 shadow-2xl border border-slate-800 transform group-hover:rotate-1 group-hover:scale-[1.02] transition-all duration-700 hover:shadow-blue-500/20">
-                                    <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
-                                        {/* Interface Header */}
-                                        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 hover:bg-gray-50 transition-colors">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-10 flex items-center justify-center">
-                                                    <img src={logo} alt="Logo" className="h-8 object-contain" />
-                                                </div>
-                                                <div>
-                                                    <span className="text-sm font-black text-gray-900 block leading-tight">Painel Principal</span>
-                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Romaneio v2.4</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-1.5">
-                                                {[1, 2, 3].map(i => <div key={i} className="w-2.5 h-2.5 rounded-full bg-gray-200"></div>)}
-                                            </div>
-                                        </div>
-
-                                        <div className="p-6 space-y-6">
-                                            {/* Stats Premium */}
-                                            <div className="grid grid-cols-3 gap-4">
-                                                {[
-                                                    { label: 'Estoque', value: '1.2k', icon: Boxes, color: 'text-blue-600' },
-                                                    { label: 'Hoje', value: '+42', icon: Truck, color: 'text-emerald-600' },
-                                                    { label: 'Alertas', value: '3', icon: AlertTriangle, color: 'text-orange-500' },
-                                                ].map((s, i) => (
-                                                    <div key={i} className="bg-gray-50 rounded-2xl p-4 border border-transparent hover:border-gray-200 transition-all cursor-default">
-                                                        <s.icon className={`w-5 h-5 ${s.color} mb-2`} />
-                                                        <p className="text-xl font-black text-gray-900 leading-tight">{s.value}</p>
-                                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{s.label}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            {/* Carrinho Mockup */}
-                                            <div className="space-y-3">
-                                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.15em] ml-1">Último Romaneio</p>
-                                                {[
-                                                    { n: 'Cabo USB-C Premium', q: '50un', p: 'R$ 890,00', s: 'ok' },
-                                                    { n: 'Adaptador HDMI 4K', q: '12un', p: 'R$ 420,00', s: 'low' },
-                                                ].map((r, i) => (
-                                                    <div key={i} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:border-blue-200 transition-all">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
-                                                                <Package className="w-5 h-5 text-gray-300" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-sm font-bold text-gray-900">{r.n}</p>
-                                                                <p className="text-[10px] font-bold text-gray-400">{r.q}</p>
-                                                            </div>
-                                                        </div>
-                                                        <p className="text-sm font-black text-blue-600">{r.p}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
+                            <div className="relative rounded-2xl sm:bg-card sm:pb-10" aria-label="Demonstração do Romaneio Rápido">
+                                <div className="relative flex justify-center sm:block rounded-2xl sm:border sm:border-border sm:bg-card sm:[perspective:1100px]">
+                                    <img
+                                        src={heroTeamImage}
+                                        alt="Profissionais conferindo informações no computador"
+                                        className="hidden h-full w-full rounded-2xl object-cover sm:block sm:min-h-[460px]"
+                                    />
+                                    <RomaneioImagePreview />
                                 </div>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                {/* Solução - Features Reais */}
-                <section id="solucao" className="py-24 bg-gray-50/60 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
-                    <div className="max-w-6xl mx-auto px-5">
-                        <motion.div 
-                            variants={containerVariants}
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true, amount: 0.3 }}
-                            className="text-center mb-20"
-                        >
-                            <motion.h2 variants={itemVariants} className="text-sm font-bold text-blue-600 uppercase tracking-[0.2em] mb-4">A Experiência Romaneio Rápido</motion.h2>
-                            <motion.h3 variants={itemVariants} className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
-                                Tudo o que você precisa para <span className="text-blue-600">vender mais rápido</span>
-                            </motion.h3>
-                        </motion.div>
-
-                        <motion.div 
-                            variants={containerVariants}
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true, amount: 0.3 }}
-                            className="grid md:grid-cols-2 gap-8"
-                        >
-                            {[
-                                {
-                                    icon: ScanBarcode,
-                                    title: 'Bipou, Vendeu.',
-                                    desc: 'Suporte nativo para leitores de código de barras USB e Câmera. Agilidade extrema na hora de montar seus pedidos de saída.',
-                                    accent: 'bg-blue-50 text-blue-600'
-                                },
-                                {
-                                    icon: ClipboardList,
-                                    title: 'Romaneio Inteligente',
-                                    desc: 'Gere romaneios profissionais em segundos. Exporte para WhatsApp ou PDF e mantenha seus clientes informados com um clique.',
-                                    accent: 'bg-emerald-50 text-emerald-600'
-                                },
-                                {
-                                    icon: Boxes,
-                                    title: 'Histórico Imutável',
-                                    desc: 'Nossa tecnologia de "Snapshots" garante que seu histórico de vendas não mude, mesmo se você alterar o nome ou preço do produto depois.',
-                                    accent: 'bg-indigo-50 text-indigo-600'
-                                },
-                                {
-                                    icon: BarChart3,
-                                    title: 'Gestão de Estoque Vivo',
-                                    desc: 'Alertas automáticos de estoque baixo e visão clara de entradas e saídas. Controle total para nunca deixar faltar mercadoria.',
-                                    accent: 'bg-amber-50 text-amber-600'
-                                },
-                            ].map((item, i) => (
-                                <motion.div
-                                    key={i}
-                                    variants={itemVariants}
-                                    className="bg-white rounded-[2.5rem] border border-gray-100 p-8 md:p-10 hover:shadow-2xl hover:shadow-blue-600/5 hover:-translate-y-1 transition-all duration-500 group"
-                                >
-                                    <div className={`w-16 h-16 rounded-3xl ${item.accent} flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500`}>
-                                        <item.icon className="w-8 h-8" />
+                <section
+                    className="border-b border-primary-dark bg-primary py-6 sm:py-8 text-card"
+                >
+                    <div className="mx-auto grid max-w-[90rem] gap-4 sm:gap-6 px-4 sm:px-6 lg:grid-cols-[auto_1fr] lg:items-center lg:px-8">
+                        <div className="flex justify-center lg:justify-start">
+                            <div className="flex -space-x-2 sm:-space-x-3">
+                                {userPhotos.map((photo, index) => (
+                                    <div
+                                        key={photo}
+                                        className="h-10 w-10 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-full border-2 sm:border-[3px] border-primary bg-brand-50"
+                                        style={{ zIndex: userPhotos.length - index }}
+                                    >
+                                        <img
+                                            src={photo}
+                                            alt=""
+                                            aria-hidden="true"
+                                            loading="lazy"
+                                            decoding="async"
+                                            className="h-full w-full object-cover"
+                                        />
                                     </div>
-                                    <h4 className="text-2xl font-black text-gray-900 mb-4">{item.title}</h4>
-                                    <p className="text-gray-500 leading-relaxed text-lg">{item.desc}</p>
-                                </motion.div>
-                            ))}
-                        </motion.div>
+                                ))}
+                                <div className="flex h-10 w-10 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-full border-2 sm:border-[3px] border-primary bg-card text-xl sm:text-3xl font-black text-primary">
+                                    +
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="text-center lg:text-left">
+                            <p className="text-xl font-black tracking-tight sm:text-3xl">
+                                +1.500 usuários organizam estoque e romaneios com o Romaneio Rápido
+                            </p>
+                            <p className="mt-1 sm:mt-2 text-xs sm:text-sm font-bold text-brand-50/90">
+                                Uma rotina mais clara para cadastrar produtos, separar pedidos e registrar saídas sem complicação.
+                            </p>
+                        </div>
                     </div>
                 </section>
 
-                {/* Recursos - Grid Moderno */}
-                <section id="recursos" className="py-24 bg-white relative overflow-hidden">
-                    <div className="max-w-6xl mx-auto px-5">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">Potência total em cada detalhe</h2>
+                <section
+                    id="solucao"
+                    className="border-b border-border bg-background py-16 sm:py-20"
+                >
+                    <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-8">
+                        <div>
+                            <SectionHeader
+                                label="Como funciona"
+                                title="Do produto lido ao romaneio pronto, sem perder o ritmo."
+                                desc="O sistema organiza cadastro, estoque, movimentações e documentos de saída para quem precisa trabalhar com velocidade."
+                            />
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                            {[
-                                { icon: ScanBarcode, title: 'BIP USB & Câmera', desc: 'Compatível com qualquer leitor' },
-                                { icon: ClipboardList, title: 'Cadastro Inteligente', desc: 'Fichas técnicas completas' },
-                                { icon: Truck, title: 'Movimentação Ágil', desc: 'Entradas e saídas sem fricção' },
-                                { icon: BarChart3, title: 'Dashboard Premium', desc: 'Dados visuais de alta carga' },
-                                { icon: Shield, title: 'Snapshots Imutáveis', desc: 'Segurança total no histórico' },
-                                { icon: Globe, title: 'Acesso Nuvem', desc: 'Sincronização em tempo real' },
-                                { icon: Zap, title: 'Performance 60FPS', desc: 'Interface fluida e responsiva' },
-                                { icon: Boxes, title: 'Multi-Categorias', desc: 'Organização estruturada' },
-                                { icon: Star, title: 'UX de Elite', desc: 'Focado na experiência do usuário' },
-                            ].map((r, i) => (
-                                <div
-                                    key={i}
-                                    className="p-6 rounded-3xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/20 transition-all duration-300 group"
-                                >
-                                    <div className="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center mb-4 transition-all duration-300">
-                                        <r.icon className="w-5 h-5" />
+                        <div className="mt-10 grid gap-6 lg:grid-cols-[0.94fr_1.06fr] lg:items-stretch">
+                            <div className="relative overflow-hidden rounded-2xl border border-border bg-card">
+                                <img
+                                    src={operationImage}
+                                    alt="Parceiros de negócio revisando pedidos no computador"
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="h-full min-h-[320px] w-full object-cover"
+                                />
+                                <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-card/60 bg-card/95 p-4 backdrop-blur">
+                                    <div className="mb-3 flex items-center justify-between gap-3">
+                                        <p className="text-sm font-black text-text-primary">Romaneio #2481</p>
+                                        <span className="rounded-xl bg-success/10 px-2.5 py-1 text-[10px] font-black text-success">Pronto</span>
                                     </div>
-                                    <h4 className="text-sm font-black text-gray-900 mb-1">{r.title}</h4>
-                                    <p className="text-xs text-gray-400 font-medium leading-relaxed">{r.desc}</p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {productStats.map((stat) => (
+                                            <PreviewStat key={stat.label} {...stat} compact />
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-1">
+                                {flowSteps.map((step, index) => (
+                                    <div key={step.title}>
+                                        <FeatureCard icon={step.icon} title={step.title} desc={step.desc} index={index + 1} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section
+                    id="recursos"
+                    className="border-b border-border bg-card py-12 sm:py-16"
+                >
+                    <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-8">
+                        <div
+                            className="mb-8 flex items-center gap-4 sm:mb-10"
+                        >
+                            <span className="h-8 w-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                            <h2 className="text-2xl font-black tracking-tight text-text-primary sm:text-3xl">
+                                <span className="text-primary">Nossos</span> Recursos
+                            </h2>
+                        </div>
+
+                        <div className="grid gap-6 lg:grid-cols-[0.62fr_0.38fr] lg:items-center">
+                            <h3
+                                className="max-w-xl text-3xl font-black leading-tight tracking-tight text-text-primary sm:text-4xl"
+                            >
+                                Recursos que transformam seu estoque.
+                            </h3>
+                        </div>
+
+                        <div className="mt-10 border-y border-border sm:mt-12">
+                            {resources.map((resource, index) => (
+                                <div
+                                    key={resource.title}
+                                    className="grid gap-4 border-b border-border py-6 last:border-b-0 sm:grid-cols-[0.15fr_0.45fr_0.4fr] sm:items-center lg:py-8 hover:bg-background/50 transition-colors"
+                                >
+                                    <span className="text-5xl font-black leading-none tracking-tight text-brand-200 sm:text-6xl lg:text-7xl">
+                                        {String(index + 1).padStart(2, '0')}
+                                    </span>
+                                    <h4 className="text-xl font-black leading-tight tracking-tight text-text-primary">
+                                        {resource.title}
+                                    </h4>
+                                    <p className="text-sm font-semibold leading-6 text-text-secondary sm:text-base">
+                                        {resource.desc}
+                                    </p>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </section>
 
-
-                {/* Planos */}
-                <section id="planos" className="py-24 bg-white">
-                    <div className="max-w-6xl mx-auto px-5">
-                        <div className="text-center mb-16">
-                            <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-3">Preços</p>
-                            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
-                                Escolha o plano ideal para você
-                            </h2>
-                            <p className="text-gray-500 max-w-2xl mx-auto">
-                                Sem taxas escondidas. Cancele quando quiser ou comece com nosso teste limitado.
-                            </p>
+                <section
+                    id="planos"
+                    className="border-b border-border bg-background py-16 sm:py-20"
+                >
+                    <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-8">
+                        <div>
+                            <SectionHeader
+                                label="Planos"
+                                title="Comece pequeno e evolua conforme sua operação cresce."
+                                desc="Planos simples, com teste inicial e limites claros para você escolher sem ruído."
+                            />
                         </div>
 
-                        {/* Unified Carousel for all screens */}
-                        <div 
-                            className="relative group/carousel px-4 md:px-0" 
-                            role="region" 
-                            aria-label="Planos de Assinatura"
-                            onMouseEnter={() => isHovered.current = true}
-                            onMouseLeave={() => isHovered.current = false}
+                        <div
+                            className="relative mt-8"
+                            role="region"
+                            aria-label="Planos de assinatura"
+                            onMouseEnter={() => { isHovered.current = true }}
+                            onMouseLeave={() => { isHovered.current = false }}
                         >
-                            {/* Navigation Arrows - Desktop/Premium Only */}
-                            <button
-                                onClick={prevPlan}
-                                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 md:-translate-x-12 z-30 w-12 h-12 bg-white border border-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-100 shadow-xl transition-all opacity-0 group-hover/carousel:opacity-100 active:scale-90"
-                                aria-label="Plano anterior"
-                            >
-                                <ChevronLeft className="w-6 h-6" />
-                            </button>
-
-                            <button
-                                onClick={nextPlan}
-                                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 md:translate-x-12 z-30 w-12 h-12 bg-white border border-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-100 shadow-xl transition-all opacity-0 group-hover/carousel:opacity-100 active:scale-90"
-                                aria-label="Próximo plano"
-                            >
-                                <ChevronRight className="w-6 h-6" />
-                            </button>
-
-                            <div 
+                            <div
                                 ref={scrollRef}
-                                className="flex overflow-x-auto gap-6 pt-10 pb-12 snap-x snap-mandatory scroll-smooth no-scrollbar"
+                                className="no-scrollbar flex snap-x snap-mandatory gap-6 overflow-x-auto pb-3 pt-5 scroll-smooth lg:grid lg:grid-cols-4 lg:overflow-visible lg:snap-none"
                                 role="list"
-                                onScroll={(e) => {
-                                    const target = e.currentTarget;
-                                    const firstCard = target.children[0] as HTMLElement;
-                                    if (firstCard) {
-                                        const cardWidth = firstCard.offsetWidth + 24;
-                                        const index = Math.round(target.scrollLeft / cardWidth);
-                                        if (index !== carouselIndex) setCarouselIndex(index);
-                                    }
+                                onScroll={(event) => {
+                                    if (window.innerWidth >= 1024) return;
+                                    const target = event.currentTarget
+                                    const firstCard = target.children[0] as HTMLElement | undefined
+                                    if (!firstCard) return
+                                    const cardWidth = firstCard.offsetWidth + 24
+                                    const index = Math.round(target.scrollLeft / cardWidth)
+                                    if (index !== carouselIndex) setCarouselIndex(index)
                                 }}
                             >
-                                {visiblePlans.map((plan, i) => (
+                                {visiblePlans.map((plan) => (
                                     <div
-                                        key={i}
+                                        key={plan.id}
                                         role="listitem"
                                         aria-label={`Plano ${plan.name}`}
-                                        className={`relative w-[280px] md:w-[320px] p-6 md:p-10 rounded-[32px] border transition-all duration-300 flex-shrink-0 snap-center flex flex-col h-full ${plan.highlight
-                                            ? 'border-blue-600 shadow-xl shadow-blue-600/10 z-10 bg-white ring-1 ring-blue-100'
-                                            : 'border-slate-100 bg-gray-50/40 hover:bg-white hover:border-blue-200 hover:shadow-lg'
-                                            }`}
+                                        className={`relative flex w-[280px] shrink-0 snap-center flex-col rounded-2xl border bg-card p-5 sm:w-[320px] sm:p-6 lg:h-full lg:w-auto lg:shrink lg:snap-align-none ${plan.highlight ? 'border-primary ring-1 ring-brand-100' : 'border-border'}`}
                                     >
                                         {plan.highlight && (
-                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black px-5 py-2 rounded-full uppercase tracking-[0.2em] shadow-lg shadow-blue-600/30 whitespace-nowrap z-20">
-                                                Destaque
-                                            </div>
+                                            <span className="absolute right-4 top-4 rounded-xl bg-primary px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-card">
+                                                Mais escolhido
+                                            </span>
                                         )}
 
-                                        <div className="mb-8">
-                                            <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">{plan.name}</h3>
-                                            <p className="text-sm text-slate-500 font-medium leading-relaxed min-h-[48px]">{plan.description}</p>
+                                        <div className="pr-20">
+                                            <h3 className="text-xl font-black text-text-primary">{plan.name}</h3>
+                                            <p className="mt-2 min-h-12 text-sm font-semibold leading-6 text-text-secondary">{plan.description}</p>
                                         </div>
 
-                                        <div className="flex items-baseline gap-1.5 mb-10">
-                                            <span className="text-4xl font-black text-slate-900 tracking-tighter">{plan.price}</span>
-                                            {plan.period && <span className="text-slate-400 font-bold text-[11px] uppercase tracking-widest">{plan.period}</span>}
+                                        <div className="mt-6 flex items-baseline gap-1">
+                                            <span className="text-3xl font-black tracking-tight text-text-primary">{plan.price}</span>
+                                            {plan.period && <span className="text-xs font-black uppercase tracking-[0.08em] text-text-secondary/70">{plan.period}</span>}
                                         </div>
 
                                         <button
-                                            onClick={() => navigate('/cadastro')}
-                                            className={`w-full py-4.5 rounded-2xl font-black text-sm transition-all duration-300 mb-10 active:scale-95 ${plan.highlight
-                                                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-600/30'
-                                                : 'bg-slate-900 text-white hover:bg-blue-600 shadow-lg shadow-slate-200'
-                                                }`}
+                                            onClick={start}
+                                            className={`mt-6 h-11 rounded-xl text-sm font-black transition-all active:scale-[0.98] ${plan.highlight ? 'bg-primary text-card hover:bg-primary-dark' : 'bg-text-primary text-card hover:bg-primary'}`}
                                         >
-                                            Começar Agora
+                                            Começar agora
                                         </button>
 
-                                        <div className="space-y-4.5 mt-auto">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-3">Recursos inclusos:</p>
-                                            {plan.features.map((feature, j) => (
-                                                <div key={j} className="flex items-start gap-3.5 group/feat">
-                                                    <div className="w-5.5 h-5.5 rounded-full bg-blue-50/50 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover/feat:bg-blue-600 transition-colors">
-                                                        <Check className="w-3 h-3 text-blue-600 group-hover/feat:text-white" />
-                                                    </div>
-                                                    <span className="text-[13px] text-slate-600 font-semibold leading-snug group-hover/feat:text-slate-900 transition-colors">{feature}</span>
+                                        <div className="mt-6 space-y-3 flex-1">
+                                            <p className="text-[11px] font-black uppercase tracking-[0.08em] text-text-secondary/70">Inclui</p>
+                                            {plan.features.map((feature) => (
+                                                <div key={feature} className="flex items-start gap-3">
+                                                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-primary">
+                                                        <Check className="h-3.5 w-3.5" />
+                                                    </span>
+                                                    <span className="text-[13px] font-semibold leading-5 text-text-secondary">{feature}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -547,20 +456,14 @@ export default function LandingPage() {
                                 ))}
                             </div>
 
-                            {/* Enhanced Dots Indicator */}
-                            <div className="flex justify-center items-center gap-3 mt-6">
-                                {visiblePlans.map((_, i) => (
-                                    <button 
-                                        key={i}
-                                        aria-label={`Ver plano ${i + 1}`}
-                                        aria-current={carouselIndex === i ? 'true' : 'false'}
-                                        onClick={() => {
-                                            if (scrollRef.current && scrollRef.current.children[0]) {
-                                                const cardWidth = (scrollRef.current.children[0] as HTMLElement).offsetWidth + 24;
-                                                scrollRef.current?.scrollTo({ left: i * cardWidth, behavior: 'smooth' });
-                                            }
-                                        }}
-                                        className={`h-2 rounded-full transition-all duration-500 ${carouselIndex === i ? 'w-10 bg-blue-600 shadow-lg shadow-blue-600/20' : 'w-2 bg-slate-200 hover:bg-slate-300'}`}
+                            <div className="mt-5 flex justify-center gap-2 lg:hidden">
+                                {visiblePlans.map((plan, index) => (
+                                    <button
+                                        key={plan.id}
+                                        aria-label={`Ver plano ${index + 1}`}
+                                        aria-current={carouselIndex === index ? 'true' : 'false'}
+                                        onClick={() => scrollToPlan(index)}
+                                        className={`h-2 rounded-xl transition-all ${carouselIndex === index ? 'w-8 bg-primary' : 'w-2 bg-text-secondary/40 hover:bg-text-secondary/45'}`}
                                     />
                                 ))}
                             </div>
@@ -568,109 +471,221 @@ export default function LandingPage() {
                     </div>
                 </section>
 
-                {/* CTA - Premium Dark Section */}
-                <section className="py-24 bg-white">
-                    <div className="max-w-5xl mx-auto px-5">
-                        <div className="bg-slate-900 rounded-[3rem] p-12 md:p-20 relative overflow-hidden shadow-2xl shadow-blue-900/20">
-                            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-blue-600/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
-                            <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-indigo-600/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2"></div>
-
-                            <div className="relative z-10 text-center">
-                                <h2 className="text-4xl md:text-5xl font-black text-white mb-6 tracking-tight">
-                                    Simplifique seu estoque <span className="text-blue-500">agora mesmo</span>
+                <section
+                    className="relative overflow-hidden border-y border-text-primary/90 bg-text-primary py-16 text-card sm:py-20"
+                >
+                    <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(37,99,235,0.22),transparent_42%,rgba(14,165,233,0.14))]" />
+                    <div className="absolute inset-x-0 top-0 h-px bg-brand-400/50" />
+                    <div className="relative mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-8">
+                        <div className="grid gap-10 lg:grid-cols-[1fr_360px] lg:items-center">
+                            <div className="max-w-4xl">
+                                <p className="text-xs font-black uppercase tracking-[0.08em] text-brand-300">Pronto para testar</p>
+                                <h2 className="mt-4 max-w-4xl text-3xl font-black tracking-tight sm:text-4xl lg:text-[2.65rem] lg:leading-tight">
+                                    Dê uma operação mais organizada para sua empresa ainda hoje.
                                 </h2>
-                                <p className="text-slate-400 mb-10 max-w-lg mx-auto text-lg font-medium leading-relaxed">
-                                    Junte-se a centenas de empresas que já transformaram sua logística com o Romaneio Rápido.
+                                <p className="mt-5 max-w-2xl text-sm font-semibold leading-7 text-text-secondary/50 sm:text-base">
+                                    Entre, cadastre seus primeiros produtos e veja como o fluxo de estoque, separação e romaneio fica mais claro desde o primeiro uso.
                                 </p>
-                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                    <button
-                                        onClick={() => navigate('/cadastro')}
-                                        className="w-full sm:w-auto h-14 px-10 text-base font-black bg-blue-600 text-white rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/40 flex items-center justify-center gap-3 active:scale-95"
-                                    >
-                                        Começar Gratuitamente <ArrowRight className="w-5 h-5" />
-                                    </button>
+
+                                <div className="mt-8 grid gap-3 text-sm font-bold text-card/70 sm:grid-cols-3">
+                                    {['Configuração rápida', 'Rotina 100% web', 'Suporte pelo WhatsApp'].map((item) => (
+                                        <div key={item} className="flex items-center gap-3 border-l border-brand-400/40 pl-3">
+                                            <Check className="h-4 w-4 text-success" />
+                                            <span>{item}</span>
+                                        </div>
+                                    ))}
                                 </div>
+                            </div>
+
+                            <div className="flex flex-col gap-4 lg:items-end">
+                                <button
+                                    onClick={start}
+                                    className="inline-flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-black text-card hover:bg-primary active:scale-[0.98] transition-all sm:w-auto lg:min-w-64"
+                                >
+                                    Acessar o sistema
+                                    <ArrowRight className="h-4 w-4" />
+                                </button>
+                                <p className="max-w-xs text-center text-xs font-bold leading-5 text-text-secondary/70 lg:text-right">
+                                    Comece pelo login e monte seu primeiro romaneio em poucos minutos.
+                                </p>
                             </div>
                         </div>
                     </div>
                 </section>
+            </main>
 
-                {/* Footer */}
-                <footer id="contato" className="border-t border-gray-100 py-12">
-                    <div className="max-w-6xl mx-auto px-5">
-                        <div className="flex flex-col md:flex-row justify-between gap-8">
-                            <div>
-                                <div className="flex items-center gap-2.5 mb-3">
-                                    <div className="h-7 flex items-center justify-center">
-                                        <img src={logo} alt="Logo" className="h-6 object-contain" />
-                                    </div>
-                                    <span className="text-sm font-bold text-gray-900">Romaneio Rápido</span>
-                                </div>
-                                <p className="text-xs text-gray-400 max-w-xs leading-relaxed">
-                                    Sistema de gestão de estoque para empresas que querem crescer com organização e eficiência.
-                                </p>
-                            </div>
+            <footer id="contato" className="border-t border-border bg-card py-10">
+                <div className="mx-auto flex max-w-[90rem] flex-col gap-8 px-4 sm:px-6 md:flex-row md:items-start md:justify-between lg:px-8">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <img src={logo} alt="Romaneio Rápido" className="h-10 w-10 object-contain" />
+                            <span className="text-sm font-black text-text-primary">Romaneio Rápido</span>
+                        </div>
+                        <p className="mt-3 max-w-sm text-xs font-semibold leading-5 text-text-secondary">
+                            Sistema web para gestão de estoque, movimentações e romaneios.
+                        </p>
+                    </div>
 
-                            <div className="flex flex-wrap gap-12">
-                                <div>
-                                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Navegação</h4>
-                                    <ul className="space-y-2 text-xs text-gray-400">
-                                        <li><a href="#solucao" className="hover:text-gray-700 transition-colors">Solução</a></li>
-                                        <li><a href="#recursos" className="hover:text-gray-700 transition-colors">Recursos</a></li>
-                                        <li><button onClick={() => navigate('/login')} className="hover:text-gray-700 transition-colors">Entrar</button></li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Termos e Políticas</h4>
-                                    <ul className="space-y-2 text-xs text-gray-400">
-                                        <li><button onClick={() => navigate('/termos')} className="hover:text-gray-700 transition-colors">Termos de Uso</button></li>
-                                        <li><button onClick={() => navigate('/privacidade')} className="hover:text-gray-700 transition-colors">Política de Privacidade</button></li>
-                                        <li><button onClick={() => navigate('/cookies')} className="hover:text-gray-700 transition-colors">Cookies</button></li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-2">
-                                        <Mail className="w-3.5 h-3.5" />
-                                        <span>romaneiorapido@gmail.com</span>
-                                    </div>
-                                    <a 
-                                        href={getWhatsAppLink('Olá! Vim pela Landing Page e preciso de suporte.')}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 text-xs text-emerald-600 font-bold hover:text-emerald-700 transition-colors"
-                                    >
-                                        <MessageCircle className="w-3.5 h-3.5" />
-                                        <span>WhatsApp Suporte</span>
-                                    </a>
-                                </div>
+                    <div className="grid gap-8 text-xs font-bold text-text-secondary sm:grid-cols-3">
+                        <div>
+                            <h3 className="mb-3 font-black uppercase tracking-[0.08em] text-text-primary">Navegação</h3>
+                            <div className="grid gap-2">
+                                <a href="#solucao" className="hover:text-primary">Como funciona</a>
+                                <a href="#recursos" className="hover:text-primary">Recursos</a>
+                                <a href="#planos" className="hover:text-primary">Planos</a>
                             </div>
                         </div>
-
-                        <div className="mt-10 pt-6 border-t border-gray-100 text-[11px] text-gray-300 text-center">
-                            © 2026 Romaneio Rápido
+                        <div>
+                            <h3 className="mb-3 font-black uppercase tracking-[0.08em] text-text-primary">Legal</h3>
+                            <div className="grid gap-2">
+                                <button onClick={() => navigate('/termos')} className="text-left hover:text-primary">Termos de Uso</button>
+                                <button onClick={() => navigate('/privacidade')} className="text-left hover:text-primary">Privacidade</button>
+                                <button onClick={() => navigate('/cookies')} className="text-left hover:text-primary">Cookies</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="mb-3 font-black uppercase tracking-[0.08em] text-text-primary">Contato</h3>
+                            <div className="grid gap-2">
+                                <span className="inline-flex items-center gap-2">
+                                    <Mail className="h-3.5 w-3.5" />
+                                    romaneiorapido@gmail.com
+                                </span>
+                                <a
+                                    href={getWhatsAppLink('Olá! Vim pela Landing Page e preciso de suporte.')}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 text-success hover:text-success"
+                                >
+                                    <MessageCircle className="h-3.5 w-3.5" />
+                                    WhatsApp Suporte
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </footer>
-            </main>
-            </div>
+                </div>
 
-            {/* Floating WhatsApp Button */}
-            <motion.a
+                <div className="mx-auto mt-8 max-w-[90rem] border-t border-border px-4 pt-5 text-center text-[11px] font-bold text-text-secondary/70 sm:px-6 lg:px-8">
+                    © 2026 Romaneio Rápido
+                </div>
+            </footer>
+
+            <a
                 href={getWhatsAppLink('Olá! Estou na Landing Page e gostaria de falar com o suporte.')}
                 target="_blank"
                 rel="noopener noreferrer"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                whileHover={{ scale: 1.1, y: -5 }}
-                whileTap={{ scale: 0.9 }}
-                className="fixed bottom-6 right-6 z-[100] w-14 h-14 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/40 border-2 border-white hover:bg-emerald-600 transition-colors group"
-                title="Falar com Suporte"
+                className="fixed bottom-5 right-5 z-[100] inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-success/30 bg-success px-4 text-sm font-black text-card hover:bg-success transition-colors"
+                title="Falar com suporte"
             >
-                <MessageCircle className="w-7 h-7" />
-                <span className="absolute right-full mr-4 px-4 py-2 bg-white text-slate-800 text-xs font-black rounded-xl shadow-xl border border-slate-100 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none uppercase tracking-widest">
-                    Suporte WhatsApp
-                </span>
-            </motion.a>
+                <MessageCircle className="h-5 w-5" />
+                Suporte
+            </a>
         </div>
     )
 }
+
+function LandingWelcomeLoader({ step, isLeaving }: { step: 'fast' | 'welcome'; isLeaving: boolean }) {
+    return (
+        <div
+            className={`fixed inset-0 z-[200] flex items-center justify-center overflow-hidden bg-card transition-opacity duration-700 ease-in-out ${isLeaving ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+            role="status"
+            aria-live="polite"
+            aria-label="Carregando landing page"
+        >
+            <div className="relative z-10 h-[16rem] w-[min(34rem,90vw)]">
+                <div className={`absolute inset-0 flex flex-col items-center justify-center px-6 text-center transition-all duration-500 ${step === 'fast' ? 'opacity-100 scale-100' : 'pointer-events-none opacity-0 scale-95 -translate-y-3'}`}>
+                    <img src={logo} alt="" className="mb-6 h-14 w-14 object-contain" />
+                    <p className="text-xs font-black uppercase tracking-[0.08em] text-text-secondary">Carregando</p>
+                    <div className="landing-loader-pass mt-5 h-1 w-full max-w-64 overflow-hidden rounded-xl bg-brand-50" aria-hidden="true">
+                        <span className="landing-loader-pass-bar block h-full rounded-xl bg-primary" />
+                    </div>
+                </div>
+
+                <div className={`absolute inset-0 flex flex-col items-center justify-center px-6 text-center transition-all duration-700 ease-in-out ${step === 'welcome' ? (isLeaving ? 'pointer-events-none -translate-x-24 opacity-0 scale-95' : 'opacity-100 translate-x-0 translate-y-0 scale-100') : 'pointer-events-none opacity-0 translate-x-0 translate-y-4 scale-105'}`}>
+                    <p className="text-[11px] font-black uppercase tracking-[0.08em] text-primary">Romaneio Rapido</p>
+                    <h2 className="mt-4 text-5xl font-black leading-none tracking-tight text-text-primary sm:text-7xl">Bem vindo</h2>
+                    <span className="mt-7 h-1 w-16 rounded-xl bg-primary" aria-hidden="true" />
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function RomaneioImagePreview() {
+    return (
+        <div className="relative mx-auto w-full max-w-[300px] rounded-2xl border border-card/80 bg-card/95 p-3 shadow-[0_24px_55px_rgba(15,23,42,0.18),0_8px_18px_rgba(37,99,235,0.12)] sm:absolute sm:-bottom-8 sm:right-5 sm:w-[20.5rem] sm:max-w-none sm:origin-bottom-right sm:rotate-[0.2deg] sm:backdrop-blur-md sm:shadow-[0_24px_55px_rgba(15,23,42,0.28),0_8px_18px_rgba(37,99,235,0.16)] sm:[transform:translateZ(34px)_rotateX(5deg)_rotateY(-8deg)]">
+            <div className="pointer-events-none absolute -inset-2 -z-10 rounded-2xl bg-primary/10 blur-xl" />
+            <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-brand-100 bg-brand-50 text-primary shadow-[0_8px_16px_rgba(37,99,235,0.14)]">
+                        <ClipboardList className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="truncate text-xs font-black text-text-primary">Romaneio #2481</p>
+                        <p className="truncate text-[10px] font-black uppercase tracking-[0.08em] text-text-secondary/70">Cliente Comercial Alves</p>
+                    </div>
+                </div>
+                <span className="shrink-0 rounded-xl border border-success/20 bg-success/10 px-2 py-1 text-[10px] font-black text-success">
+                    Pronto
+                </span>
+            </div>
+
+            <div className="space-y-1.5">
+                {[
+                    ['Kit Escritório', '86 un.'],
+                    ['Suporte Premium', '24 un.'],
+                    ['Caixa Organizadora', '9 un.']
+                ].map(([name, quantity]) => (
+                    <div key={name} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-2.5 py-2">
+                        <span className="truncate text-[11px] font-black text-text-primary">{name}</span>
+                        <span className="shrink-0 text-[11px] font-black text-text-primary">{quantity}</span>
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.08em] text-text-secondary/70">Total</span>
+                <span className="text-sm font-black text-success">R$ 1.842,00</span>
+            </div>
+        </div>
+    )
+}
+
+function PreviewStat({ label, value, icon: Icon, tone, compact = false }: { label: string; value: string; icon: IconType; tone: string; compact?: boolean }) {
+    return (
+        <div className={`rounded-2xl border border-border bg-card ${compact ? 'p-2.5' : 'p-3 sm:p-4'}`}>
+            <div className={`mb-2 flex ${compact ? 'h-8 w-8' : 'h-9 w-9'} items-center justify-center rounded-xl border ${tone}`}>
+                <Icon className="h-4 w-4" />
+            </div>
+            <p className={`${compact ? 'text-base' : 'text-xl sm:text-2xl'} font-black leading-none text-text-primary`}>{value}</p>
+            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.08em] text-text-secondary/70">{label}</p>
+        </div>
+    )
+}
+
+function SectionHeader({ label, title, desc }: { label: string; title: string; desc: string }) {
+    return (
+        <div className="max-w-3xl">
+            <p className="text-xs font-black uppercase tracking-[0.08em] text-primary">{label}</p>
+            <h2 className="mt-3 text-2xl font-black tracking-tight text-text-primary sm:text-3xl">{title}</h2>
+            <p className="mt-4 text-sm font-semibold leading-6 text-text-secondary sm:text-base">{desc}</p>
+        </div>
+    )
+}
+
+function FeatureCard({ icon: Icon, title, desc, index }: { icon: IconType; title: string; desc: string; index: number }) {
+    return (
+        <div className="h-full rounded-2xl border border-border bg-card p-5 transition-colors hover:border-brand-200">
+            <div className="mb-5 flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-brand-100 bg-brand-50 text-primary">
+                    <Icon className="h-5 w-5" />
+                </div>
+                <span className="text-xs font-black text-text-secondary/50">0{index}</span>
+            </div>
+            <h3 className="text-base font-black text-text-primary">{title}</h3>
+            <p className="mt-3 text-sm font-semibold leading-6 text-text-secondary">{desc}</p>
+        </div>
+    )
+}
+
+
+

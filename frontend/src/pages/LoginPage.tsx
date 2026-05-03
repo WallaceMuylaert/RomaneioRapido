@@ -1,22 +1,26 @@
-import { useState, type FormEvent } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useAuth } from '@/context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import LoadingOverlay from '../components/LoadingOverlay'
 import { Eye, EyeOff, Loader2, ArrowLeft, Zap, BarChart3, ScanBarcode, User, Mail, Lock } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import api from '../services/api'
-import AlertModal from '../components/AlertModal'
-import logo from '../assets/romaneiorapido_logo.png'
+import api from '@/services/api'
+import AlertModal from '@/components/AlertModal'
+
+const loginLogo = '/login-logo-192.png'
+const loginWarehouseImage = '/login-warehouse-1200.jpg'
 
 export default function LoginPage() {
     const { login } = useAuth()
     const navigate = useNavigate()
+    const authFormRef = useRef<HTMLFormElement>(null)
 
     // Estados Compartilhados
     const [isLoading, setIsLoading] = useState(false)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
+    const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches)
+    const [isHeroImageLoaded, setIsHeroImageLoaded] = useState(false)
 
     // Estado de Alternância (Login vs Cadastro)
     const [isRegistering, setIsRegistering] = useState(false)
@@ -48,6 +52,16 @@ export default function LoginPage() {
         type: 'info'
     })
 
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(min-width: 1024px)')
+        const updateDesktopState = () => setIsDesktop(mediaQuery.matches)
+
+        updateDesktopState()
+        mediaQuery.addEventListener('change', updateDesktopState)
+
+        return () => mediaQuery.removeEventListener('change', updateDesktopState)
+    }, [])
+
     const validateForm = () => {
         const newErrors: typeof errors = {}
 
@@ -68,6 +82,19 @@ export default function LoginPage() {
 
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
+    }
+
+    const storeBrowserCredentials = async () => {
+        if (isRegistering || !authFormRef.current || !('credentials' in navigator) || !('PasswordCredential' in window)) {
+            return
+        }
+
+        try {
+            const credential = new (window as any).PasswordCredential(authFormRef.current)
+            await navigator.credentials.store(credential)
+        } catch (err) {
+            console.warn('Navegador não permitiu salvar credenciais automaticamente.', err)
+        }
     }
 
     const handleSubmit = async (e: FormEvent) => {
@@ -95,6 +122,7 @@ export default function LoginPage() {
             } else {
                 // Fluxo de Login
                 await login(normalizedEmail, password)
+                await storeBrowserCredentials()
                 navigate('/dashboard')
             }
         } catch (err: any) {
@@ -160,21 +188,31 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50/30 font-sans selection:bg-brand-500/30">
-            {isLoading && <LoadingOverlay message={isRegistering ? "Criando sua conta..." : "Autenticando..."} />}
-
+        <div className="min-h-screen flex flex-col lg:flex-row bg-background/30 font-sans selection:bg-brand-500/30">
             {/* Seção Esquerda - Marketing (Oculta em Mobile) */}
-            <div className="hidden lg:flex lg:w-1/2 bg-slate-900 relative flex-col justify-between p-20 overflow-hidden">
-                {/* Decorative background elements */}
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-600/20 rounded-full blur-[120px] -mr-64 -mt-64" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-brand-600/10 rounded-full blur-[120px] -ml-64 -mb-64" />
+            <div className="hidden lg:flex lg:w-1/2 bg-text-primary relative flex-col justify-between p-20 overflow-hidden">
+                {isDesktop && (
+                    <img
+                        src={loginWarehouseImage}
+                        alt=""
+                        aria-hidden="true"
+                        loading="eager"
+                        decoding="async"
+                        fetchPriority="high"
+                        onLoad={() => setIsHeroImageLoaded(true)}
+                        className={`absolute inset-0 h-full w-full scale-[1.03] object-cover transition-opacity duration-300 ${isHeroImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    />
+                )}
+                <div className="absolute inset-0 bg-brand-950/55 mix-blend-multiply" />
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-900/78 via-slate-950/66 to-slate-950/88" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/72 via-transparent to-brand-700/16" />
 
                 {/* Botão Voltar */}
                 <button
                     onClick={() => navigate('/')}
-                    className="flex items-center gap-3 text-slate-400 hover:text-white transition-all text-sm font-bold w-fit group relative z-10 mb-16"
+                    className="flex items-center gap-3 text-text-secondary hover:text-card transition-all text-sm font-bold w-fit group relative z-10 mb-16"
                 >
-                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-brand-600 transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-card/5 flex items-center justify-center group-hover:bg-brand-600 transition-colors">
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                     </div>
                     <span>Voltar para o início</span>
@@ -182,21 +220,21 @@ export default function LoginPage() {
 
                 {/* Conteúdo Central */}
                 <div className="max-w-md relative z-10">
-                    <h1 className="text-5xl font-black text-white leading-[1.1] mb-8 tracking-tighter">
+                    <h1 className="text-5xl font-black text-card leading-[1.1] mb-8 tracking-tighter">
                         Controle seu estoque com <span className="text-brand-400">velocidade</span> máxima.
                     </h1>
-                    <p className="text-slate-400 text-lg mb-12 font-medium leading-relaxed">
+                    <p className="text-text-secondary text-lg mb-12 font-medium leading-relaxed">
                         Gerencie movimentações, organize categorias e acompanhe relatórios em tempo real com elegância e eficiência.
                     </p>
 
                     <div className="space-y-8">
                         {[
                             { icon: ScanBarcode, text: 'Leitura rápida de código de barras', color: 'text-brand-400' },
-                            { icon: Zap, text: 'Interface ultra-rápida sem delay', color: 'text-amber-400' },
+                            { icon: Zap, text: 'Interface ultra-rápida sem delay', color: 'text-warning' },
                             { icon: BarChart3, text: 'Dashboards visuais e inteligentes', color: 'text-emerald-400' }
                         ].map((item, i) => (
-                            <div key={i} className="flex items-center gap-5 text-slate-300">
-                                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-inner group transition-all hover:bg-white/10">
+                            <div key={i} className="flex items-center gap-5 text-text-secondary/60">
+                                <div className="w-12 h-12 rounded-2xl bg-card/5 flex items-center justify-center border border-card/10 shadow-inner group transition-all hover:bg-card/10">
                                     <item.icon className={`w-6 h-6 ${item.color}`} />
                                 </div>
                                 <span className="text-base font-bold tracking-tight">{item.text}</span>
@@ -206,7 +244,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* Rodapé Visual */}
-                <div className="flex items-center gap-6 text-slate-500 text-xs font-bold uppercase tracking-widest relative z-10 mt-auto pt-10">
+                <div className="flex items-center gap-6 text-text-secondary text-xs font-bold uppercase tracking-widest relative z-10 mt-auto pt-10">
                     <span>© 2026 Romaneio Rápido</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-brand-600" />
                     <span>Segurança Bancária</span>
@@ -214,14 +252,14 @@ export default function LoginPage() {
             </div>
 
             {/* Seção Direita - Formulário */}
-            <div className="flex-1 flex flex-col bg-white overflow-y-auto">
+            <div className="flex-1 flex flex-col bg-card overflow-y-auto">
                 {/* Mobile Header (Apenas em Mobile) */}
                 <div className="lg:hidden flex items-center justify-between pt-2">
                     <div className="flex items-center gap-1 ps-4 group cursor-pointer" onClick={() => navigate('/')}>
                         <img
-                            src={logo}
+                            src={loginLogo}
                             alt="Romaneio Rápido"
-                            className="h-12 w-15 rounded-xl object-contain bg-white shadow-lg shadow-brand-500/20"
+                            className="h-12 w-15 rounded-xl object-contain bg-card shadow-lg shadow-primary/20"
                         />
                     </div>
                     <button onClick={() => navigate('/')} className="text-xs font-black text-brand-600 uppercase tracking-wider pe-6">
@@ -229,14 +267,14 @@ export default function LoginPage() {
                     </button>
                 </div>
 
-                <div className="flex-1 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-slate-50/30">
+                <div className="flex-1 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-background/30">
                     <div className="w-full max-w-sm animate-slide-up">
                         {/* Boas vindas */}
                         <div className="mb-12 text-center lg:text-left">
-                            <h2 className="text-4xl font-black text-slate-900 tracking-tighter mb-3">
+                            <h2 className="text-4xl font-black text-text-primary tracking-tighter mb-3">
                                 {isRegistering ? 'Crie sua conta.' : 'Bem-vindo.'}
                             </h2>
-                            <p className="text-slate-500 font-semibold italic text-sm">
+                            <p className="text-text-secondary font-semibold italic text-sm">
                                 {isRegistering
                                     ? 'Cadastre-se para começar a gerenciar seu estoque.'
                                     : 'Insira suas credenciais para acessar a plataforma.'}
@@ -244,13 +282,20 @@ export default function LoginPage() {
                         </div>
 
                         {/* Formulário */}
-                        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
+                        <form
+                            ref={authFormRef}
+                            onSubmit={handleSubmit}
+                            className="space-y-6"
+                            autoComplete="on"
+                            method="post"
+                            action="/login"
+                        >
                             {isRegistering && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
+                                    <label className="text-[11px] font-black text-text-secondary uppercase tracking-widest ml-1">Nome Completo</label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                            <User className={`h-4 w-4 ${errors.fullName ? 'text-red-400' : 'text-slate-400'}`} />
+                                            <User className={`h-4 w-4 ${errors.fullName ? 'text-red-400' : 'text-text-secondary'}`} />
                                         </div>
                                         <input
                                             id="fullName"
@@ -264,25 +309,25 @@ export default function LoginPage() {
                                             }}
                                             placeholder="João da Silva"
                                             required
-                                            className={`w-full h-14 pl-12 pr-6 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.fullName
-                                                ? 'border-red-500 focus:ring-red-500/5 focus:border-red-500'
-                                                : 'border-slate-100 focus:ring-brand-500/5 focus:border-brand-500'}`}
+                                            className={`w-full h-14 pl-12 pr-6 bg-card border-2 rounded-2xl text-text-primary placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.fullName
+                                                ? 'border-error focus:ring-error/5 focus:border-error'
+                                                : 'border-border focus:ring-brand-500/5 focus:border-brand-500'}`}
                                         />
                                     </div>
-                                    {errors.fullName && <p className="text-[10px] font-black text-red-500 ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.fullName}</p>}
+                                    {errors.fullName && <p className="text-[10px] font-black text-error ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.fullName}</p>}
                                 </div>
                             )}
 
                             <div className="space-y-2">
-                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Endereço de Email</label>
+                                <label className="text-[11px] font-black text-text-secondary uppercase tracking-widest ml-1">Endereço de Email</label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                        <Mail className={`h-4 w-4 ${errors.email ? 'text-red-400' : 'text-slate-400'}`} />
+                                        <Mail className={`h-4 w-4 ${errors.email ? 'text-red-400' : 'text-text-secondary'}`} />
                                     </div>
-                                    <input
-                                        id="email"
-                                        name="username"
-                                        type="email"
+                                        <input
+                                            id="email"
+                                            name="username"
+                                            type="email"
                                         value={email}
                                         autoComplete="username"
                                         onChange={(e) => {
@@ -291,17 +336,17 @@ export default function LoginPage() {
                                         }}
                                         placeholder="exemplo@email.com"
                                         required
-                                        className={`w-full h-14 pl-12 pr-6 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.email
-                                            ? 'border-red-500 focus:ring-red-500/5 focus:border-red-500'
-                                            : 'border-slate-100 focus:ring-brand-500/5 focus:border-brand-500'}`}
+                                        className={`w-full h-14 pl-12 pr-6 bg-card border-2 rounded-2xl text-text-primary placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.email
+                                            ? 'border-error focus:ring-error/5 focus:border-error'
+                                            : 'border-border focus:ring-brand-500/5 focus:border-brand-500'}`}
                                     />
                                 </div>
-                                {errors.email && <p className="text-[10px] font-black text-red-500 ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.email}</p>}
+                                {errors.email && <p className="text-[10px] font-black text-error ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.email}</p>}
                             </div>
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between px-1">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Senha de Acesso</label>
+                                    <label className="text-[11px] font-black text-text-secondary uppercase tracking-widest">Senha de Acesso</label>
                                     {!isRegistering && (
                                         <button
                                             type="button"
@@ -314,7 +359,7 @@ export default function LoginPage() {
                                 </div>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                        <Lock className={`h-4 w-4 ${errors.password ? 'text-red-400' : 'text-slate-400'}`} />
+                                        <Lock className={`h-4 w-4 ${errors.password ? 'text-red-400' : 'text-text-secondary'}`} />
                                     </div>
                                     <input
                                         key={isRegistering ? 'register-password' : 'login-password'}
@@ -329,27 +374,27 @@ export default function LoginPage() {
                                         }}
                                         placeholder="••••••••••••"
                                         required
-                                        className={`w-full h-14 pl-12 pr-14 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.password
-                                            ? 'border-red-500 focus:ring-red-500/5 focus:border-red-500'
-                                            : 'border-slate-100 focus:ring-brand-500/5 focus:border-brand-500'}`}
+                                        className={`w-full h-14 pl-12 pr-14 bg-card border-2 rounded-2xl text-text-primary placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.password
+                                            ? 'border-error focus:ring-error/5 focus:border-error'
+                                            : 'border-border focus:ring-brand-500/5 focus:border-brand-500'}`}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-brand-600 p-2 transition-colors"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary/60 hover:text-brand-600 p-2 transition-colors"
                                     >
                                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
                                 </div>
-                                {errors.password && <p className="text-[10px] font-black text-red-500 ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.password}</p>}
+                                {errors.password && <p className="text-[10px] font-black text-error ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.password}</p>}
                             </div>
 
                             {isRegistering && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirme a Senha</label>
+                                    <label className="text-[11px] font-black text-text-secondary uppercase tracking-widest ml-1">Confirme a Senha</label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                            <Lock className={`h-4 w-4 ${errors.confirmPassword ? 'text-red-400' : 'text-slate-400'}`} />
+                                            <Lock className={`h-4 w-4 ${errors.confirmPassword ? 'text-red-400' : 'text-text-secondary'}`} />
                                         </div>
                                         <input
                                             id="confirmPassword"
@@ -363,26 +408,26 @@ export default function LoginPage() {
                                             }}
                                             placeholder="••••••••••••"
                                             required
-                                            className={`w-full h-14 pl-12 pr-14 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.confirmPassword
-                                                ? 'border-red-500 focus:ring-red-500/5 focus:border-red-500'
-                                                : 'border-slate-100 focus:ring-brand-500/5 focus:border-brand-500'}`}
+                                            className={`w-full h-14 pl-12 pr-14 bg-card border-2 rounded-2xl text-text-primary placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.confirmPassword
+                                                ? 'border-error focus:ring-error/5 focus:border-error'
+                                                : 'border-border focus:ring-brand-500/5 focus:border-brand-500'}`}
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-brand-600 p-2 transition-colors"
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary/60 hover:text-brand-600 p-2 transition-colors"
                                         >
                                             {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                         </button>
                                     </div>
-                                    {errors.confirmPassword && <p className="text-[10px] font-black text-red-500 ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.confirmPassword}</p>}
+                                    {errors.confirmPassword && <p className="text-[10px] font-black text-error ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.confirmPassword}</p>}
                                 </div>
                             )}
 
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full h-16 bg-brand-600 text-white font-black rounded-2xl shadow-xl shadow-brand-500/20 hover:bg-brand-700 hover:shadow-brand-500/30 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-4 text-sm tracking-tight"
+                                className="w-full h-16 bg-brand-600 text-card font-black rounded-2xl shadow-xl shadow-primary/20 hover:bg-brand-700 hover:shadow-primary/30 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-4 text-sm tracking-tight"
                             >
                                 {isLoading ? (
                                     <>
@@ -396,7 +441,7 @@ export default function LoginPage() {
                         </form>
 
                         <div className="mt-16 text-center">
-                            <p className="text-xs text-slate-400 font-bold tracking-tight">
+                            <p className="text-xs text-text-secondary font-bold tracking-tight">
                                 {isRegistering ? 'Já tem uma conta?' : 'Não tem uma conta ainda?'}
                                 <button
                                     onClick={toggleMode}

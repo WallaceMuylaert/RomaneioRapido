@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import api from '../services/api'
+import api from '@/services/api'
 
 export interface User {
     id: number

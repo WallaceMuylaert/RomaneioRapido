@@ -82,7 +82,7 @@ def _build_admin_email_html(recipient_name: str, subject: str, message: str) -> 
             <tr>
                 <td style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #f1f5f9;">
                     <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-                        Â© {datetime.now().year} {settings.PROJECT_NAME}.<br>
+                        © {datetime.now().year} {settings.PROJECT_NAME}.<br>
                         Este e-mail foi enviado pela equipe administrativa.
                     </p>
                 </td>

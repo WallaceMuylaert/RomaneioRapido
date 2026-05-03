@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import api from '../services/api'
-import { useAuth } from '../context/AuthContext'
+import api from '@/services/api'
+import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
-import { translateError } from '../utils/errors'
+import { translateError } from '@/utils/errors'
 
 export function useSubscription() {
     const { user } = useAuth()

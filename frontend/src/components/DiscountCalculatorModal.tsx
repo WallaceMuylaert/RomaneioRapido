@@ -39,20 +39,20 @@ export default function DiscountCalculatorModal({ isOpen, subtotal, currentPerce
     return (
         <div className="fixed inset-0 z-[100] overflow-y-auto outline-none focus:outline-none">
             <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
-                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
+                <div className="fixed inset-0 bg-text-primary/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
                 
-                <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+                <div className="relative bg-card rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="px-6 py-5 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
+                        <div className="w-10 h-10 bg-brand-50 text-primary rounded-xl flex items-center justify-center shrink-0">
                             <Calculator className="w-5 h-5" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-gray-900">Aplicar Desconto</h2>
-                            <p className="text-xs font-semibold text-gray-400 mt-0.5 uppercase tracking-wider">Porcentagem (%)</p>
+                            <h2 className="text-lg font-bold text-text-primary">Aplicar Desconto</h2>
+                            <p className="text-xs font-semibold text-text-secondary mt-0.5 uppercase tracking-wider">Porcentagem (%)</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 text-gray-400 hover:bg-gray-50 hover:text-red-500 rounded-xl transition-all active:scale-95">
+                    <button onClick={onClose} className="p-2 text-text-secondary hover:bg-background hover:text-error rounded-xl transition-all active:scale-95">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -60,8 +60,8 @@ export default function DiscountCalculatorModal({ isOpen, subtotal, currentPerce
                 <div className="p-6 space-y-6">
                     <div>
                         <div className="flex justify-between items-end mb-2">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Desconto em %</label>
-                            <span className="text-xs font-bold text-slate-500">
+                            <label className="text-xs font-black text-text-secondary uppercase tracking-widest">Desconto em %</label>
+                            <span className="text-xs font-bold text-text-secondary">
                                 de {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(subtotal)}
                             </span>
                         </div>
@@ -76,9 +76,9 @@ export default function DiscountCalculatorModal({ isOpen, subtotal, currentPerce
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleApply()
                                 }}
-                                className="w-full h-14 pl-4 pr-12 text-2xl font-black text-gray-900 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300 placeholder:font-medium"
+                                className="w-full h-14 pl-4 pr-12 text-2xl font-black text-text-primary bg-background border border-border rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all placeholder:text-text-secondary/60 placeholder:font-medium"
                             />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xl font-bold text-slate-400">%</span>
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xl font-bold text-text-secondary">%</span>
                         </div>
                     </div>
 
@@ -92,13 +92,13 @@ export default function DiscountCalculatorModal({ isOpen, subtotal, currentPerce
                     <div className="flex gap-3 pt-2">
                         <button
                             onClick={onClose}
-                            className="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all active:scale-95"
+                            className="flex-1 h-12 bg-border/50 hover:bg-border text-text-secondary font-bold rounded-xl transition-all active:scale-95"
                         >
                             Cancelar
                         </button>
                         <button
                             onClick={handleApply}
-                            className="flex-1 h-12 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95"
+                            className="flex-1 h-12 bg-primary hover:bg-brand-500 text-card font-bold rounded-xl transition-all shadow-md shadow-primary/20 active:scale-95"
                         >
                             Aplicar
                         </button>

@@ -137,13 +137,13 @@ export default function BarcodeScanner({ onScan, onClose, status = 'idle' }: Bar
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-            <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white relative z-10">
+            <div className="relative bg-card rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-card relative z-10">
                     <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${status === 'success' ? 'bg-emerald-100 text-emerald-600 scale-110' :
-                            status === 'searching' ? 'bg-blue-100 text-blue-600 animate-bounce' :
-                                status === 'error' ? 'bg-red-100 text-red-600' :
-                                    'bg-blue-50 text-blue-600'
+                            status === 'searching' ? 'bg-brand-100 text-primary animate-bounce' :
+                                status === 'error' ? 'bg-error/20 text-error' :
+                                    'bg-brand-50 text-primary'
                             }`}>
                             {status === 'success' ? <CheckCircle2 className="w-4 h-4" /> :
                                 status === 'searching' ? <RefreshCcw className="w-4 h-4 animate-spin" /> :
@@ -151,9 +151,9 @@ export default function BarcodeScanner({ onScan, onClose, status = 'idle' }: Bar
                                         <Camera className="w-4 h-4" />}
                         </div>
                         <h2 className={`text-sm font-bold transition-colors duration-300 ${status === 'success' ? 'text-emerald-600' :
-                            status === 'searching' ? 'text-blue-600' :
-                                status === 'error' ? 'text-red-600' :
-                                    'text-gray-900'
+                            status === 'searching' ? 'text-primary' :
+                                status === 'error' ? 'text-error' :
+                                    'text-text-primary'
                             } text-nowrap`}>
                             {status === 'success' ? 'Lido com sucesso!' :
                                 status === 'searching' ? 'Processando leitura...' :
@@ -161,33 +161,33 @@ export default function BarcodeScanner({ onScan, onClose, status = 'idle' }: Bar
                                         'Centralize o Código'}
                         </h2>
                     </div>
-                    <button onClick={onClose} className="p-2 text-gray-400 hover:bg-gray-50 rounded-full">
+                    <button onClick={onClose} className="p-2 text-text-secondary hover:bg-background rounded-full">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <div className="p-4 bg-gray-900 border-x border-gray-900 relative">
+                <div className="p-4 bg-text-primary border-x border-gray-900 relative">
                     <div className="relative rounded-2xl overflow-hidden bg-black aspect-square shadow-2xl flex items-center justify-center">
 
                         {/* Modal de Pré-Permissão */}
                         {needsPermission && !errorMessage && (
-                            <div className="absolute inset-0 z-50 bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
+                            <div className="absolute inset-0 z-50 bg-text-primary/95 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
                                 <div className="w-20 h-20 bg-brand-500/20 rounded-full flex items-center justify-center mb-6 border border-brand-500/30">
                                     <Camera className="w-10 h-10 text-brand-400 animate-pulse" />
                                 </div>
-                                <h3 className="text-xl font-black text-white mb-3">Acesso à Câmera</h3>
-                                <p className="text-slate-400 text-sm font-medium mb-8 leading-relaxed">
+                                <h3 className="text-xl font-black text-card mb-3">Acesso à Câmera</h3>
+                                <p className="text-text-secondary text-sm font-medium mb-8 leading-relaxed">
                                     Para ler códigos de barras e QR Codes, precisamos da sua permissão para usar a câmera traseira do dispositivo.
                                 </p>
                                 <button
                                     onClick={startScanner}
-                                    className="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-2xl shadow-lg shadow-brand-500/20 transition-all active:scale-95 text-sm uppercase tracking-wider"
+                                    className="w-full py-4 bg-brand-600 hover:bg-brand-700 text-card font-black rounded-2xl shadow-lg shadow-primary/20 transition-all active:scale-95 text-sm uppercase tracking-wider"
                                 >
                                     Permitir Câmera
                                 </button>
                                 <button
                                     onClick={onClose}
-                                    className="mt-4 text-slate-500 text-xs font-bold uppercase tracking-widest hover:text-slate-300 transition-colors"
+                                    className="mt-4 text-text-secondary text-xs font-bold uppercase tracking-widest hover:text-text-secondary/60 transition-colors"
                                 >
                                     Agora não
                                 </button>
@@ -197,8 +197,8 @@ export default function BarcodeScanner({ onScan, onClose, status = 'idle' }: Bar
                         {/* Overlay de Sucesso */}
                         {scanSuccess && (
                             <div className="absolute inset-0 z-30 bg-emerald-500/90 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-200">
-                                <CheckCircle2 className="w-16 h-16 text-white mb-3 drop-shadow-md animate-bounce" />
-                                <p className="text-white font-bold text-lg drop-shadow-md">Código Localizado</p>
+                                <CheckCircle2 className="w-16 h-16 text-card mb-3 drop-shadow-md animate-bounce" />
+                                <p className="text-card font-bold text-lg drop-shadow-md">Código Localizado</p>
                                 <p className="text-emerald-50 text-sm font-medium mt-1">Processando...</p>
                             </div>
                         )}
@@ -209,11 +209,11 @@ export default function BarcodeScanner({ onScan, onClose, status = 'idle' }: Bar
                         {/* Overlay visual fixo para guiar o usuário */}
                         {status === 'idle' && !scanSuccess && (
                             <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-                                <div className="w-[200px] h-[200px] border-2 border-blue-500/50 rounded-2xl relative shadow-[0_0_0_999px_rgba(0,0,0,0.3)] transition-all">
-                                    <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-blue-500 rounded-tl-lg" />
-                                    <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-blue-500 rounded-tr-lg" />
-                                    <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-blue-500 rounded-bl-lg" />
-                                    <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-blue-500 rounded-br-lg" />
+                                <div className="w-[200px] h-[200px] border-2 border-brand-500/50 rounded-2xl relative shadow-[0_0_0_999px_rgba(0,0,0,0.3)] transition-all">
+                                    <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-brand-500 rounded-tl-lg" />
+                                    <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-brand-500 rounded-tr-lg" />
+                                    <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-brand-500 rounded-bl-lg" />
+                                    <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-brand-500 rounded-br-lg" />
                                     <div className="absolute top-1/2 left-4 right-4 h-px bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)] animate-pulse" />
                                 </div>
                             </div>
@@ -223,46 +223,46 @@ export default function BarcodeScanner({ onScan, onClose, status = 'idle' }: Bar
                         {status === 'searching' && (
                             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
                                 <div className="relative">
-                                    <div className="w-20 h-20 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
-                                    <ScanBarcode className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-white animate-pulse" />
+                                    <div className="w-20 h-20 border-4 border-brand-500/30 border-t-blue-500 rounded-full animate-spin" />
+                                    <ScanBarcode className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-card animate-pulse" />
                                 </div>
-                                <span className="mt-4 text-white font-black text-xs uppercase tracking-[0.2em] animate-pulse">Lendo código...</span>
+                                <span className="mt-4 text-card font-black text-xs uppercase tracking-[0.2em] animate-pulse">Lendo código...</span>
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div className={`p-6 transition-colors duration-300 text-center ${scanSuccess ? 'bg-emerald-50' : errorMessage ? 'bg-red-50' : 'bg-white'}`}>
+                <div className={`p-6 transition-colors duration-300 text-center ${scanSuccess ? 'bg-emerald-50' : errorMessage ? 'bg-error/10' : 'bg-card'}`}>
                     {errorMessage ? (
                         <>
-                            <p className="text-[13px] text-red-600 font-bold mb-3">
+                            <p className="text-[13px] text-error font-bold mb-3">
                                 {errorMessage}
                             </p>
                             {!isSecureContext && (
-                                <p className="text-[11px] text-amber-600 mb-4 bg-amber-50 p-2 rounded-lg border border-amber-100">
+                                <p className="text-[11px] text-warning mb-4 bg-warning/10 p-2 rounded-lg border border-amber-100">
                                     Dica: Acesse usando <strong>https://</strong> ou <strong>localhost</strong> para habilitar a câmera.
                                 </p>
                             )}
                             <button
                                 onClick={startScanner}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-full text-xs font-bold transition-colors"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-error/20 hover:bg-error/30 text-error rounded-full text-xs font-bold transition-colors"
                             >
                                 <RefreshCcw className="w-3.5 h-3.5" /> Tentar Novamente
                             </button>
                         </>
                     ) : status === 'searching' ? (
-                        <p className="text-[13px] text-blue-700 leading-relaxed font-bold animate-pulse">
+                        <p className="text-[13px] text-primary-dark leading-relaxed font-bold animate-pulse">
                             Buscando no banco de dados...
                         </p>
                     ) : !scanSuccess ? (
                         <>
                             <button
                                 onClick={() => stopScanner().then(startScanner)}
-                                className="mb-4 inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-xs font-bold transition-colors"
+                                className="mb-4 inline-flex items-center gap-2 px-4 py-2 bg-border/50 hover:bg-border text-text-secondary rounded-full text-xs font-bold transition-colors"
                             >
                                 <RefreshCcw className="w-3.5 h-3.5" /> Reiniciar Câmera
                             </button>
-                            <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
+                            <p className="text-[11px] text-text-secondary leading-relaxed font-medium">
                                 Aponte para o código e aguarde a detecção automática.<br />
                                 Funciona com QR Codes e Códigos de Barras.
                             </p>

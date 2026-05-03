@@ -18,6 +18,8 @@ export const translateError = (error: any): string => {
             email: 'E-mail',
             notes: 'Observações',
             price: 'Preço',
+            cost_price: 'Preço de custo',
+            min_stock: 'Estoque mínimo',
             quantity: 'Quantidade',
             stock_quantity: 'Quantidade em estoque',
             barcode: 'Código de barras'
@@ -43,6 +45,8 @@ export const translateError = (error: any): string => {
             case 'type_error.float':
             case 'type_error.number':
                 return `O campo "${fieldName}" deve ser um número válido.`
+            case 'greater_than_equal':
+                return `O campo "${fieldName}" deve ser maior ou igual a ${firstError.ctx?.ge ?? 0}.`
             default:
                 // Se não houver tradução específica, tenta limpar a mensagem original
                 return firstError.msg?.replace('String', 'Texto').replace('Value', 'Valor') || 'Erro de validação'

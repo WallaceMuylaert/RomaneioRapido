@@ -52,29 +52,29 @@ export default function ErrorPage({ code }: ErrorPageProps) {
     const details = errorDetails[finalCode] || defaultError;
 
     return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-            <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center animate-fade-in border border-gray-100">
-                <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-red-100">
-                    <AlertTriangle className="w-12 h-12 text-red-500" />
+        <div className="min-h-screen bg-border/50 flex items-center justify-center p-4">
+            <div className="max-w-md w-full bg-card rounded-3xl shadow-xl p-8 text-center animate-fade-in border border-border">
+                <div className="w-24 h-24 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-error/20">
+                    <AlertTriangle className="w-12 h-12 text-error" />
                 </div>
 
                 <h1 className="text-7xl font-bold mb-2 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                     {finalCode}
                 </h1>
-                <h2 className="text-2xl font-semibold text-gray-800 mb-4">{details.title}</h2>
-                <p className="text-gray-500 mb-10 text-base leading-relaxed">{details.message}</p>
+                <h2 className="text-2xl font-semibold text-text-primary mb-4">{details.title}</h2>
+                <p className="text-text-secondary mb-10 text-base leading-relaxed">{details.message}</p>
 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button
                         onClick={() => navigate(-1)}
-                        className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-gray-50 text-gray-700 rounded-xl hover:bg-gray-100 border border-gray-200 transition-all font-medium whitespace-nowrap"
+                        className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-background text-text-secondary rounded-xl hover:bg-border/50 border border-border transition-all font-medium whitespace-nowrap"
                     >
                         <ArrowLeft className="w-5 h-5" />
                         Voltar
                     </button>
                     <button
                         onClick={() => navigate('/')}
-                        className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all font-medium whitespace-nowrap"
+                        className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-primary text-card rounded-xl hover:bg-primary-dark shadow-md shadow-primary/20 transition-all font-medium whitespace-nowrap"
                     >
                         <Home className="w-5 h-5" />
                         Início

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, defer
 from fastapi import HTTPException
 from backend.models.products import Product
 from backend.schemas.products import ProductCreate, ProductUpdate
+from backend.utils.images import compress_image_base64
 
 
 # Colunas permitidas para ordenação — whitelist explícita para evitar inference attacks
@@ -82,7 +83,11 @@ def get_product_by_sku(db: Session, sku: str, user_id: int):
 
 def create_product(db: Session, product: ProductCreate, user_id: int):
     from backend.models.inventory import InventoryMovement, MovementType
-    db_product = Product(**product.model_dump(), user_id=user_id)
+    product_data = product.model_dump()
+    if product_data.get("image_base64"):
+        product_data["image_base64"] = compress_image_base64(product_data["image_base64"])
+
+    db_product = Product(**product_data, user_id=user_id)
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
@@ -114,6 +119,8 @@ def update_product(db: Session, product_id: int, product: ProductUpdate, user_id
     
     old_stock = db_product.stock_quantity
     update_data = product.model_dump(exclude_unset=True)
+    if update_data.get("image_base64"):
+        update_data["image_base64"] = compress_image_base64(update_data["image_base64"])
 
     if update_data.get("barcode"):
         existing = db.query(Product).filter(
@@ -166,6 +173,7 @@ def delete_product(db: Session, product_id: int, user_id: int):
     if not db_product:
         return None
     db_product.is_active = False
+    db_product.image_base64 = None
     db.commit()
     db.refresh(db_product)
     return db_product
