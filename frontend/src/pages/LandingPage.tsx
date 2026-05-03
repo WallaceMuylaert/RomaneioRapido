@@ -421,7 +421,7 @@ export default function LandingPage() {
                                         key={plan.id}
                                         role="listitem"
                                         aria-label={`Plano ${plan.name}`}
-                                        className={`relative flex w-[280px] shrink-0 snap-center flex-col rounded-2xl border bg-card p-5 sm:w-[320px] sm:p-6 lg:w-auto lg:shrink lg:snap-align-none ${plan.highlight ? 'border-primary ring-1 ring-brand-100' : 'border-border'}`}
+                                        className={`relative flex w-[280px] shrink-0 snap-center flex-col rounded-2xl border bg-card p-5 sm:w-[320px] sm:p-6 lg:h-full lg:w-auto lg:shrink lg:snap-align-none ${plan.highlight ? 'border-primary ring-1 ring-brand-100' : 'border-border'}`}
                                     >
                                         {plan.highlight && (
                                             <span className="absolute right-4 top-4 rounded-xl bg-primary px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-card">
@@ -446,7 +446,7 @@ export default function LandingPage() {
                                             Começar agora
                                         </button>
 
-                                        <div className="mt-6 space-y-3">
+                                        <div className="mt-6 space-y-3 flex-1">
                                             <p className="text-[11px] font-black uppercase tracking-[0.08em] text-text-secondary/70">Inclui</p>
                                             {plan.features.map((feature) => (
                                                 <div key={feature} className="flex items-start gap-3">

@@ -170,13 +170,11 @@ export default function LoginPage() {
                     src={loginWarehouseImage}
                     alt=""
                     aria-hidden="true"
-                    className="absolute inset-0 h-full w-full scale-[1.03] object-cover blur-[1.5px]"
+                    className="absolute inset-0 h-full w-full scale-[1.03]"
                 />
                 <div className="absolute inset-0 bg-brand-950/55 mix-blend-multiply" />
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-900/78 via-slate-950/66 to-slate-950/88" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/72 via-transparent to-brand-700/16" />
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500/24 rounded-full blur-[120px] -mr-64 -mt-64" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-cyan-400/12 rounded-full blur-[120px] -ml-64 -mb-64" />
 
                 {/* Botão Voltar */}
                 <button

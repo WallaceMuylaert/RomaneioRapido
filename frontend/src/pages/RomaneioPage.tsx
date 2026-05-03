@@ -1104,37 +1104,37 @@ export default function RomaneioPage() {
                         </div>
                     </div>
                     <div className="hidden lg:flex flex-col">
-                        <div className="bg-text-primary rounded-2xl p-6 shadow-xl lg:sticky lg:top-24">
-                            <h2 className="text-sm font-bold text-card mb-6 flex items-center gap-2">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-400" /> Resumo
+                        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm lg:sticky lg:top-24">
+                            <h2 className="text-base font-black text-text-primary mb-6 flex items-center gap-2">
+                                <CheckCircle2 className="w-5 h-5 text-success" /> Resumo
                             </h2>
                             <div className="space-y-4 mb-8">
-                                <div className="flex justify-between items-center pb-4 border-b border-card/10">
-                                    <span className="text-sm text-text-secondary">Cliente</span>
-                                    <span className="text-sm font-semibold text-card truncate max-w-[150px]">{customerName || 'Consumidor'}</span>
+                                <div className="flex justify-between items-center pb-4 border-b border-border">
+                                    <span className="text-sm font-semibold text-text-secondary">Cliente</span>
+                                    <span className="text-sm font-bold text-text-primary truncate max-w-[150px]">{customerName || 'Consumidor'}</span>
                                 </div>
-                                <div className="flex justify-between items-center pb-4 border-b border-card/10">
-                                    <span className="text-sm text-text-secondary">Total de Linhas</span>
-                                    <span className="text-sm font-bold text-card">{cartItems.length}</span>
+                                <div className="flex justify-between items-center pb-4 border-b border-border">
+                                    <span className="text-sm font-semibold text-text-secondary">Total de Linhas</span>
+                                    <span className="text-sm font-black text-text-primary">{cartItems.length}</span>
                                 </div>
-                                <div className="flex justify-between items-center pb-4 border-b border-card/10">
-                                    <span className="text-sm text-text-secondary">Unidades Totais</span>
-                                    <span className="text-sm font-bold text-card">{cartItems.reduce((acc, i) => acc + i.quantity, 0)}</span>
+                                <div className="flex justify-between items-center pb-4 border-b border-border">
+                                    <span className="text-sm font-semibold text-text-secondary">Unidades Totais</span>
+                                    <span className="text-sm font-black text-text-primary">{cartItems.reduce((acc, i) => acc + i.quantity, 0)}</span>
                                 </div>
-                                <div className="flex justify-between items-center pb-4 border-b border-card/10">
-                                    <span className="text-sm font-bold text-text-secondary/60">Subtotal</span>
-                                    <span className="text-sm font-black text-text-secondary/40">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(romaneioSubtotal)}</span>
+                                <div className="flex justify-between items-center pb-4 border-b border-border">
+                                    <span className="text-sm font-semibold text-text-secondary">Subtotal</span>
+                                    <span className="text-sm font-black text-text-primary">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(romaneioSubtotal)}</span>
                                 </div>
 
-                                <div className="flex justify-between items-center pb-4 border-b border-card/10">
-                                    <span className="text-sm text-text-secondary">Desconto {discountPercentage > 0 ? `(${discountPercentage.toFixed(2)}%)` : ''}</span>
+                                <div className="flex justify-between items-center pb-4 border-b border-border">
+                                    <span className="text-sm font-semibold text-text-secondary">Desconto {discountPercentage > 0 ? `(${discountPercentage.toFixed(2)}%)` : ''}</span>
                                     <div className="flex items-center gap-3">
-                                        <span className="text-sm font-bold text-red-400">
+                                        <span className="text-sm font-bold text-error">
                                             {discountAmount > 0 ? `- ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(discountAmount)}` : 'R$ 0,00'}
                                         </span>
                                         <button
                                             onClick={() => setShowDiscountModal(true)}
-                                            className="px-2 py-1 bg-text-primary/90 hover:bg-text-primary/80 text-xs font-bold text-text-secondary/60 rounded-lg transition-colors border border-card/10"
+                                            className="px-2 py-1 bg-background hover:bg-border/50 text-xs font-bold text-text-secondary rounded-lg transition-colors border border-border"
                                         >
                                             Alterar
                                         </button>
@@ -1142,30 +1142,30 @@ export default function RomaneioPage() {
                                 </div>
 
                                 <div className="flex justify-between items-center pb-4">
-                                    <span className="text-sm font-bold text-text-secondary/60">Valor Total</span>
-                                    <span className="text-xl font-black text-emerald-400">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(romaneioTotal)}</span>
+                                    <span className="text-sm font-black text-text-primary">Valor Total</span>
+                                    <span className="text-xl font-black text-success">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(romaneioTotal)}</span>
                                 </div>
                             </div>
                             <div className="flex flex-col gap-3">
                                 <button
                                     onClick={handleFinalizeRomaneio}
                                     disabled={submitting || cartItems.length === 0}
-                                    className="w-full h-12 bg-primary hover:bg-brand-500 disabled:bg-text-primary/90 disabled:text-text-secondary text-card font-bold rounded-xl transition-all shadow-lg shadow-primary/20"
+                                    className="w-full h-12 bg-primary hover:bg-primary-dark disabled:bg-border disabled:text-text-secondary text-card font-black rounded-xl transition-all shadow-md shadow-primary/20 active:scale-[0.98]"
                                 >
                                     {submitting ? 'Registrando...' : 'Finalizar Romaneio'}
                                 </button>
                                 <button
                                     onClick={() => setShowDraftModal(true)}
                                     disabled={cartItems.length === 0}
-                                    className="w-full h-12 bg-card hover:bg-background disabled:opacity-50 text-text-secondary font-bold rounded-xl border border-border transition-all flex items-center justify-center gap-2 shadow-sm"
+                                    className="w-full h-12 bg-card hover:bg-background disabled:opacity-50 text-text-secondary font-bold rounded-xl border border-border transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
                                 >
-                                    <Printer className="w-4 h-4 text-brand-500" />
+                                    <Printer className="w-4 h-4" />
                                     Imprimir Rascunho
                                 </button>
                                 <button
                                     onClick={handleSavePending}
                                     disabled={isSavingPending || cartItems.length === 0}
-                                    className="w-full h-12 bg-text-primary/90 hover:bg-text-primary/80 disabled:opacity-50 text-warning font-bold rounded-xl border border-card/10 transition-all flex items-center justify-center gap-2"
+                                    className="w-full h-12 bg-warning/10 hover:bg-warning/20 disabled:opacity-50 text-warning font-bold rounded-xl border border-warning/30 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
                                 >
                                     {isSavingPending ? 'Salvando...' : (
                                         <>
@@ -1177,7 +1177,7 @@ export default function RomaneioPage() {
                                 {cartItems.length > 0 && (
                                     <button
                                         onClick={handleCancelRomaneio}
-                                        className="w-full h-12 bg-error/10 hover:bg-error/20/80 text-error font-bold rounded-xl border border-error/30 transition-all flex items-center justify-center gap-2 mt-2 shadow-sm"
+                                        className="w-full h-12 bg-error/10 hover:bg-error/20 text-error font-bold rounded-xl border border-error/30 transition-all flex items-center justify-center gap-2 mt-2 active:scale-[0.98]"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                         Cancelar Romaneio
