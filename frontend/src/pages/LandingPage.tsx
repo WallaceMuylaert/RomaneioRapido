@@ -113,7 +113,7 @@ export default function LandingPage() {
     useEffect(() => {
         const welcomeTimer = window.setTimeout(() => setLoaderStep('welcome'), 420)
         const leaveTimer = window.setTimeout(() => setIsLoaderLeaving(true), 1450)
-        const hideTimer = window.setTimeout(() => setIsLoaderVisible(false), 1220)
+        const hideTimer = window.setTimeout(() => setIsLoaderVisible(false), 2150)
 
         return () => {
             window.clearTimeout(welcomeTimer)
@@ -586,7 +586,7 @@ export default function LandingPage() {
 function LandingWelcomeLoader({ step, isLeaving }: { step: 'fast' | 'welcome'; isLeaving: boolean }) {
     return (
         <div
-            className={`fixed inset-0 z-[200] flex items-center justify-center overflow-hidden bg-card transition-all duration-500 ease-out ${isLeaving ? 'pointer-events-none opacity-0 scale-[1.01]' : 'opacity-100 scale-100'}`}
+            className={`fixed inset-0 z-[200] flex items-center justify-center overflow-hidden bg-card transition-opacity duration-700 ease-in-out ${isLeaving ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
             role="status"
             aria-live="polite"
             aria-label="Carregando landing page"
@@ -600,7 +600,7 @@ function LandingWelcomeLoader({ step, isLeaving }: { step: 'fast' | 'welcome'; i
                     </div>
                 </div>
 
-                <div className={`absolute inset-0 flex flex-col items-center justify-center px-6 text-center transition-all duration-500 ${step === 'welcome' ? 'opacity-100 scale-100 translate-y-0' : 'pointer-events-none opacity-0 scale-105 translate-y-4'}`}>
+                <div className={`absolute inset-0 flex flex-col items-center justify-center px-6 text-center transition-all duration-700 ease-in-out ${step === 'welcome' ? (isLeaving ? 'pointer-events-none -translate-x-24 opacity-0 scale-95' : 'opacity-100 translate-x-0 translate-y-0 scale-100') : 'pointer-events-none opacity-0 translate-x-0 translate-y-4 scale-105'}`}>
                     <p className="text-[11px] font-black uppercase tracking-[0.08em] text-primary">Romaneio Rapido</p>
                     <h2 className="mt-4 text-5xl font-black leading-none tracking-tight text-text-primary sm:text-7xl">Bem vindo</h2>
                     <span className="mt-7 h-1 w-16 rounded-xl bg-primary" aria-hidden="true" />

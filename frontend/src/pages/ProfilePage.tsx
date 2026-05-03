@@ -358,14 +358,14 @@ export default function ProfilePage() {
             {/* Subtle Brand Background Glow */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4/5 h-64 bg-brand-100/40 rounded-[100%] blur-[100px] pointer-events-none -z-10" />
 
-            <div className="pt-8 pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+            <div className="pt-8 pb-8 flex flex-col items-center gap-5 text-center">
                 <div>
                     <h1 className="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">Configurações</h1>
                     <p className="text-xs sm:text-sm font-medium text-text-secondary mt-1">Gerencie suas preferências com facilidade</p>
                 </div>
 
                 {/* Refined Segmented Control - Mobile Responsive */}
-                <div className="flex bg-card/80 backdrop-blur shadow-sm border border-border/60 p-1 rounded-xl sm:rounded-2xl w-full sm:w-fit overflow-x-auto no-scrollbar">
+                <div className="flex bg-card/80 backdrop-blur shadow-sm border border-border/60 p-1 rounded-xl sm:rounded-2xl w-full max-w-md sm:max-w-none sm:w-fit overflow-x-auto no-scrollbar mx-auto">
                     <div className="flex min-w-full sm:min-w-0">
                         {(['general', 'subscription', 'security'] as const).map((tab) => {
                             const isLocked = user?.plan_id === 'trial' && user?.trial_expired && !user?.is_admin
@@ -397,10 +397,10 @@ export default function ProfilePage() {
             <div className="glass-card rounded-3xl sm:rounded-[2.5rem] overflow-hidden">
                 <div className="p-6 sm:p-12">
                     {activeTab === 'general' && (
-                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl mx-auto">
 
                             {/* Profile Header (Avatar + Name) */}
-                            <div className="flex flex-col sm:flex-row items-center gap-8 mb-12 relative group/header">
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mb-12 relative group/header">
                                 <div
                                     className="relative group cursor-pointer"
                                     onClick={() => fileInputRef.current?.click()}
@@ -420,7 +420,7 @@ export default function ProfilePage() {
                                     </div>
                                 </div>
 
-                                <div className="text-center sm:text-left">
+                                <div className="text-center">
                                     <h2 className="text-3xl font-extrabold text-text-primary tracking-tight">{user?.full_name}</h2>
                                     <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 text-brand-600 rounded-full text-xs font-bold mt-2">
                                         <Zap className="w-3 h-3 fill-current" />
@@ -431,7 +431,7 @@ export default function ProfilePage() {
                                 <input type="file" ref={fileInputRef} onChange={handleImageSelect} accept="image/*" className="hidden" />
                             </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-8 max-w-3xl">
+                            <form onSubmit={handleSubmit} className="space-y-8">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
                                     <div className="sm:col-span-2 group/input">
                                         <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-2 block ml-1">Nome Completo</label>
@@ -510,7 +510,7 @@ export default function ProfilePage() {
                                     </div>
                                 </div>
 
-                                <div className="pt-6 flex justify-end">
+                                <div className="pt-6 flex justify-center">
                                     <button
                                         type="submit"
                                         disabled={saving}
@@ -654,14 +654,14 @@ export default function ProfilePage() {
                     )}
 
                     {activeTab === 'security' && (
-                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative max-w-3xl mx-auto">
 
-                            <div className="mb-10 max-w-2xl">
+                            <div className="mb-10 max-w-2xl mx-auto text-center">
                                 <h3 className="text-2xl font-extrabold text-text-primary tracking-tight">Segurança da Conta</h3>
                                 <p className="text-sm font-medium text-text-secondary mt-1">Atualize sua senha para manter o acesso restrito e protegido.</p>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
+                            <form onSubmit={handleSubmit} className="space-y-6 max-w-xl mx-auto">
                                 <div className="p-6 bg-warning/10 rounded-3xl border border-warning/30/60 mb-8 flex items-start gap-4">
                                     <ShieldCheck className="w-6 h-6 text-warning shrink-0" />
                                     <div>
@@ -739,7 +739,7 @@ export default function ProfilePage() {
                                     </div>
                                 </div>
 
-                                <div className="pt-8 flex justify-start">
+                                <div className="pt-8 flex justify-center">
                                     <button
                                         type="submit"
                                         disabled={saving || !form.password}
@@ -753,7 +753,7 @@ export default function ProfilePage() {
 
                             {/* ═══════ API KEYS SECTION ═══════ */}
                             <div className="mt-16 pt-12 border-t-2 border-border/80">
-                                <div className="flex items-center gap-3 mb-2">
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-2 text-center sm:text-left">
                                     <div className="w-10 h-10 rounded-2xl bg-brand-50 flex items-center justify-center">
                                         <KeyRound className="w-5 h-5 text-brand-600" />
                                     </div>

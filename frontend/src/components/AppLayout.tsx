@@ -21,6 +21,7 @@ import {
     LifeBuoy
 } from 'lucide-react'
 import { getWhatsAppLink } from '@/constants/contacts'
+import { WhatsAppIcon } from '@/assets/WhatsAppIcon'
 import { useState, useEffect } from 'react'
 import TrialExpiredBanner from '@/components/TrialExpiredBanner'
 import PaymentFailedBanner from '@/components/PaymentFailedBanner'
@@ -247,7 +248,7 @@ export default function AppLayout() {
                         title={isCollapsed ? "Suporte WhatsApp" : ""}
                         className={`flex items-center w-full text-[13px] font-semibold text-brand-600 hover:bg-brand-50 rounded-xl transition-all border border-transparent hover:border-brand-100 mb-2 ${isCollapsed ? 'justify-center p-3' : 'gap-2.5 px-3 py-2.5'}`}
                     >
-                        <LifeBuoy className="w-4 h-4 shrink-0" />
+                        <WhatsAppIcon className="w-4 h-4 shrink-0" />
                         {!isCollapsed && <span className="whitespace-nowrap animate-in fade-in duration-300">Suporte WhatsApp</span>}
                     </a>
                     <button

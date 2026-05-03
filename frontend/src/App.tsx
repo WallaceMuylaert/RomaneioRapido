@@ -1,35 +1,49 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import LoginPage from '@/pages/LoginPage'
-import LandingPage from '@/pages/LandingPage'
-import DashboardPage from '@/pages/DashboardPage'
-import ProductsPage from '@/pages/ProductsPage'
-import CategoriesPage from '@/pages/CategoriesPage'
-import CategoryProductsPage from '@/pages/CategoryProductsPage'
-import RomaneioPage from '@/pages/RomaneioPage'
-import ProfilePage from '@/pages/ProfilePage'
-import ClientsPage from '@/pages/ClientsPage'
 import AppLayout from '@/components/AppLayout'
 import { useToasterStore, toast, Toaster } from 'react-hot-toast'
-import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
-import ResetPasswordPage from '@/pages/ResetPasswordPage'
-import MovementsPage from '@/pages/MovementsPage'
-import SuperAdminPage from '@/pages/SuperAdminPage'
-import ErrorPage from '@/pages/ErrorPage'
-import OnboardingPage from '@/pages/OnboardingPage'
-import TermsPage from '@/pages/TermsPage'
-import PrivacyPage from '@/pages/PrivacyPage'
-import CookiesPage from '@/pages/CookiesPage'
+import LoadingOverlay from '@/components/LoadingOverlay'
 import '@/index.css'
+
+const LoginPage = lazy(() => import('@/pages/LoginPage'))
+const LandingPage = lazy(() => import('@/pages/LandingPage'))
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
+const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
+const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'))
+const CategoryProductsPage = lazy(() => import('@/pages/CategoryProductsPage'))
+const RomaneioPage = lazy(() => import('@/pages/RomaneioPage'))
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
+const ClientsPage = lazy(() => import('@/pages/ClientsPage'))
+const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'))
+const MovementsPage = lazy(() => import('@/pages/MovementsPage'))
+const SuperAdminPage = lazy(() => import('@/pages/SuperAdminPage'))
+const ErrorPage = lazy(() => import('@/pages/ErrorPage'))
+const OnboardingPage = lazy(() => import('@/pages/OnboardingPage'))
+const TermsPage = lazy(() => import('@/pages/TermsPage'))
+const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'))
+const CookiesPage = lazy(() => import('@/pages/CookiesPage'))
+
+function RouteLoader() {
+  return (
+    <div className="min-h-[50vh] flex items-center justify-center">
+      <LoadingOverlay compact message="Carregando tela" />
+    </div>
+  )
+}
+
+function LazyPage({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<RouteLoader />}>{children}</Suspense>
+}
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth()
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <LoadingOverlay compact message="Preparando sua área" />
       </div>
     )
   }
@@ -42,8 +56,8 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <LoadingOverlay compact message="Verificando sessão" />
       </div>
     )
   }
@@ -56,8 +70,8 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <LoadingOverlay compact message="Validando acesso" />
       </div>
     )
   }
@@ -72,14 +86,14 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <LandingPage />,
-    errorElement: <ErrorPage />,
+    element: <LazyPage><LandingPage /></LazyPage>,
+    errorElement: <LazyPage><ErrorPage /></LazyPage>,
   },
   {
     path: "/login",
     element: (
       <PublicRoute>
-        <LoginPage />
+        <LazyPage><LoginPage /></LazyPage>
       </PublicRoute>
     ),
   },
@@ -91,7 +105,7 @@ const router = createBrowserRouter([
     path: "/forgot-password",
     element: (
       <PublicRoute>
-        <ForgotPasswordPage />
+        <LazyPage><ForgotPasswordPage /></LazyPage>
       </PublicRoute>
     ),
   },
@@ -99,7 +113,7 @@ const router = createBrowserRouter([
     path: "/reset-password",
     element: (
       <PublicRoute>
-        <ResetPasswordPage />
+        <LazyPage><ResetPasswordPage /></LazyPage>
       </PublicRoute>
     ),
   },
@@ -109,45 +123,45 @@ const router = createBrowserRouter([
         <AppLayout />
       </PrivateRoute>
     ),
-    errorElement: <ErrorPage />,
+    errorElement: <LazyPage><ErrorPage /></LazyPage>,
     children: [
       {
         path: "/dashboard",
-        element: <DashboardPage />,
+        element: <LazyPage><DashboardPage /></LazyPage>,
       },
       {
         path: "/produtos",
-        element: <ProductsPage />,
+        element: <LazyPage><ProductsPage /></LazyPage>,
       },
       {
         path: "/categorias",
-        element: <CategoriesPage />,
+        element: <LazyPage><CategoriesPage /></LazyPage>,
       },
       {
         path: "/categorias/:id",
-        element: <CategoryProductsPage />,
+        element: <LazyPage><CategoryProductsPage /></LazyPage>,
       },
       {
         path: "/clientes",
-        element: <ClientsPage />,
+        element: <LazyPage><ClientsPage /></LazyPage>,
       },
       {
         path: "/romaneio",
-        element: <RomaneioPage />,
+        element: <LazyPage><RomaneioPage /></LazyPage>,
       },
       {
         path: "/movimentacoes",
-        element: <MovementsPage />,
+        element: <LazyPage><MovementsPage /></LazyPage>,
       },
       {
         path: "/perfil",
-        element: <ProfilePage />,
+        element: <LazyPage><ProfilePage /></LazyPage>,
       },
       {
         path: "/super-admin",
         element: (
           <AdminRoute>
-            <SuperAdminPage />
+            <LazyPage><SuperAdminPage /></LazyPage>
           </AdminRoute>
         ),
       },
@@ -157,29 +171,29 @@ const router = createBrowserRouter([
     path: "/onboarding",
     element: (
       <PrivateRoute>
-        <OnboardingPage />
+        <LazyPage><OnboardingPage /></LazyPage>
       </PrivateRoute>
     ),
   },
   {
     path: "/termos",
-    element: <TermsPage />,
+    element: <LazyPage><TermsPage /></LazyPage>,
   },
   {
     path: "/privacidade",
-    element: <PrivacyPage />,
+    element: <LazyPage><PrivacyPage /></LazyPage>,
   },
   {
     path: "/cookies",
-    element: <CookiesPage />,
+    element: <LazyPage><CookiesPage /></LazyPage>,
   },
   {
     path: "/error",
-    element: <ErrorPage />,
+    element: <LazyPage><ErrorPage /></LazyPage>,
   },
   {
     path: "*",
-    element: <ErrorPage code={404} />,
+    element: <LazyPage><ErrorPage code={404} /></LazyPage>,
   },
 ]);
 

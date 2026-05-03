@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type FormEvent, type MouseEvent } from 'react'
+import { lazy, Suspense, useState, useEffect, useRef, type FormEvent, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import api from '@/services/api'
 import LoadingOverlay from '@/components/LoadingOverlay'
@@ -22,11 +22,12 @@ import {
     ChevronDown,
     Download
 } from 'lucide-react'
-import BarcodeScanner from '@/components/BarcodeScanner'
-import ImageCropper from '@/components/ImageCropper'
 import ConfirmModal from '@/components/ConfirmModal'
 import { getBase64FromUrl } from '@/utils/imageUtils'
 import logoImg from '@/assets/romaneiorapido_logo.png'
+
+const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
+const ImageCropper = lazy(() => import('@/components/ImageCropper'))
 
 const applyCurrencyMask = (value: string) => {
     const cleaned = value.replace(/\D/g, "");
@@ -562,7 +563,8 @@ export default function ProductsPage() {
                 page: 1,
                 per_page: 1000, // Limite alto para o relatório
                 sort_by: sortBy,
-                order: sortOrder
+                order: sortOrder,
+                include_images: false
             }
             if (search) params.search = search
             if (colorFilter) params.color = colorFilter
@@ -892,9 +894,8 @@ export default function ProductsPage() {
 
             {/* Table */}
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 relative min-h-[400px]">
-                    <LoadingOverlay message="Carregando Produtos..." />
-                    <Loader2 className="w-6 h-6 text-brand-500 animate-spin opacity-20" />
+                <div className="py-4">
+                    <LoadingOverlay message="Carregando produtos" rows={6} />
                 </div>
             ) : products.length === 0 ? (
                 <div className="text-center py-20">
@@ -1501,6 +1502,7 @@ export default function ProductsPage() {
 
             {/* Camera Scanner */}
             {cameraOpen && (
+                <Suspense fallback={null}>
                 <BarcodeScanner
                     onScan={async (code) => {
                         setCameraOpen(false)
@@ -1522,15 +1524,18 @@ export default function ProductsPage() {
                     }}
                     onClose={() => setCameraOpen(false)}
                 />
+                </Suspense>
             )}
 
             {/* Cropper */}
             {cropImageSrc && (
+                <Suspense fallback={null}>
                 <ImageCropper
                     imageSrc={cropImageSrc}
                     onCropComplete={handleCropComplete}
                     onCancel={() => setCropImageSrc(null)}
                 />
+                </Suspense>
             )}
             {/* CONFIRM DELETE */}
             <ConfirmModal

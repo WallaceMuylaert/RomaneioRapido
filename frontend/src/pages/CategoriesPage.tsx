@@ -293,9 +293,8 @@ export default function CategoriesPage() {
             )}
 
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 relative min-h-[300px]">
-                    <LoadingOverlay message="Buscando Categorias..." />
-                    <Loader2 className="w-6 h-6 text-brand-500 animate-spin opacity-20" />
+                <div className="py-4">
+                    <LoadingOverlay message="Buscando categorias" rows={4} />
                 </div>
             ) : categories.length === 0 ? (
                 <div className="text-center py-20">

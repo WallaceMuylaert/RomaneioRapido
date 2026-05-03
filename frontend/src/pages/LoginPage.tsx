@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import LoadingOverlay from '@/components/LoadingOverlay'
 import { Eye, EyeOff, Loader2, ArrowLeft, Zap, BarChart3, ScanBarcode, User, Mail, Lock } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import api from '@/services/api'
 import AlertModal from '@/components/AlertModal'
-import logo from '@/assets/romaneiorapido_logo.png'
-import loginWarehouseImage from '@/assets/pexels-erwinfhm-24862481.jpg'
+
+const loginLogo = '/login-logo-192.png'
+const loginWarehouseImage = '/login-warehouse-1200.jpg'
 
 export default function LoginPage() {
     const { login } = useAuth()
@@ -19,6 +19,7 @@ export default function LoginPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
+    const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches)
     const [isHeroImageLoaded, setIsHeroImageLoaded] = useState(false)
 
     // Estado de Alternância (Login vs Cadastro)
@@ -52,16 +53,13 @@ export default function LoginPage() {
     })
 
     useEffect(() => {
-        const link = document.createElement('link')
-        link.rel = 'preload'
-        link.as = 'image'
-        link.href = loginWarehouseImage
-        link.fetchPriority = 'high'
-        document.head.appendChild(link)
+        const mediaQuery = window.matchMedia('(min-width: 1024px)')
+        const updateDesktopState = () => setIsDesktop(mediaQuery.matches)
 
-        return () => {
-            document.head.removeChild(link)
-        }
+        updateDesktopState()
+        mediaQuery.addEventListener('change', updateDesktopState)
+
+        return () => mediaQuery.removeEventListener('change', updateDesktopState)
     }, [])
 
     const validateForm = () => {
@@ -191,20 +189,20 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen flex flex-col lg:flex-row bg-background/30 font-sans selection:bg-brand-500/30">
-            {isLoading && <LoadingOverlay message={isRegistering ? "Criando sua conta..." : "Autenticando..."} />}
-
             {/* Seção Esquerda - Marketing (Oculta em Mobile) */}
             <div className="hidden lg:flex lg:w-1/2 bg-text-primary relative flex-col justify-between p-20 overflow-hidden">
-                <img
-                    src={loginWarehouseImage}
-                    alt=""
-                    aria-hidden="true"
-                    loading="eager"
-                    decoding="async"
-                    fetchPriority="high"
-                    onLoad={() => setIsHeroImageLoaded(true)}
-                    className={`absolute inset-0 h-full w-full scale-[1.03] object-cover transition-opacity duration-300 ${isHeroImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                />
+                {isDesktop && (
+                    <img
+                        src={loginWarehouseImage}
+                        alt=""
+                        aria-hidden="true"
+                        loading="eager"
+                        decoding="async"
+                        fetchPriority="high"
+                        onLoad={() => setIsHeroImageLoaded(true)}
+                        className={`absolute inset-0 h-full w-full scale-[1.03] object-cover transition-opacity duration-300 ${isHeroImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    />
+                )}
                 <div className="absolute inset-0 bg-brand-950/55 mix-blend-multiply" />
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-900/78 via-slate-950/66 to-slate-950/88" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/72 via-transparent to-brand-700/16" />
@@ -259,7 +257,7 @@ export default function LoginPage() {
                 <div className="lg:hidden flex items-center justify-between pt-2">
                     <div className="flex items-center gap-1 ps-4 group cursor-pointer" onClick={() => navigate('/')}>
                         <img
-                            src={logo}
+                            src={loginLogo}
                             alt="Romaneio Rápido"
                             className="h-12 w-15 rounded-xl object-contain bg-card shadow-lg shadow-primary/20"
                         />

@@ -145,10 +145,16 @@ export default function SuperAdminPage() {
         unlimited: 'Ilimitado'
     }
 
+    if (loading) {
+        return (
+            <div className="max-w-7xl mx-auto pb-20">
+                <LoadingOverlay message="Buscando usuários" rows={7} />
+            </div>
+        )
+    }
+
     return (
         <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500 pb-20">
-            {loading && <LoadingOverlay message="Buscando usuários..." />}
-
             {/* HEADER */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div className="space-y-1">

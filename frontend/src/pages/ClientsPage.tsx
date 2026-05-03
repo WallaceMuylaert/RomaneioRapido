@@ -315,10 +315,16 @@ export default function ClientsPage() {
         }
     }
 
+    if (loading) {
+        return (
+            <div className="max-w-7xl mx-auto">
+                <LoadingOverlay message="Carregando clientes" rows={6} />
+            </div>
+        )
+    }
+
     return (
         <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500">
-            {loading && <LoadingOverlay message="Carregando clientes..." />}
-
             {/* HEADER */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div className="space-y-1">

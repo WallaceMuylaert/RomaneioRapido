@@ -157,26 +157,9 @@ export default function DashboardPage() {
 
     if (loading) {
         return (
-            <>
-                <LoadingOverlay message="Sincronizando Dados..." />
-                <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="space-y-2">
-                            <div className="h-8 w-48 bg-border rounded-lg" />
-                            <div className="h-4 w-64 bg-border/50 rounded-md" />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="h-24 bg-card rounded-2xl border border-border shadow-sm" />
-                        ))}
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-                        <div className="lg:col-span-3 h-80 bg-card rounded-3xl border border-border shadow-sm" />
-                        <div className="lg:col-span-2 h-80 bg-card rounded-3xl border border-border shadow-sm" />
-                    </div>
-                </div>
-            </>
+            <div className="max-w-7xl mx-auto">
+                <LoadingOverlay message="Sincronizando dados" rows={4} />
+            </div>
         )
     }
 

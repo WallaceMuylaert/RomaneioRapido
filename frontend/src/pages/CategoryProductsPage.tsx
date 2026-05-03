@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { lazy, Suspense, useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '@/services/api'
@@ -23,8 +23,8 @@ import {
     ChevronUp,
     ChevronDown
 } from 'lucide-react'
-import BarcodeScanner from '@/components/BarcodeScanner'
-import ImageCropper from '@/components/ImageCropper'
+const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
+const ImageCropper = lazy(() => import('@/components/ImageCropper'))
 
 const applyCurrencyMask = (value: string) => {
     const cleaned = value.replace(/\D/g, "");
@@ -281,9 +281,8 @@ export default function CategoryProductsPage() {
 
     if (!category) {
         return (
-            <div className="flex items-center justify-center py-20 relative min-h-screen">
-                <LoadingOverlay message="Buscando informações da categoria..." />
-                <Loader2 className="w-6 h-6 text-brand-500 animate-spin opacity-20" />
+            <div className="py-4">
+                <LoadingOverlay message="Buscando informações da categoria" rows={4} />
             </div>
         )
     }
@@ -329,9 +328,8 @@ export default function CategoryProductsPage() {
 
             {/* Product List */}
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 relative min-h-[400px]">
-                    <LoadingOverlay message="Carregando Produtos..." />
-                    <Loader2 className="w-6 h-6 text-brand-500 animate-spin opacity-20" />
+                <div className="py-4">
+                    <LoadingOverlay message="Carregando produtos" rows={6} />
                 </div>
             ) : products.length === 0 ? (
                 <div className="text-center py-20">
@@ -694,6 +692,7 @@ export default function CategoryProductsPage() {
 
             {/* Camera Scanner */}
             {cameraOpen && (
+                <Suspense fallback={null}>
                 <BarcodeScanner
                     onScan={async (code) => {
                         setCameraOpen(false)
@@ -710,15 +709,18 @@ export default function CategoryProductsPage() {
                     }}
                     onClose={() => setCameraOpen(false)}
                 />
+                </Suspense>
             )}
 
             {/* Cropper */}
             {cropImageSrc && (
+                <Suspense fallback={null}>
                 <ImageCropper
                     imageSrc={cropImageSrc}
                     onCropComplete={handleCropComplete}
                     onCancel={() => setCropImageSrc(null)}
                 />
+                </Suspense>
             )}
         </div>
     )

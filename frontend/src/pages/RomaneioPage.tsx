@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { lazy, Suspense, useState, useEffect, useRef } from 'react'
 import { useBlocker } from 'react-router-dom'
 import api from '@/services/api'
 import { toast } from 'react-hot-toast'
@@ -23,8 +23,6 @@ import {
     ChevronDown,
     ChevronUp
 } from 'lucide-react'
-import BarcodeScanner from '@/components/BarcodeScanner'
-import RomaneioExportModal from '@/components/RomaneioExportModal'
 import type { CartItem } from '@/components/RomaneioExportModal'
 import { isIntegerUnit } from '@/utils/units'
 import ClientModal from '@/components/ClientModal'
@@ -32,6 +30,9 @@ import ConfirmModal from '@/components/ConfirmModal'
 import DiscountCalculatorModal from '@/components/DiscountCalculatorModal'
 import { maskCurrency, unmaskCurrency } from '@/utils/masks'
 import { soundEffects } from '@/utils/sounds'
+
+const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
+const RomaneioExportModal = lazy(() => import('@/components/RomaneioExportModal'))
 
 interface Product {
     id: number
@@ -265,7 +266,7 @@ export default function RomaneioPage() {
             return
         }
         try {
-            const res = await api.get('/products/', { params: { search: val, per_page: 5 } })
+            const res = await api.get('/products/', { params: { search: val, per_page: 5, include_images: false } })
             setDropdownResults(res.data.items)
             setActiveProductIndex(res.data.items.length > 0 ? 0 : -1)
         } catch (err) {
@@ -810,7 +811,7 @@ export default function RomaneioPage() {
         } catch (err) { }
 
         try {
-            const res = await api.get('/products/', { params: { search: trimmedCode } })
+            const res = await api.get('/products/', { params: { search: trimmedCode, include_images: false } })
             const items = res.data.items || res.data
             if (items.length === 1) {
                 addToCart(items[0])
@@ -1615,11 +1616,23 @@ export default function RomaneioPage() {
                 </div>
             )}
 
-            {showExportModal && <RomaneioExportModal isOpen={showExportModal} onClose={resetCart} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} discount={discountAmount} />}
-            {showDraftModal && <RomaneioExportModal isOpen={showDraftModal} onClose={() => setShowDraftModal(false)} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} discount={discountAmount} isDraft={true} />}
+            {showExportModal && (
+                <Suspense fallback={null}>
+                    <RomaneioExportModal isOpen={showExportModal} onClose={resetCart} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} discount={discountAmount} />
+                </Suspense>
+            )}
+            {showDraftModal && (
+                <Suspense fallback={null}>
+                    <RomaneioExportModal isOpen={showDraftModal} onClose={() => setShowDraftModal(false)} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} discount={discountAmount} isDraft={true} />
+                </Suspense>
+            )}
             <DiscountCalculatorModal isOpen={showDiscountModal} subtotal={romaneioSubtotal} currentPercentage={discountPercentage} onClose={() => setShowDiscountModal(false)} onApply={(_, pct) => { setDiscountPercentage(pct); if (pct > 0) { toast.success(`Desconto de ${pct.toFixed(2)}% aplicado!`, { id: 'discount-toast' }) } else { toast.success('Desconto removido!', { id: 'discount-toast' }) } }} />
             <ClientModal isOpen={clientModalOpen} onClose={() => setClientModalOpen(false)} onSuccess={(newClient) => { setCustomerName(newClient.name); setSelectedClientId(newClient.id); setCustomerPhone(newClient.phone); }} />
-            {cameraOpen && <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setCameraOpen(false)} status={scanStatus} />}
+            {cameraOpen && (
+                <Suspense fallback={null}>
+                    <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setCameraOpen(false)} status={scanStatus} />
+                </Suspense>
+            )}
             {stockValidationError && (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" onClick={() => setStockValidationError(null)} />
