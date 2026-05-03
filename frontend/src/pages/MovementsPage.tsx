@@ -588,9 +588,9 @@ export default function MovementsPage() {
     const getTypeStyles = (m: Movement) => {
         if (m.is_cancelled) {
             return {
-                bg: 'bg-slate-100',
-                text: 'text-slate-400',
-                border: 'border-slate-200',
+                bg: 'bg-border/50',
+                text: 'text-text-secondary',
+                border: 'border-border',
                 icon: <XCircle className="w-4 h-4" />,
                 label: 'Cancelado'
             }
@@ -615,9 +615,9 @@ export default function MovementsPage() {
                 }
             default:
                 return {
-                    bg: 'bg-blue-50',
-                    text: 'text-blue-700',
-                    border: 'border-blue-100',
+                    bg: 'bg-brand-50',
+                    text: 'text-primary-dark',
+                    border: 'border-brand-100',
                     icon: <Settings2 className="w-4 h-4" />,
                     label: 'Ajuste'
                 }
@@ -630,8 +630,8 @@ export default function MovementsPage() {
         <div className="max-w-7xl mx-auto space-y-8 pb-12">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Movimentações</h1>
-                    <p className="text-sm font-semibold text-slate-400">
+                    <h1 className="text-3xl font-black text-text-primary tracking-tight">Movimentações</h1>
+                    <p className="text-sm font-semibold text-text-secondary">
                         Histórico detalhado de todas as entradas e saídas de estoque.
                     </p>
                 </div>
@@ -639,7 +639,7 @@ export default function MovementsPage() {
                 {reportData && (
                     <button
                         onClick={handleExportReportPDF}
-                        className="flex items-center gap-2 px-5 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20 active:scale-95 shrink-0"
+                        className="flex items-center gap-2 px-5 h-12 bg-primary hover:bg-primary-dark text-card rounded-2xl font-bold text-sm transition-all shadow-lg shadow-primary/20 active:scale-95 shrink-0"
                     >
                         <Download className="w-4 h-4" />
                         Baixar PDF do Período
@@ -655,14 +655,14 @@ export default function MovementsPage() {
                     </div>
                     <div className="relative z-10 flex flex-col h-full justify-between gap-4">
                         <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
+                            <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] mb-1">
                                 {typeFilter === 'IN' ? 'Total Entradas' : typeFilter === 'OUT' ? 'Total Romaneios' : 'Total Registros'}
                             </p>
-                            <h3 className="text-4xl font-black text-slate-900 tracking-tighter">
+                            <h3 className="text-4xl font-black text-text-primary tracking-tighter">
                                 {reportLoading ? '...' : reportData?.total_romaneios || 0}
                             </h3>
                         </div>
-                        <div className="flex items-center gap-2 text-[11px] font-bold text-blue-600">
+                        <div className="flex items-center gap-2 text-[11px] font-bold text-primary">
                             <span>Ver detalhamento abaixo</span>
                             <ArrowRight className="w-3 h-3" />
                         </div>
@@ -675,14 +675,14 @@ export default function MovementsPage() {
                     </div>
                     <div className="relative z-10 flex flex-col h-full justify-between gap-4">
                         <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
+                            <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] mb-1">
                                 {typeFilter === 'IN' ? 'Custo no Período' : typeFilter === 'OUT' ? 'Receita no Período' : 'Valor Movimentado'}
                             </p>
-                            <h3 className={`text-4xl font-black tracking-tighter ${typeFilter === 'OUT' ? 'text-emerald-600' : typeFilter === 'IN' ? 'text-blue-600' : 'text-slate-900'}`}>
+                            <h3 className={`text-4xl font-black tracking-tighter ${typeFilter === 'OUT' ? 'text-emerald-600' : typeFilter === 'IN' ? 'text-primary' : 'text-text-primary'}`}>
                                 {reportLoading ? '...' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(reportData?.total_value || 0)}
                             </h3>
                         </div>
-                        <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400">
+                        <div className="flex items-center gap-2 text-[11px] font-bold text-text-secondary">
                             <span>Relatório Geral</span>
                             <ArrowRight className="w-3 h-3" />
                         </div>
@@ -694,24 +694,24 @@ export default function MovementsPage() {
             <div className="glass-card rounded-[2rem] p-6 md:p-8 space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
                     <div className="lg:col-span-5 space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Buscar Produto</label>
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">Buscar Produto</label>
                         <div className="relative group">
-                            <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-brand-500 transition-colors" />
+                            <Search className="w-5 h-5 text-text-secondary absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-brand-500 transition-colors" />
                             <input
                                 type="text"
                                 placeholder="Nome ou código de barras..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="w-full h-12 pl-12 pr-6 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-semibold"
+                                className="w-full h-12 pl-12 pr-6 text-sm bg-background border border-border rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-card transition-all font-semibold"
                             />
                         </div>
                     </div>
 
                     <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="flex-1 space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Data Início</label>
+                            <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">Data Início</label>
                             <div className="relative group">
-                                <Calendar className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                                <Calendar className="w-5 h-5 text-text-secondary absolute left-4 top-1/2 -translate-y-1/2" />
                                 <input
                                     type="date"
                                     value={reportPeriod.start}
@@ -719,14 +719,14 @@ export default function MovementsPage() {
                                         setReportPeriod(prev => ({ ...prev, start: e.target.value }));
                                         setPage(1);
                                     }}
-                                    className="w-full h-12 pl-12 pr-6 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-bold"
+                                    className="w-full h-12 pl-12 pr-6 text-sm bg-background border border-border rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-card transition-all font-bold"
                                 />
                             </div>
                         </div>
                         <div className="flex-1 space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Data Fim</label>
+                            <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">Data Fim</label>
                             <div className="relative group">
-                                <Calendar className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                                <Calendar className="w-5 h-5 text-text-secondary absolute left-4 top-1/2 -translate-y-1/2" />
                                 <input
                                     type="date"
                                     value={reportPeriod.end}
@@ -734,18 +734,18 @@ export default function MovementsPage() {
                                         setReportPeriod(prev => ({ ...prev, end: e.target.value }));
                                         setPage(1);
                                     }}
-                                    className="w-full h-12 pl-12 pr-6 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-bold"
+                                    className="w-full h-12 pl-12 pr-6 text-sm bg-background border border-border rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-card transition-all font-bold"
                                 />
                             </div>
                         </div>
                         <div className="relative min-w-[180px] space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Movimento</label>
+                            <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">Tipo de Movimento</label>
                             <div className="relative">
-                                <Filter className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                                <Filter className="w-4 h-4 text-text-secondary absolute left-4 top-1/2 -translate-y-1/2" />
                                 <select
                                     value={typeFilter}
                                     onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-                                    className="w-full h-12 pl-11 pr-10 appearance-none bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-white transition-all font-bold text-sm text-slate-700"
+                                    className="w-full h-12 pl-11 pr-10 appearance-none bg-background border border-border rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-card transition-all font-bold text-sm text-text-secondary"
                                 >
                                     <option value="">Todos os Tipos</option>
                                     {viewMode === 'movements' && (
@@ -757,15 +757,15 @@ export default function MovementsPage() {
                                     <option value="OUT">Saídas</option>
                                 </select>
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                                    <ChevronRight className="w-4 h-4 text-text-secondary rotate-90" />
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex justify-center pt-8 border-t border-slate-100">
-                    <div className="grid w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100/50 p-1.5 sm:w-auto sm:flex sm:items-center">
+                <div className="flex justify-center pt-8 border-t border-border">
+                    <div className="grid w-full grid-cols-2 gap-1 rounded-2xl bg-border/50/50 p-1.5 sm:w-auto sm:flex sm:items-center">
                         <button
                             onClick={() => {
                                 setViewMode('movements');
@@ -773,8 +773,8 @@ export default function MovementsPage() {
                                 setPage(1);
                             }}
                             className={`flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl px-3 text-[11px] font-black uppercase tracking-widest transition-all sm:px-8 sm:text-xs ${viewMode === 'movements'
-                                ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
-                                : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`}
+                                ? 'bg-card text-text-primary shadow-sm border border-border'
+                                : 'text-text-secondary hover:text-text-secondary hover:bg-card/50'}`}
                         >
                             <Settings2 className="h-3.5 w-3.5 shrink-0" />
                             Relatório
@@ -786,8 +786,8 @@ export default function MovementsPage() {
                                 setPage(1);
                             }}
                             className={`flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl px-3 text-[11px] font-black uppercase tracking-widest transition-all sm:px-8 sm:text-xs ${viewMode === 'romaneios'
-                                ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
-                                : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`}
+                                ? 'bg-card text-text-primary shadow-sm border border-border'
+                                : 'text-text-secondary hover:text-text-secondary hover:bg-card/50'}`}
                         >
                             <Share2 className="h-3.5 w-3.5 shrink-0" />
                             Romaneios
@@ -802,17 +802,17 @@ export default function MovementsPage() {
                     <div className="min-w-[1000px] md:min-w-full inline-block align-middle px-6 md:px-0">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="bg-slate-50/50">
-                                    <th className="w-[132px] min-w-[132px] whitespace-nowrap bg-slate-50 px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 md:sticky md:left-0 md:z-10 md:shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)]">Data/Hora</th>
-                                    <th className="min-w-[240px] shrink-0 whitespace-nowrap px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">{viewMode === 'romaneios' ? 'Cliente / Romaneio' : 'Produto'}</th>
-                                    <th className="min-w-[120px] whitespace-nowrap px-8 py-4 text-center text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Tipo</th>
-                                    <th className="min-w-[260px] whitespace-nowrap px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">{viewMode === 'romaneios' ? 'Produto / Variantes' : 'Notas/Variantes'}</th>
-                                    <th className="w-[108px] min-w-[108px] whitespace-nowrap bg-slate-50 px-8 py-4 text-right text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 md:sticky md:right-0 md:z-10 md:shadow-[-8px_0_16px_-16px_rgba(15,23,42,0.45)]">Ações</th>
+                                <tr className="bg-background/50">
+                                    <th className="w-[132px] min-w-[132px] whitespace-nowrap bg-background px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-text-secondary md:sticky md:left-0 md:z-10 md:shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)]">Data/Hora</th>
+                                    <th className="min-w-[240px] shrink-0 whitespace-nowrap px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-text-secondary">{viewMode === 'romaneios' ? 'Cliente / Romaneio' : 'Produto'}</th>
+                                    <th className="min-w-[120px] whitespace-nowrap px-8 py-4 text-center text-[10px] font-black uppercase tracking-[0.15em] text-text-secondary">Tipo</th>
+                                    <th className="min-w-[260px] whitespace-nowrap px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-text-secondary">{viewMode === 'romaneios' ? 'Produto / Variantes' : 'Notas/Variantes'}</th>
+                                    <th className="w-[108px] min-w-[108px] whitespace-nowrap bg-background px-8 py-4 text-right text-[10px] font-black uppercase tracking-[0.15em] text-text-secondary md:sticky md:right-0 md:z-10 md:shadow-[-8px_0_16px_-16px_rgba(15,23,42,0.45)]">Ações</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100/50 relative">
                                 {loading && (
-                                    <tr className="bg-white/50 backdrop-blur-[1px]">
+                                    <tr className="bg-card/50 backdrop-blur-[1px]">
                                         <td colSpan={5} className="py-20 flex items-center justify-center w-full">
                                             <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
                                         </td>
@@ -820,7 +820,7 @@ export default function MovementsPage() {
                                 )}
                                 {(viewMode === 'romaneios' ? groupedMovementsForReport : movements).length === 0 && !loading ? (
                                     <tr>
-                                        <td colSpan={5} className="py-20 text-center text-sm font-bold text-slate-400 italic">
+                                        <td colSpan={5} className="py-20 text-center text-sm font-bold text-text-secondary italic">
                                             Nenhuma movimentação encontrada.
                                         </td>
                                     </tr>
@@ -835,17 +835,17 @@ export default function MovementsPage() {
                                         const productNames = getUniqueProductNames(productItems);
 
                                         return (
-                                            <tr key={isGroup ? `group-${m.id}` : m.id} className={`hover:bg-slate-50/50 transition-colors group ${cancelled ? 'opacity-60 bg-slate-50/30' : ''}`}>
+                                            <tr key={isGroup ? `group-${m.id}` : m.id} className={`hover:bg-background/50 transition-colors group ${cancelled ? 'opacity-60 bg-background/30' : ''}`}>
                                                 <td className="px-8 py-5">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
+                                                        <div className="w-9 h-9 rounded-xl bg-background flex items-center justify-center text-text-secondary">
                                                             <Calendar className="w-4 h-4" />
                                                         </div>
                                                         <div>
-                                                            <p className={`text-sm font-bold ${cancelled ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                                                            <p className={`text-sm font-bold ${cancelled ? 'text-text-secondary line-through' : 'text-text-secondary'}`}>
                                                                 {format(new Date(m.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                                                             </p>
-                                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                            <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
                                                                 {format(new Date(m.created_at), 'HH:mm')}
                                                             </p>
                                                         </div>
@@ -853,23 +853,23 @@ export default function MovementsPage() {
                                                 </td>
                                                 <td className="px-8 py-5">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-xl bg-slate-50 overflow-hidden border border-slate-100 flex items-center justify-center shrink-0 group-hover:border-brand-200 transition-colors shadow-sm">
+                                                        <div className="w-10 h-10 rounded-xl bg-background overflow-hidden border border-border flex items-center justify-center shrink-0 group-hover:border-brand-200 transition-colors shadow-sm">
                                                             {isGroup ? (
-                                                                <div className="w-full h-full flex items-center justify-center bg-blue-50 text-blue-600 font-black text-xs relative">
+                                                                <div className="w-full h-full flex items-center justify-center bg-brand-50 text-primary font-black text-xs relative">
                                                                     <ClipboardList className="w-5 h-5 opacity-20 absolute" />
                                                                     <span className="relative z-10">
                                                                         {(m as any).customerName ? (m as any).customerName.split(' ').map((n: any) => n[0]).join('').slice(0, 2).toUpperCase() : 'RT'}
                                                                     </span>
                                                                 </div>
                                                             ) : (
-                                                                <Package className="w-5 h-5 text-slate-300" />
+                                                                <Package className="w-5 h-5 text-text-secondary/60" />
                                                             )}
                                                         </div>
                                                         <div>
-                                                            <p className={`text-sm font-bold line-clamp-1 ${cancelled ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-800'}`}>
+                                                            <p className={`text-sm font-bold line-clamp-1 ${cancelled ? 'text-text-secondary line-through decoration-slate-300' : 'text-text-primary'}`}>
                                                                 {isGroup ? ((m as any).customerName || 'Romaneio Agrupado') : m.product_name}
                                                             </p>
-                                                            <p className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-tighter">
+                                                            <p className="text-[10px] font-mono font-bold text-text-secondary uppercase tracking-tighter">
                                                                 {isGroup ? `ID: ${String(m.id).slice(-8).toUpperCase()}` : (m.product_barcode_snapshot || 'SEM SKU')}
                                                             </p>
                                                         </div>
@@ -884,18 +884,18 @@ export default function MovementsPage() {
                                                 <td className="px-8 py-5">
                                                     {viewMode === 'romaneios' ? (
                                                         <div className="flex max-w-[280px] items-center gap-3" title={productNames.join(', ')}>
-                                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50 shadow-sm">
+                                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background shadow-sm">
                                                                 {primaryProduct?.product_image ? (
                                                                     <img src={primaryProduct.product_image} alt={getProductName(primaryProduct)} className="h-full w-full object-cover" />
                                                                 ) : (
-                                                                    <Package className="h-4 w-4 text-slate-300" />
+                                                                    <Package className="h-4 w-4 text-text-secondary/60" />
                                                                 )}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <p className={`line-clamp-1 text-sm font-bold ${cancelled ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-800'}`}>
+                                                                <p className={`line-clamp-1 text-sm font-bold ${cancelled ? 'text-text-secondary line-through decoration-slate-300' : 'text-text-primary'}`}>
                                                                     {getProductSummary(productItems)}
                                                                 </p>
-                                                                <p className="truncate text-[10px] font-black uppercase tracking-tight text-slate-400">
+                                                                <p className="truncate text-[10px] font-black uppercase tracking-tight text-text-secondary">
                                                                     {getProductMeta(primaryProduct, productNames.length)}
                                                                 </p>
                                                             </div>
@@ -904,12 +904,12 @@ export default function MovementsPage() {
                                                         <div className="flex flex-col gap-1">
                                                             {!isGroup && (m.product_color_snapshot || m.product_size_snapshot) && (
                                                                 <div className="flex items-center gap-1">
-                                                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold">
+                                                                    <span className="px-2 py-0.5 bg-border/50 text-text-secondary rounded text-[10px] font-bold">
                                                                         {m.product_color_snapshot || '-'} / {m.product_size_snapshot || '-'}
                                                                     </span>
                                                                 </div>
                                                             )}
-                                                            <p className="text-xs font-medium text-slate-500 max-w-[200px] truncate" title={isGroup ? 'Itens do Romaneio' : (m.notes || '')}>
+                                                            <p className="text-xs font-medium text-text-secondary max-w-[200px] truncate" title={isGroup ? 'Itens do Romaneio' : (m.notes || '')}>
                                                                 {isGroup ? (m as any).items.map((i: any) => i.product_name).join(', ') : (m.notes || '-')}
                                                             </p>
                                                         </div>
@@ -919,7 +919,7 @@ export default function MovementsPage() {
                                                     <div className="flex justify-end">
                                                         <button
                                                             onClick={(event) => handleActionMenuClick(event, menuId)}
-                                                            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${openMenu?.id === menuId ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-100'}`}
+                                                            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${openMenu?.id === menuId ? 'bg-text-primary text-card' : 'text-text-secondary hover:bg-border/50'}`}
                                                         >
                                                             <MoreVertical className="w-4 h-4" />
                                                         </button>
@@ -931,7 +931,7 @@ export default function MovementsPage() {
                                                                     onClick={() => setOpenMenu(null)}
                                                                 />
                                                                 <div
-                                                                    className="fixed bg-white rounded-2xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+                                                                    className="fixed bg-card rounded-2xl border border-border py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
                                                                     style={{
                                                                         top: openMenu.top,
                                                                         bottom: openMenu.bottom,
@@ -941,7 +941,7 @@ export default function MovementsPage() {
                                                                     }}
                                                                 >
                                                                     <div
-                                                                        className={`absolute w-3 h-3 bg-white border-slate-100 rotate-45 pointer-events-none ${openMenu.placement === 'top' ? '-bottom-1.5 border-b border-r' : '-top-1.5 border-t border-l'}`}
+                                                                        className={`absolute w-3 h-3 bg-card border-border rotate-45 pointer-events-none ${openMenu.placement === 'top' ? '-bottom-1.5 border-b border-r' : '-top-1.5 border-t border-l'}`}
                                                                         style={{ left: openMenu.arrowLeft - 6 }}
                                                                     />
                                                                     <button
@@ -953,9 +953,9 @@ export default function MovementsPage() {
                                                                             }
                                                                             setOpenMenu(null)
                                                                         }}
-                                                                        className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all group"
+                                                                        className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-text-secondary hover:bg-background hover:text-primary transition-all group"
                                                                     >
-                                                                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                                                                        <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center text-brand-500 group-hover:bg-primary group-hover:text-card transition-all shadow-sm">
                                                                             <Share2 className="w-4 h-4" />
                                                                         </div>
                                                                         <span>Ver Detalhes</span>
@@ -967,9 +967,9 @@ export default function MovementsPage() {
                                                                                 handleCopyToRomaneio(m as any)
                                                                                 setOpenMenu(null)
                                                                             }}
-                                                                            className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-all group"
+                                                                            className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-text-secondary hover:bg-background hover:text-warning transition-all group"
                                                                         >
-                                                                            <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-500 group-hover:bg-amber-600 group-hover:text-white transition-all shadow-sm">
+                                                                            <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center text-warning group-hover:bg-warning group-hover:text-card transition-all shadow-sm">
                                                                                 <Copy className="w-4 h-4" />
                                                                             </div>
                                                                             <span>Copiar para Novo Romaneio</span>
@@ -1024,9 +1024,9 @@ export default function MovementsPage() {
                                                                             }
                                                                             setOpenMenu(null)
                                                                         }}
-                                                                        className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-all group"
+                                                                        className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-text-secondary hover:bg-background hover:text-emerald-600 transition-all group"
                                                                     >
-                                                                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
+                                                                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-600 group-hover:text-card transition-all shadow-sm">
                                                                             <Smartphone className="w-4 h-4" />
                                                                         </div>
                                                                         <span>Imprimir / WhatsApp</span>
@@ -1038,9 +1038,9 @@ export default function MovementsPage() {
                                                                                 setCancelModal({ isOpen: true, id: m.id })
                                                                                 setOpenMenu(null)
                                                                             }}
-                                                                            className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-slate-700 hover:bg-rose-50 hover:text-rose-600 transition-all group"
+                                                                            className="w-full px-4 py-2.5 flex items-center gap-3 text-[13px] font-bold text-text-secondary hover:bg-rose-50 hover:text-rose-600 transition-all group"
                                                                         >
-                                                                            <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-500 group-hover:bg-rose-600 group-hover:text-white transition-all shadow-sm">
+                                                                            <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-500 group-hover:bg-rose-600 group-hover:text-card transition-all shadow-sm">
                                                                                 <AlertCircle className="w-4 h-4" />
                                                                             </div>
                                                                             <span>Cancelar Lançamento</span>
@@ -1063,25 +1063,25 @@ export default function MovementsPage() {
 
                 {/* Pagination with responsiveness - only show for movements view */}
                 {viewMode === 'movements' && totalPages > 1 && (
-                    <div className="px-8 py-6 border-t border-slate-100/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                            Mostrando <span className="text-slate-900">{movements.length}</span> de <span className="text-slate-900">{total}</span> registros
+                    <div className="px-8 py-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p className="text-xs font-bold text-text-secondary uppercase tracking-widest">
+                            Mostrando <span className="text-text-primary">{movements.length}</span> de <span className="text-text-primary">{total}</span> registros
                         </p>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                 disabled={page === 1 || loading}
-                                className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-brand-600 hover:border-brand-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                className="w-10 h-10 rounded-xl border border-border flex items-center justify-center text-text-secondary hover:text-brand-600 hover:border-brand-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                             >
                                 <ChevronLeft className="w-5 h-5" />
                             </button>
-                            <div className="flex items-center px-4 h-10 rounded-xl bg-slate-50 border border-slate-200 text-xs font-black text-slate-600 tracking-widest">
+                            <div className="flex items-center px-4 h-10 rounded-xl bg-background border border-border text-xs font-black text-text-secondary tracking-widest">
                                 PÁGINA {page} / {totalPages}
                             </div>
                             <button
                                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                                 disabled={page === totalPages || loading}
-                                className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-brand-600 hover:border-brand-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                className="w-10 h-10 rounded-xl border border-border flex items-center justify-center text-text-secondary hover:text-brand-600 hover:border-brand-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                             >
                                 <ChevronRight className="w-5 h-5" />
                             </button>

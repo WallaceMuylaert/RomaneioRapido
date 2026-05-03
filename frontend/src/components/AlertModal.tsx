@@ -13,23 +13,23 @@ interface AlertModalProps {
 
 const icons = {
     success: <CheckCircle2 className="w-6 h-6 text-emerald-500" />,
-    error: <AlertCircle className="w-6 h-6 text-red-500" />,
-    warning: <AlertTriangle className="w-6 h-6 text-amber-500" />,
-    info: <Info className="w-6 h-6 text-blue-500" />
+    error: <AlertCircle className="w-6 h-6 text-error" />,
+    warning: <AlertTriangle className="w-6 h-6 text-warning" />,
+    info: <Info className="w-6 h-6 text-brand-500" />
 }
 
 const colors = {
     success: 'bg-emerald-50 border-emerald-100 text-emerald-900',
-    error: 'bg-red-50 border-red-100 text-red-900',
-    warning: 'bg-amber-50 border-amber-100 text-amber-900',
-    info: 'bg-blue-50 border-blue-100 text-blue-900'
+    error: 'bg-error/10 border-error/20 text-red-900',
+    warning: 'bg-warning/10 border-amber-100 text-amber-900',
+    info: 'bg-brand-50 border-brand-100 text-blue-900'
 }
 
 const buttonColors = {
     success: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200',
-    error: 'bg-red-600 hover:bg-red-700 shadow-red-200',
-    warning: 'bg-amber-600 hover:bg-amber-700 shadow-amber-200',
-    info: 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+    error: 'bg-error hover:bg-error shadow-red-200',
+    warning: 'bg-warning hover:bg-warning shadow-amber-200',
+    info: 'bg-primary hover:bg-primary-dark shadow-blue-200'
 }
 
 export default function AlertModal({
@@ -47,12 +47,12 @@ export default function AlertModal({
             <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
                 {/* Backdrop */}
                 <div
-                    className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+                    className="fixed inset-0 bg-text-primary/60 backdrop-blur-sm animate-in fade-in duration-300"
                     onClick={onClose}
                 />
 
             {/* Modal Container */}
-            <div className="relative bg-white/90 backdrop-blur-xl border border-white/20 rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            <div className="relative bg-card/90 backdrop-blur-xl border border-card/20 rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                 <div className="p-8 pb-6">
                     <div className="flex items-center justify-between mb-6">
                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm border ${colors[type]}`}>
@@ -60,16 +60,16 @@ export default function AlertModal({
                         </div>
                         <button
                             onClick={onClose}
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-slate-300 hover:text-slate-600 hover:bg-slate-100 transition-all duration-300"
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary/60 hover:text-text-secondary hover:bg-border/50 transition-all duration-300"
                         >
                             <X className="w-5 h-5" />
                         </button>
                     </div>
 
-                    <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2 leading-tight">
+                    <h3 className="text-2xl font-black text-text-primary tracking-tight mb-2 leading-tight">
                         {title}
                     </h3>
-                    <p className="text-slate-500 font-medium text-sm leading-relaxed">
+                    <p className="text-text-secondary font-medium text-sm leading-relaxed">
                         {message}
                     </p>
                 </div>
@@ -77,7 +77,7 @@ export default function AlertModal({
                 <div className="p-8 pt-2">
                     <button
                         onClick={onClose}
-                        className={`w-full h-14 rounded-2xl text-white font-black text-sm tracking-tight shadow-xl transition-all duration-300 active:scale-95 ${buttonColors[type]}`}
+                        className={`w-full h-14 rounded-2xl text-card font-black text-sm tracking-tight shadow-xl transition-all duration-300 active:scale-95 ${buttonColors[type]}`}
                     >
                         {confirmText}
                     </button>

@@ -614,17 +614,17 @@ export default function RomaneioExportModal({
             <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
 
-                <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+                <div className="relative bg-card rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="px-6 py-5 border-b border-border flex items-center justify-between">
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900">
+                        <h2 className="text-lg font-bold text-text-primary">
                             {title || (isDraft ? "Rascunho de Separação 📝" : "Romaneio Finalizado! 🎉")}
                         </h2>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-text-secondary mt-1">
                             {isDraft ? "Conclua a separação antes de finalizar" : "Escolha como deseja exportar a lista"}
                         </p>
                     </div>
-                    <button onClick={onClose} className="p-2 text-gray-400 hover:bg-gray-50 hover:text-gray-700 rounded-full transition-colors">
+                    <button onClick={onClose} className="p-2 text-text-secondary hover:bg-background hover:text-text-secondary rounded-full transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -633,28 +633,28 @@ export default function RomaneioExportModal({
                     {/* Botão A4 */}
                     <button
                         onClick={printA4}
-                        className="w-full group relative overflow-hidden bg-white border-2 border-blue-500 hover:border-blue-600 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
+                        className="w-full group relative overflow-hidden bg-card border-2 border-brand-500 hover:border-primary rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
                     >
-                        <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <div className="w-12 h-12 bg-brand-50 text-primary rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                             <FileText className="w-6 h-6" />
                         </div>
                         <div>
-                            <p className="font-bold text-gray-900 text-[15px]">Imprimir Folha A4</p>
-                            <p className="text-[12px] text-gray-500 font-medium">Layout profissional para pranchetas e pastas, com checkbox de conferência.</p>
+                            <p className="font-bold text-text-primary text-[15px]">Imprimir Folha A4</p>
+                            <p className="text-[12px] text-text-secondary font-medium">Layout profissional para pranchetas e pastas, com checkbox de conferência.</p>
                         </div>
                     </button>
 
                     {/* Botão Bobina Térmica */}
                     <button
                         onClick={printThermal}
-                        className="w-full group relative overflow-hidden bg-white border-2 border-slate-800 hover:border-black rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
+                        className="w-full group relative overflow-hidden bg-card border-2 border-card/10 hover:border-black rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
                     >
-                        <div className="w-12 h-12 bg-slate-100 text-slate-800 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <div className="w-12 h-12 bg-border/50 text-text-primary rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                             <Printer className="w-6 h-6" />
                         </div>
                         <div>
-                            <p className="font-bold text-gray-900 text-[15px]">Imprimir Bobina (Térmica)</p>
-                            <p className="text-[12px] text-gray-500 font-medium">Formato estreito de cupom (80mm) ideal para impressoras portáteis/caixa.</p>
+                            <p className="font-bold text-text-primary text-[15px]">Imprimir Bobina (Térmica)</p>
+                            <p className="text-[12px] text-text-secondary font-medium">Formato estreito de cupom (80mm) ideal para impressoras portáteis/caixa.</p>
                         </div>
                     </button>
 
@@ -663,14 +663,14 @@ export default function RomaneioExportModal({
                         {/* Botão WhatsApp Loja (Sempre ativo) */}
                         <button
                             onClick={() => handleExportWhatsAppText('store')}
-                            className="group relative overflow-hidden bg-white border-2 border-emerald-500 hover:border-emerald-600 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
+                            className="group relative overflow-hidden bg-card border-2 border-emerald-500 hover:border-emerald-600 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
                         >
                             <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                                 <WhatsAppIcon className="w-5 h-5" />
                             </div>
                             <div>
-                                <p className="font-bold text-gray-900 text-[13px]">Enviar p/ Loja</p>
-                                <p className="text-[10px] text-gray-500 font-medium line-clamp-1">Via WhatsApp (Texto)</p>
+                                <p className="font-bold text-text-primary text-[13px]">Enviar p/ Loja</p>
+                                <p className="text-[10px] text-text-secondary font-medium line-clamp-1">Via WhatsApp (Texto)</p>
                             </div>
                         </button>
 
@@ -678,31 +678,31 @@ export default function RomaneioExportModal({
                         {!currentPhone && !isEditingPhone ? (
                             <button
                                 onClick={() => { setIsEditingPhone(true); setTempPhone(''); }}
-                                className="group relative overflow-hidden border-2 bg-white border-dashed border-gray-300 hover:border-brand-500 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
+                                className="group relative overflow-hidden border-2 bg-card border-dashed border-border hover:border-brand-500 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm hover:shadow-md"
                             >
-                                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-gray-50 text-gray-400 group-hover:bg-brand-50 group-hover:text-brand-500 transition-colors">
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-background text-text-secondary group-hover:bg-brand-50 group-hover:text-brand-500 transition-colors">
                                     <WhatsAppIcon className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <p className="font-bold text-gray-900 text-[13px]">Salvar Contato</p>
-                                    <p className="text-[10px] text-gray-500 font-medium line-clamp-1">Cadastrar WhatsApp</p>
+                                    <p className="font-bold text-text-primary text-[13px]">Salvar Contato</p>
+                                    <p className="text-[10px] text-text-secondary font-medium line-clamp-1">Cadastrar WhatsApp</p>
                                 </div>
                             </button>
                         ) : isEditingPhone ? (
                             <div className="border-2 border-brand-200 bg-brand-50/30 rounded-2xl p-3 flex flex-col gap-2 transition-all">
-                                <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider ml-1">Número do WhatsApp *</label>
+                                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider ml-1">Número do WhatsApp *</label>
                                 <div className="flex gap-2">
                                     <input
                                         autoFocus
                                         value={tempPhone}
                                         onChange={(e) => setTempPhone(maskPhone(e.target.value))}
                                         placeholder="(00) 00000-0000"
-                                        className="w-full text-sm font-semibold h-10 px-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all placeholder:font-normal"
+                                        className="w-full text-sm font-semibold h-10 px-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all placeholder:font-normal"
                                     />
                                     <button
                                         onClick={handleSavePhone}
                                         disabled={savingPhone || !tempPhone}
-                                        className="w-10 h-10 shrink-0 bg-brand-600 text-white rounded-xl flex items-center justify-center hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-sm"
+                                        className="w-10 h-10 shrink-0 bg-brand-600 text-card rounded-xl flex items-center justify-center hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-sm"
                                     >
                                         {savingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                     </button>
@@ -712,14 +712,14 @@ export default function RomaneioExportModal({
                             <div className="relative group">
                                 <button
                                     onClick={() => handleExportWhatsAppText('customer')}
-                                    className="w-full relative overflow-hidden border-2 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm bg-white border-blue-500 hover:border-blue-600 hover:shadow-md h-[100%]"
+                                    className="w-full relative overflow-hidden border-2 rounded-2xl p-4 transition-all duration-300 flex items-center gap-4 text-left shadow-sm bg-card border-brand-500 hover:border-primary hover:shadow-md h-[100%]"
                                 >
-                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform bg-blue-50 text-blue-600">
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform bg-brand-50 text-primary">
                                         <WhatsAppIcon className="w-5 h-5" />
                                     </div>
                                     <div className="pr-6">
-                                        <p className="font-bold text-gray-900 text-[13px]">Enviar p/ Cliente</p>
-                                        <p className="text-[10px] text-gray-500 font-medium truncate">{currentPhone}</p>
+                                        <p className="font-bold text-text-primary text-[13px]">Enviar p/ Cliente</p>
+                                        <p className="text-[10px] text-text-secondary font-medium truncate">{currentPhone}</p>
                                     </div>
                                 </button>
                                 <button
@@ -728,7 +728,7 @@ export default function RomaneioExportModal({
                                         setIsEditingPhone(true);
                                         setTempPhone(currentPhone);
                                     }}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm shadow-sm border border-gray-100 text-gray-400 hover:text-brand-600 rounded-xl opacity-0 group-hover:opacity-100 transition-all z-10"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-card/80 backdrop-blur-sm shadow-sm border border-border text-text-secondary hover:text-brand-600 rounded-xl opacity-0 group-hover:opacity-100 transition-all z-10"
                                     title="Alterar número"
                                 >
                                     <Phone className="w-4 h-4" />

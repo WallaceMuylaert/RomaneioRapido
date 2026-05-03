@@ -161,8 +161,8 @@ export default function CategoryProductsPage() {
     }, [categoryId])
 
     const getStockStatus = (p: Product) => {
-        if (p.stock_quantity <= 0) return { label: 'Zerado', class: 'bg-red-50 text-red-600' }
-        if (p.stock_quantity <= p.min_stock) return { label: 'Baixo', class: 'bg-amber-50 text-amber-600' }
+        if (p.stock_quantity <= 0) return { label: 'Zerado', class: 'bg-error/10 text-error' }
+        if (p.stock_quantity <= p.min_stock) return { label: 'Baixo', class: 'bg-warning/10 text-warning' }
         return { label: 'OK', class: 'bg-emerald-50 text-emerald-600' }
     }
 
@@ -283,7 +283,7 @@ export default function CategoryProductsPage() {
         return (
             <div className="flex items-center justify-center py-20 relative min-h-screen">
                 <LoadingOverlay message="Buscando informações da categoria..." />
-                <Loader2 className="w-6 h-6 text-blue-500 animate-spin opacity-20" />
+                <Loader2 className="w-6 h-6 text-brand-500 animate-spin opacity-20" />
             </div>
         )
     }
@@ -295,18 +295,18 @@ export default function CategoryProductsPage() {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => navigate('/categorias')}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 text-text-secondary hover:text-text-secondary hover:bg-border/50 rounded-lg transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-lg bg-brand-50 text-primary flex items-center justify-center">
                                 <Tags className="w-4 h-4" />
                             </div>
-                            <h1 className="text-xl font-bold text-gray-900">{category.name}</h1>
+                            <h1 className="text-xl font-bold text-text-primary">{category.name}</h1>
                         </div>
-                        <p className="text-sm text-gray-400 mt-0.5 ml-10">
+                        <p className="text-sm text-text-secondary mt-0.5 ml-10">
                             {totalProducts} produto{totalProducts !== 1 ? 's' : ''} nesta categoria
                         </p>
                     </div>
@@ -314,13 +314,13 @@ export default function CategoryProductsPage() {
                 <div className="flex gap-2">
                     <button
                         onClick={() => setCameraOpen(true)}
-                        className="h-9 px-4 text-[13px] font-semibold border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                        className="h-9 px-4 text-[13px] font-semibold border border-border text-text-secondary rounded-lg hover:bg-background transition-colors flex items-center gap-2"
                     >
                         <Camera className="w-4 h-4" /> Escanear
                     </button>
                     <button
                         onClick={() => openCreate()}
-                        className="h-9 px-4 text-[13px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
+                        className="h-9 px-4 text-[13px] font-semibold bg-primary text-card rounded-lg hover:bg-primary-dark transition-colors shadow-sm flex items-center gap-2"
                     >
                         <Plus className="w-4 h-4" /> Novo Produto
                     </button>
@@ -331,22 +331,22 @@ export default function CategoryProductsPage() {
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 relative min-h-[400px]">
                     <LoadingOverlay message="Carregando Produtos..." />
-                    <Loader2 className="w-6 h-6 text-blue-500 animate-spin opacity-20" />
+                    <Loader2 className="w-6 h-6 text-brand-500 animate-spin opacity-20" />
                 </div>
             ) : products.length === 0 ? (
                 <div className="text-center py-20">
-                    <Boxes className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                    <p className="text-sm font-medium text-gray-400">Nenhum produto nesta categoria</p>
-                    <p className="text-xs text-gray-300 mt-1">Clique em "Novo Produto" para adicionar</p>
+                    <Boxes className="w-12 h-12 text-text-secondary/40 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-text-secondary">Nenhum produto nesta categoria</p>
+                    <p className="text-xs text-text-secondary/60 mt-1">Clique em "Novo Produto" para adicionar</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+                <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
                     <div className="overflow-x-auto min-h-[400px]">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="bg-gray-50/80 border-b border-gray-100">
+                                <tr className="bg-background/80 border-b border-border">
                                     <th
-                                        className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-brand-600 transition-colors"
+                                        className="text-left px-4 py-3 text-xs font-semibold text-text-secondary uppercase tracking-wider cursor-pointer hover:text-brand-600 transition-colors"
                                         onClick={() => {
                                             if (sortBy === 'name') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                                             else { setSortBy('name'); setSortOrder('asc'); }
@@ -357,9 +357,9 @@ export default function CategoryProductsPage() {
                                             {sortBy === 'name' ? (sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ArrowDownUp className="w-3 h-3 opacity-30" />}
                                         </div>
                                     </th>
-                                    <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">SKU / Cód. Barras</th>
+                                    <th className="text-center px-4 py-3 text-xs font-semibold text-text-secondary uppercase tracking-wider hidden md:table-cell">SKU / Cód. Barras</th>
                                     <th
-                                        className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell cursor-pointer hover:text-brand-600 transition-colors"
+                                        className="text-center px-4 py-3 text-xs font-semibold text-text-secondary uppercase tracking-wider hidden sm:table-cell cursor-pointer hover:text-brand-600 transition-colors"
                                         onClick={() => {
                                             if (sortBy === 'price') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                                             else { setSortBy('price'); setSortOrder('desc'); }
@@ -371,7 +371,7 @@ export default function CategoryProductsPage() {
                                         </div>
                                     </th>
                                     <th
-                                        className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-brand-600 transition-colors"
+                                        className="text-center px-4 py-3 text-xs font-semibold text-text-secondary uppercase tracking-wider cursor-pointer hover:text-brand-600 transition-colors"
                                         onClick={() => {
                                             if (sortBy === 'stock_quantity') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                                             else { setSortBy('stock_quantity'); setSortOrder('desc'); }
@@ -382,55 +382,55 @@ export default function CategoryProductsPage() {
                                             {sortBy === 'stock_quantity' ? (sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ArrowDownUp className="w-3 h-3 opacity-30" />}
                                         </div>
                                     </th>
-                                    <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                                    <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Ações</th>
+                                    <th className="text-center px-4 py-3 text-xs font-semibold text-text-secondary uppercase tracking-wider">Status</th>
+                                    <th className="text-center px-4 py-3 text-xs font-semibold text-text-secondary uppercase tracking-wider">Ações</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {products.map((p) => {
                                     const status = getStockStatus(p)
                                     return (
-                                        <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                                        <tr key={p.id} className="hover:bg-background/50 transition-colors">
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
+                                                    <div className="flex-shrink-0 w-10 h-10 bg-border/50 rounded-lg overflow-hidden border border-border flex items-center justify-center">
                                                         {p.image_base64 ? (
                                                             <img src={p.image_base64} alt={p.name} className="w-full h-full object-cover" />
                                                         ) : (
-                                                            <ImageIcon className="w-4 h-4 text-gray-400" />
+                                                            <ImageIcon className="w-4 h-4 text-text-secondary" />
                                                         )}
                                                     </div>
                                                     <div>
-                                                        <p className="font-medium text-gray-900 leading-tight flex items-center gap-2">
+                                                        <p className="font-medium text-text-primary leading-tight flex items-center gap-2">
                                                             {p.name}
                                                             {(p.color || p.size) && (
-                                                                <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md font-semibold">
+                                                                <span className="text-[10px] bg-border/50 text-text-secondary px-1.5 py-0.5 rounded-md font-semibold">
                                                                     {[p.color, p.size].filter(Boolean).join(' • ')}
                                                                 </span>
                                                             )}
                                                         </p>
-                                                        {p.description && <p className="text-[11px] text-gray-500 mt-1 line-clamp-2 max-w-sm leading-snug">{p.description}</p>}
+                                                        {p.description && <p className="text-[11px] text-text-secondary mt-1 line-clamp-2 max-w-sm leading-snug">{p.description}</p>}
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 text-center hidden md:table-cell">
                                                 <div className="space-y-0.5">
-                                                    {p.sku && <p className="text-xs font-mono text-gray-500">{p.sku}</p>}
+                                                    {p.sku && <p className="text-xs font-mono text-text-secondary">{p.sku}</p>}
                                                     {p.barcode && (
-                                                        <p className="text-xs font-mono text-gray-400 flex items-center justify-center gap-1">
+                                                        <p className="text-xs font-mono text-text-secondary flex items-center justify-center gap-1">
                                                             <ScanBarcode className="w-3 h-3" />{p.barcode}
                                                         </p>
                                                     )}
-                                                    {!p.sku && !p.barcode && <span className="text-gray-300">—</span>}
+                                                    {!p.sku && !p.barcode && <span className="text-text-secondary/60">—</span>}
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 text-center font-medium text-gray-700 hidden sm:table-cell">
+                                            <td className="px-4 py-3 text-center font-medium text-text-secondary hidden sm:table-cell">
                                                 R$ {p.price.toFixed(2)}
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                <span className="font-semibold text-gray-800">{p.stock_quantity} <span className="text-[10px] text-gray-400 font-medium uppercase">{p.unit}</span></span>
+                                                <span className="font-semibold text-text-primary">{p.stock_quantity} <span className="text-[10px] text-text-secondary font-medium uppercase">{p.unit}</span></span>
                                                 {p.stock_quantity <= p.min_stock && p.min_stock > 0 && (
-                                                    <AlertTriangle className="w-3 h-3 text-amber-500 inline ml-1" />
+                                                    <AlertTriangle className="w-3 h-3 text-warning inline ml-1" />
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-center">
@@ -445,7 +445,7 @@ export default function CategoryProductsPage() {
                                                             e.stopPropagation();
                                                             setOpenMenuId(openMenuId === p.id ? null : p.id);
                                                         }}
-                                                        className={`p-2 rounded-full transition-all ${openMenuId === p.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
+                                                        className={`p-2 rounded-full transition-all ${openMenuId === p.id ? 'text-brand-600 bg-brand-50' : 'text-text-secondary hover:text-text-primary hover:bg-border/50'}`}
                                                     >
                                                         <MoreVertical className="w-4 h-4" />
                                                     </button>
@@ -453,16 +453,16 @@ export default function CategoryProductsPage() {
                                                     {openMenuId === p.id && (
                                                         <>
                                                             <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                                                            <div className="absolute right-0 top-10 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-4 max-sm:top-auto max-sm:w-auto max-sm:origin-bottom">
+                                                            <div className="absolute right-0 top-10 w-44 bg-card rounded-2xl shadow-2xl border border-border z-50 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-4 max-sm:top-auto max-sm:w-auto max-sm:origin-bottom">
                                                                 <button
                                                                     onClick={() => { openEdit(p); setOpenMenuId(null); }}
-                                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors text-left"
+                                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-text-secondary hover:bg-background hover:text-brand-600 transition-colors text-left"
                                                                 >
                                                                     <Pencil className="w-3.5 h-3.5" /> Editar
                                                                 </button>
                                                                 <button
                                                                     onClick={() => { setDeleteConfirm(p.id); setOpenMenuId(null); }}
-                                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors text-left"
+                                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-error hover:bg-error/10 transition-colors text-left"
                                                                 >
                                                                     <Trash2 className="w-3.5 h-3.5" /> Excluir
                                                                 </button>
@@ -471,11 +471,11 @@ export default function CategoryProductsPage() {
                                                     )}
 
                                                     {deleteConfirm === p.id && (
-                                                        <div className="absolute right-0 top-0 bg-white border border-red-100 rounded-xl shadow-lg p-2 z-[80] animate-in fade-in slide-in-from-right-4">
-                                                            <p className="text-[10px] font-bold text-red-600 mb-2 truncate">Excluir?</p>
+                                                        <div className="absolute right-0 top-0 bg-card border border-error/20 rounded-xl shadow-lg p-2 z-[80] animate-in fade-in slide-in-from-right-4">
+                                                            <p className="text-[10px] font-bold text-error mb-2 truncate">Excluir?</p>
                                                             <div className="flex gap-1.5">
-                                                                <button onClick={() => handleDelete(p.id)} className="px-2 py-1 text-[10px] bg-red-500 text-white rounded-md font-bold hover:bg-red-600 transition-colors">Sim</button>
-                                                                <button onClick={() => setDeleteConfirm(null)} className="px-2 py-1 text-[10px] bg-slate-100 text-slate-600 rounded-md font-bold hover:bg-slate-200 transition-colors">Não</button>
+                                                                <button onClick={() => handleDelete(p.id)} className="px-2 py-1 text-[10px] bg-error text-card rounded-md font-bold hover:bg-error transition-colors">Sim</button>
+                                                                <button onClick={() => setDeleteConfirm(null)} className="px-2 py-1 text-[10px] bg-border/50 text-text-secondary rounded-md font-bold hover:bg-border transition-colors">Não</button>
                                                             </div>
                                                         </div>
                                                     )}
@@ -490,15 +490,15 @@ export default function CategoryProductsPage() {
 
                     {/* Paginação */}
                     {totalPages > 1 && (
-                        <div className="px-4 py-3 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                            <p className="text-xs text-gray-400 order-2 sm:order-1">
-                                Mostrando <span className="font-semibold text-gray-600">{(page - 1) * perPage + 1}–{Math.min(page * perPage, totalProducts)}</span> de <span className="font-semibold text-gray-600">{totalProducts}</span>
+                        <div className="px-4 py-3 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <p className="text-xs text-text-secondary order-2 sm:order-1">
+                                Mostrando <span className="font-semibold text-text-secondary">{(page - 1) * perPage + 1}–{Math.min(page * perPage, totalProducts)}</span> de <span className="font-semibold text-text-secondary">{totalProducts}</span>
                             </p>
                             <div className="flex items-center gap-1.5 order-1 sm:order-2">
                                 <button
                                     onClick={() => fetchProducts(page - 1)}
                                     disabled={page <= 1}
-                                    className="h-8 px-3 text-xs font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="h-8 px-3 text-xs font-semibold border border-border rounded-lg hover:bg-background transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                     ←
                                 </button>
@@ -507,12 +507,12 @@ export default function CategoryProductsPage() {
                                         .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
                                         .map((p, i, arr) => (
                                             <span key={p}>
-                                                {i > 0 && arr[i - 1] !== p - 1 && <span className="text-gray-300 px-0.5">…</span>}
+                                                {i > 0 && arr[i - 1] !== p - 1 && <span className="text-text-secondary/60 px-0.5">…</span>}
                                                 <button
                                                     onClick={() => fetchProducts(p)}
                                                     className={`w-8 h-8 text-xs font-semibold rounded-lg transition-colors ${p === page
-                                                        ? 'bg-blue-600 text-white shadow-sm'
-                                                        : 'text-gray-500 hover:bg-gray-100'
+                                                        ? 'bg-primary text-card shadow-sm'
+                                                        : 'text-text-secondary hover:bg-border/50'
                                                         }`}
                                                 >
                                                     {p}
@@ -524,7 +524,7 @@ export default function CategoryProductsPage() {
                                 <button
                                     onClick={() => fetchProducts(page + 1)}
                                     disabled={page >= totalPages}
-                                    className="h-8 px-3 text-xs font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="h-8 px-3 text-xs font-semibold border border-border rounded-lg hover:bg-background transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                     →
                                 </button>
@@ -538,12 +538,12 @@ export default function CategoryProductsPage() {
             {modalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
-                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                        <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between rounded-t-2xl">
-                            <h2 className="text-base font-bold text-gray-900">
+                    <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                        <div className="sticky top-0 bg-card px-6 py-4 border-b border-border flex items-center justify-between rounded-t-2xl">
+                            <h2 className="text-base font-bold text-text-primary">
                                 {editingProduct ? 'Editar Produto' : 'Novo Produto'}
                             </h2>
-                            <button onClick={() => setModalOpen(false)} className="p-1 text-gray-400 hover:text-gray-600">
+                            <button onClick={() => setModalOpen(false)} className="p-1 text-text-secondary hover:text-text-secondary">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
@@ -552,19 +552,19 @@ export default function CategoryProductsPage() {
                             {/* Upload de Foto */}
                             <div className="flex justify-center mb-6">
                                 <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                                    <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-blue-400 group-hover:bg-blue-50">
+                                    <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-border bg-background flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-blue-400 group-hover:bg-brand-50">
                                         {imagePreview ? (
                                             <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                                         ) : (
                                             <>
-                                                <ImageIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500 mb-1" />
-                                                <span className="text-[10px] font-semibold text-gray-400 group-hover:text-blue-500 text-center leading-tight">Adicionar<br />Foto</span>
+                                                <ImageIcon className="w-6 h-6 text-text-secondary group-hover:text-brand-500 mb-1" />
+                                                <span className="text-[10px] font-semibold text-text-secondary group-hover:text-brand-500 text-center leading-tight">Adicionar<br />Foto</span>
                                             </>
                                         )}
                                     </div>
                                     {imagePreview && (
                                         <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl flex items-center justify-center">
-                                            <Pencil className="w-5 h-5 text-white" />
+                                            <Pencil className="w-5 h-5 text-card" />
                                         </div>
                                     )}
                                     <input
@@ -578,41 +578,41 @@ export default function CategoryProductsPage() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Nome *</label>
+                                <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Nome *</label>
                                 <input required autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                    className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                                    className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all"
                                     placeholder="Nome do produto" />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">SKU</label>
+                                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">SKU</label>
                                     <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })}
-                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
+                                        className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all font-mono"
                                         placeholder="BRQ-001" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Código de Barras</label>
+                                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Código de Barras</label>
                                     <input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })}
-                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
+                                        className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all font-mono"
                                         placeholder="7891234567890" />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Cor / Variante</label>
+                                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Cor / Variante</label>
                                     <input
                                         value={form.color}
                                         onChange={(e) => setForm({ ...form, color: e.target.value })}
-                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-semibold"
+                                        className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all font-semibold"
                                         placeholder="Ex: Vermelho, Ouro"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tamanho</label>
+                                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Tamanho</label>
                                     <input
                                         value={form.size}
                                         onChange={(e) => setForm({ ...form, size: e.target.value })}
-                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-semibold uppercase"
+                                        className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all font-semibold uppercase"
                                         placeholder="Ex: M, 42, Único"
                                     />
                                 </div>
@@ -621,43 +621,43 @@ export default function CategoryProductsPage() {
                             {/* Preço + Custo */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Preço Venda</label>
+                                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Preço Venda</label>
                                     <input
                                         type="text"
                                         value={form.price}
                                         onChange={(e) => setForm({ ...form, price: applyCurrencyMask(e.target.value) })}
-                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-semibold"
+                                        className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all font-semibold"
                                         placeholder="R$ 0,00"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Preço Custo</label>
+                                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Preço Custo</label>
                                     <input
                                         type="text"
                                         value={form.cost_price}
                                         onChange={(e) => setForm({ ...form, cost_price: applyCurrencyMask(e.target.value) })}
-                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-semibold"
+                                        className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all font-semibold"
                                         placeholder="R$ 0,00"
                                     />
                                 </div>
                             </div>
                             <div className="grid grid-cols-3 gap-3">
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Quantidade</label>
+                                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Quantidade</label>
                                     <input type="number" step={form.unit === 'UN' ? '1' : '0.01'} value={form.stock_quantity} onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })}
-                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-semibold"
+                                        className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all font-semibold"
                                         placeholder="0" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Mínimo</label>
+                                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Mínimo</label>
                                     <input type="number" step={form.unit === 'UN' ? '1' : '0.01'} value={form.min_stock} onChange={(e) => setForm({ ...form, min_stock: e.target.value })}
-                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                                        className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all"
                                         placeholder="0" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Unidade</label>
+                                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Unidade</label>
                                     <select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                                        className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all appearance-none font-bold text-blue-600">
+                                        className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all appearance-none font-bold text-primary">
                                         <option value="UN">UN — Unidade</option>
                                         <option value="PCT">PCT — Pacote</option>
                                         <option value="CX">CX — Caixa</option>
@@ -671,9 +671,9 @@ export default function CategoryProductsPage() {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Categoria</label>
+                                <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Categoria</label>
                                 <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-                                    className="w-full h-10 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all appearance-none">
+                                    className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all appearance-none">
                                     <option value="">Sem categoria</option>
                                     {allCategories.map(c => (
                                         <option key={c.id} value={c.id}>{c.name}</option>
@@ -681,8 +681,8 @@ export default function CategoryProductsPage() {
                                 </select>
                             </div>
                             <div className="flex gap-3 pt-2">
-                                <button type="button" onClick={() => setModalOpen(false)} className="flex-1 h-10 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Cancelar</button>
-                                <button type="submit" disabled={saving} className="flex-1 h-10 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                                <button type="button" onClick={() => setModalOpen(false)} className="flex-1 h-10 text-sm font-medium text-text-secondary border border-border rounded-xl hover:bg-background transition-colors">Cancelar</button>
+                                <button type="submit" disabled={saving} className="flex-1 h-10 text-sm font-semibold bg-primary text-card rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
                                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                     {editingProduct ? 'Salvar' : 'Criar'}
                                 </button>

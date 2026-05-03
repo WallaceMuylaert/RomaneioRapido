@@ -69,7 +69,7 @@ const getMovementLabel = (type: Movement['movement_type']) => {
 const getMovementTone = (type: Movement['movement_type']) => {
     if (type === 'IN') return 'text-emerald-600 bg-emerald-50 border-emerald-100'
     if (type === 'OUT') return 'text-rose-600 bg-rose-50 border-rose-100'
-    return 'text-slate-600 bg-slate-50 border-slate-200'
+    return 'text-text-secondary bg-background border-border'
 }
 
 export default function DashboardPage() {
@@ -162,18 +162,18 @@ export default function DashboardPage() {
                 <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="space-y-2">
-                            <div className="h-8 w-48 bg-slate-200 rounded-lg" />
-                            <div className="h-4 w-64 bg-slate-100 rounded-md" />
+                            <div className="h-8 w-48 bg-border rounded-lg" />
+                            <div className="h-4 w-64 bg-border/50 rounded-md" />
                         </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2 sm:gap-4">
                         {[1, 2, 3].map((i) => (
-                            <div key={i} className="h-24 bg-white rounded-2xl border border-slate-100 shadow-sm" />
+                            <div key={i} className="h-24 bg-card rounded-2xl border border-border shadow-sm" />
                         ))}
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-                        <div className="lg:col-span-3 h-80 bg-white rounded-3xl border border-slate-100 shadow-sm" />
-                        <div className="lg:col-span-2 h-80 bg-white rounded-3xl border border-slate-100 shadow-sm" />
+                        <div className="lg:col-span-3 h-80 bg-card rounded-3xl border border-border shadow-sm" />
+                        <div className="lg:col-span-2 h-80 bg-card rounded-3xl border border-border shadow-sm" />
                     </div>
                 </div>
             </>
@@ -184,14 +184,14 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Painel</h1>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-400">
+                    <h1 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">Painel</h1>
+                    <p className="text-xs sm:text-sm font-semibold text-text-secondary">
                         Bem-vindo de volta, <span className="text-brand-600">{user?.full_name.split(' ')[0]}</span>! Aqui esta um resumo do seu estoque.
                     </p>
                 </div>
                 <div className="hidden sm:flex flex-col items-end">
                     <p className="text-xs font-black text-brand-600 uppercase tracking-[0.2em]">Visao Geral</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mt-0.5">
                         {new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date())}
                     </p>
                 </div>
@@ -207,8 +207,8 @@ export default function DashboardPage() {
                             <Boxes className="w-4 h-4 sm:w-5 sm:h-5 text-brand-600" />
                         </div>
                         <div className="min-w-0">
-                            <p className="text-xl sm:text-3xl font-black text-slate-900 leading-none tracking-tight">{stats.totalProducts}</p>
-                            <p className="mt-1 text-[8px] sm:text-[11px] font-black text-slate-400 uppercase tracking-wider leading-tight">Produtos</p>
+                            <p className="text-xl sm:text-3xl font-black text-text-primary leading-none tracking-tight">{stats.totalProducts}</p>
+                            <p className="mt-1 text-[8px] sm:text-[11px] font-black text-text-secondary uppercase tracking-wider leading-tight">Produtos</p>
                         </div>
                     </div>
                 </button>
@@ -222,8 +222,8 @@ export default function DashboardPage() {
                             <ArrowRightLeft className="w-4 h-4 sm:w-5 sm:h-5 text-brand-600" />
                         </div>
                         <div className="min-w-0">
-                            <p className="text-xl sm:text-3xl font-black text-slate-900 leading-none tracking-tight">{stats.todayMovements}</p>
-                            <p className="mt-1 text-[8px] sm:text-[11px] font-black text-slate-400 uppercase tracking-wider leading-tight">Hoje</p>
+                            <p className="text-xl sm:text-3xl font-black text-text-primary leading-none tracking-tight">{stats.todayMovements}</p>
+                            <p className="mt-1 text-[8px] sm:text-[11px] font-black text-text-secondary uppercase tracking-wider leading-tight">Hoje</p>
                         </div>
                     </div>
                 </button>
@@ -237,21 +237,21 @@ export default function DashboardPage() {
                             <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />
                         </div>
                         <div className="min-w-0">
-                            <p className="text-xl sm:text-3xl font-black text-slate-900 leading-none tracking-tight">{stats.lowStockCount}</p>
-                            <p className="mt-1 text-[8px] sm:text-[11px] font-black text-slate-400 uppercase tracking-wider leading-tight">Alertas</p>
+                            <p className="text-xl sm:text-3xl font-black text-text-primary leading-none tracking-tight">{stats.lowStockCount}</p>
+                            <p className="mt-1 text-[8px] sm:text-[11px] font-black text-text-secondary uppercase tracking-wider leading-tight">Alertas</p>
                         </div>
                     </div>
                 </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
-                <section className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-4 sm:p-6">
+                <section className="lg:col-span-3 bg-card border border-border rounded-2xl p-4 sm:p-6">
                     <div className="flex items-center justify-between gap-4 mb-6">
                         <div>
-                            <p className="text-sm font-black text-slate-900">Movimento dos ultimos 7 dias</p>
-                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Entradas, saidas e ajustes</p>
+                            <p className="text-sm font-black text-text-primary">Movimento dos ultimos 7 dias</p>
+                            <p className="text-[11px] font-bold text-text-secondary uppercase tracking-widest mt-1">Entradas, saidas e ajustes</p>
                         </div>
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-brand-50 text-primary flex items-center justify-center">
                             <BarChart3 className="w-5 h-5" />
                         </div>
                     </div>
@@ -264,18 +264,18 @@ export default function DashboardPage() {
                                         style={{ height: `${Math.max((item.value / maxDailyMovements) * 100, item.value > 0 ? 10 : 2)}%` }}
                                     />
                                 </div>
-                                <p className="text-xs font-black text-slate-900">{item.value}</p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{item.label}</p>
+                                <p className="text-xs font-black text-text-primary">{item.value}</p>
+                                <p className="text-[10px] font-bold text-text-secondary uppercase truncate">{item.label}</p>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                <section className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-4 sm:p-6">
+                <section className="lg:col-span-2 bg-card border border-border rounded-2xl p-4 sm:p-6">
                     <div className="flex items-center justify-between gap-4 mb-6">
                         <div>
-                            <p className="text-sm font-black text-slate-900">Saude do estoque</p>
-                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">{stockLevels.length} produtos analisados</p>
+                            <p className="text-sm font-black text-text-primary">Saude do estoque</p>
+                            <p className="text-[11px] font-bold text-text-secondary uppercase tracking-widest mt-1">{stockLevels.length} produtos analisados</p>
                         </div>
                         <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                             <Activity className="w-5 h-5" />
@@ -286,27 +286,27 @@ export default function DashboardPage() {
                         <div>
                             <div className="flex items-center justify-between text-xs font-black mb-2">
                                 <span className="flex items-center gap-2 text-emerald-700"><CheckCircle2 className="w-4 h-4" /> Estoque ok</span>
-                                <span className="text-slate-900">{stockHealth.healthy}</span>
+                                <span className="text-text-primary">{stockHealth.healthy}</span>
                             </div>
-                            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-2.5 bg-border/50 rounded-full overflow-hidden">
                                 <div className="h-full bg-emerald-500" style={{ width: `${stockHealth.healthyPercent}%` }} />
                             </div>
                         </div>
                         <div>
                             <div className="flex items-center justify-between text-xs font-black mb-2">
                                 <span className="flex items-center gap-2 text-orange-600"><TrendingDown className="w-4 h-4" /> Estoque baixo</span>
-                                <span className="text-slate-900">{stockHealth.lowStock}</span>
+                                <span className="text-text-primary">{stockHealth.lowStock}</span>
                             </div>
-                            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-2.5 bg-border/50 rounded-full overflow-hidden">
                                 <div className="h-full bg-orange-500" style={{ width: `${stockHealth.lowStockPercent}%` }} />
                             </div>
                         </div>
                         <div>
                             <div className="flex items-center justify-between text-xs font-black mb-2">
                                 <span className="flex items-center gap-2 text-rose-600"><PackageX className="w-4 h-4" /> Sem estoque</span>
-                                <span className="text-slate-900">{stockHealth.outOfStock}</span>
+                                <span className="text-text-primary">{stockHealth.outOfStock}</span>
                             </div>
-                            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-2.5 bg-border/50 rounded-full overflow-hidden">
                                 <div className="h-full bg-rose-500" style={{ width: `${stockHealth.outOfStockPercent}%` }} />
                             </div>
                         </div>
@@ -315,11 +315,11 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                <section className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6">
+                <section className="bg-card border border-border rounded-2xl p-4 sm:p-6">
                     <div className="flex items-center justify-between gap-4 mb-5">
                         <div>
-                            <p className="text-sm font-black text-slate-900">Produtos criticos</p>
-                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Prioridade de reposicao</p>
+                            <p className="text-sm font-black text-text-primary">Produtos criticos</p>
+                            <p className="text-[11px] font-bold text-text-secondary uppercase tracking-widest mt-1">Prioridade de reposicao</p>
                         </div>
                         <button
                             onClick={() => navigate('/produtos')}
@@ -332,17 +332,17 @@ export default function DashboardPage() {
                         {criticalProducts.length > 0 ? criticalProducts.map((product) => {
                             const stockRatio = product.min_stock > 0 ? Math.min(Math.max(product.stock_quantity / product.min_stock, 0), 1) : 0
                             return (
-                                <div key={product.product_id} className="border border-slate-100 rounded-xl p-3">
+                                <div key={product.product_id} className="border border-border rounded-xl p-3">
                                     <div className="flex items-center justify-between gap-3 mb-2">
                                         <div className="min-w-0">
-                                            <p className="text-sm font-black text-slate-900 truncate">{product.product_name}</p>
-                                            <p className="text-[11px] font-bold text-slate-400">{formatQuantity(product.stock_quantity)} {product.unit} de minimo {formatQuantity(product.min_stock)}</p>
+                                            <p className="text-sm font-black text-text-primary truncate">{product.product_name}</p>
+                                            <p className="text-[11px] font-bold text-text-secondary">{formatQuantity(product.stock_quantity)} {product.unit} de minimo {formatQuantity(product.min_stock)}</p>
                                         </div>
                                         <span className="shrink-0 text-[11px] font-black text-orange-600 bg-orange-50 border border-orange-100 rounded-lg px-2 py-1">
                                             Baixo
                                         </span>
                                     </div>
-                                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-2 bg-border/50 rounded-full overflow-hidden">
                                         <div className="h-full bg-orange-500" style={{ width: `${stockRatio * 100}%` }} />
                                     </div>
                                 </div>
@@ -356,11 +356,11 @@ export default function DashboardPage() {
                     </div>
                 </section>
 
-                <section className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6">
+                <section className="bg-card border border-border rounded-2xl p-4 sm:p-6">
                     <div className="flex items-center justify-between gap-4 mb-5">
                         <div>
-                            <p className="text-sm font-black text-slate-900">Atividade recente</p>
-                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Ultimas movimentacoes</p>
+                            <p className="text-sm font-black text-text-primary">Atividade recente</p>
+                            <p className="text-[11px] font-bold text-text-secondary uppercase tracking-widest mt-1">Ultimas movimentacoes</p>
                         </div>
                         <button
                             onClick={() => navigate('/movimentacoes')}
@@ -371,24 +371,24 @@ export default function DashboardPage() {
                     </div>
                     <div className="space-y-3">
                         {recentMovements.slice(0, 5).map((movement) => (
-                            <div key={movement.id} className="flex items-center gap-3 border border-slate-100 rounded-xl p-3">
+                            <div key={movement.id} className="flex items-center gap-3 border border-border rounded-xl p-3">
                                 <span className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${getMovementTone(movement.movement_type)}`}>
                                     <ArrowRightLeft className="w-4 h-4" />
                                 </span>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-black text-slate-900 truncate">{movement.product_name || movement.product_name_snapshot || 'Produto'}</p>
-                                    <p className="text-[11px] font-bold text-slate-400">
+                                    <p className="text-sm font-black text-text-primary truncate">{movement.product_name || movement.product_name_snapshot || 'Produto'}</p>
+                                    <p className="text-[11px] font-bold text-text-secondary">
                                         {getMovementLabel(movement.movement_type)} de {formatQuantity(Math.abs(Number(movement.quantity) || 0))} {movement.unit_snapshot || 'UN'}
                                     </p>
                                 </div>
-                                <p className="text-[11px] font-bold text-slate-400 shrink-0">
+                                <p className="text-[11px] font-bold text-text-secondary shrink-0">
                                     {new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(new Date(movement.created_at))}
                                 </p>
                             </div>
                         ))}
                         {recentMovements.length === 0 && (
-                            <div className="border border-slate-100 bg-slate-50 rounded-xl p-4">
-                                <p className="text-sm font-bold text-slate-500">Nenhuma movimentacao registrada ainda.</p>
+                            <div className="border border-border bg-background rounded-xl p-4">
+                                <p className="text-sm font-bold text-text-secondary">Nenhuma movimentacao registrada ainda.</p>
                             </div>
                         )}
                     </div>
@@ -398,40 +398,40 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4">
                 <button
                     onClick={() => navigate('/romaneio')}
-                    className="flex-1 sm:min-w-[200px] h-14 sm:h-20 bg-white border border-slate-200 sm:border-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center gap-3 sm:gap-4 hover:border-brand-200 hover:shadow-lg transition-all group overflow-hidden relative"
+                    className="flex-1 sm:min-w-[200px] h-14 sm:h-20 bg-card border border-border sm:border-border rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center gap-3 sm:gap-4 hover:border-brand-200 hover:shadow-lg transition-all group overflow-hidden relative"
                 >
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-brand-50 flex items-center justify-center text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-all shrink-0">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-brand-50 flex items-center justify-center text-brand-600 group-hover:bg-brand-600 group-hover:text-card transition-all shrink-0">
                         <ArrowRightLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                     <div className="text-left">
-                        <p className="text-[13px] sm:text-sm font-black text-slate-900 leading-tight">Montar Romaneio</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Saida Rapida</p>
+                        <p className="text-[13px] sm:text-sm font-black text-text-primary leading-tight">Montar Romaneio</p>
+                        <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Saida Rapida</p>
                     </div>
                 </button>
 
                 <button
                     onClick={() => navigate('/clientes')}
-                    className="flex-1 sm:min-w-[200px] h-14 sm:h-20 bg-white border border-slate-200 sm:border-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center gap-3 sm:gap-4 hover:border-emerald-200 hover:shadow-lg transition-all group overflow-hidden relative"
+                    className="flex-1 sm:min-w-[200px] h-14 sm:h-20 bg-card border border-border sm:border-border rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center gap-3 sm:gap-4 hover:border-emerald-200 hover:shadow-lg transition-all group overflow-hidden relative"
                 >
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all shrink-0">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-card transition-all shrink-0">
                         <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                     <div className="text-left">
-                        <p className="text-[13px] sm:text-sm font-black text-slate-900 leading-tight">Novo Cliente</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cadastro Agil</p>
+                        <p className="text-[13px] sm:text-sm font-black text-text-primary leading-tight">Novo Cliente</p>
+                        <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Cadastro Agil</p>
                     </div>
                 </button>
 
                 <button
                     onClick={() => navigate('/produtos')}
-                    className="flex-1 sm:min-w-[200px] h-14 sm:h-20 bg-white border border-slate-200 sm:border-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center gap-3 sm:gap-4 hover:border-blue-200 hover:shadow-lg transition-all group overflow-hidden relative"
+                    className="flex-1 sm:min-w-[200px] h-14 sm:h-20 bg-card border border-border sm:border-border rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center gap-3 sm:gap-4 hover:border-blue-200 hover:shadow-lg transition-all group overflow-hidden relative"
                 >
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-brand-50 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-card transition-all shrink-0">
                         <Boxes className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                     <div className="text-left">
-                        <p className="text-[13px] sm:text-sm font-black text-slate-900 leading-tight">Produtos</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Gerenciar Estoque</p>
+                        <p className="text-[13px] sm:text-sm font-black text-text-primary leading-tight">Produtos</p>
+                        <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Gerenciar Estoque</p>
                     </div>
                 </button>
             </div>

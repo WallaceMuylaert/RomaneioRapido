@@ -161,11 +161,11 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50/30 font-sans selection:bg-brand-500/30">
+        <div className="min-h-screen flex flex-col lg:flex-row bg-background/30 font-sans selection:bg-brand-500/30">
             {isLoading && <LoadingOverlay message={isRegistering ? "Criando sua conta..." : "Autenticando..."} />}
 
             {/* Seção Esquerda - Marketing (Oculta em Mobile) */}
-            <div className="hidden lg:flex lg:w-1/2 bg-slate-900 relative flex-col justify-between p-20 overflow-hidden">
+            <div className="hidden lg:flex lg:w-1/2 bg-text-primary relative flex-col justify-between p-20 overflow-hidden">
                 <img
                     src={loginWarehouseImage}
                     alt=""
@@ -181,9 +181,9 @@ export default function LoginPage() {
                 {/* Botão Voltar */}
                 <button
                     onClick={() => navigate('/')}
-                    className="flex items-center gap-3 text-slate-400 hover:text-white transition-all text-sm font-bold w-fit group relative z-10 mb-16"
+                    className="flex items-center gap-3 text-text-secondary hover:text-card transition-all text-sm font-bold w-fit group relative z-10 mb-16"
                 >
-                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-brand-600 transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-card/5 flex items-center justify-center group-hover:bg-brand-600 transition-colors">
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                     </div>
                     <span>Voltar para o início</span>
@@ -191,21 +191,21 @@ export default function LoginPage() {
 
                 {/* Conteúdo Central */}
                 <div className="max-w-md relative z-10">
-                    <h1 className="text-5xl font-black text-white leading-[1.1] mb-8 tracking-tighter">
+                    <h1 className="text-5xl font-black text-card leading-[1.1] mb-8 tracking-tighter">
                         Controle seu estoque com <span className="text-brand-400">velocidade</span> máxima.
                     </h1>
-                    <p className="text-slate-400 text-lg mb-12 font-medium leading-relaxed">
+                    <p className="text-text-secondary text-lg mb-12 font-medium leading-relaxed">
                         Gerencie movimentações, organize categorias e acompanhe relatórios em tempo real com elegância e eficiência.
                     </p>
 
                     <div className="space-y-8">
                         {[
                             { icon: ScanBarcode, text: 'Leitura rápida de código de barras', color: 'text-brand-400' },
-                            { icon: Zap, text: 'Interface ultra-rápida sem delay', color: 'text-amber-400' },
+                            { icon: Zap, text: 'Interface ultra-rápida sem delay', color: 'text-warning' },
                             { icon: BarChart3, text: 'Dashboards visuais e inteligentes', color: 'text-emerald-400' }
                         ].map((item, i) => (
-                            <div key={i} className="flex items-center gap-5 text-slate-300">
-                                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-inner group transition-all hover:bg-white/10">
+                            <div key={i} className="flex items-center gap-5 text-text-secondary/60">
+                                <div className="w-12 h-12 rounded-2xl bg-card/5 flex items-center justify-center border border-card/10 shadow-inner group transition-all hover:bg-card/10">
                                     <item.icon className={`w-6 h-6 ${item.color}`} />
                                 </div>
                                 <span className="text-base font-bold tracking-tight">{item.text}</span>
@@ -215,7 +215,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* Rodapé Visual */}
-                <div className="flex items-center gap-6 text-slate-500 text-xs font-bold uppercase tracking-widest relative z-10 mt-auto pt-10">
+                <div className="flex items-center gap-6 text-text-secondary text-xs font-bold uppercase tracking-widest relative z-10 mt-auto pt-10">
                     <span>© 2026 Romaneio Rápido</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-brand-600" />
                     <span>Segurança Bancária</span>
@@ -223,14 +223,14 @@ export default function LoginPage() {
             </div>
 
             {/* Seção Direita - Formulário */}
-            <div className="flex-1 flex flex-col bg-white overflow-y-auto">
+            <div className="flex-1 flex flex-col bg-card overflow-y-auto">
                 {/* Mobile Header (Apenas em Mobile) */}
                 <div className="lg:hidden flex items-center justify-between pt-2">
                     <div className="flex items-center gap-1 ps-4 group cursor-pointer" onClick={() => navigate('/')}>
                         <img
                             src={logo}
                             alt="Romaneio Rápido"
-                            className="h-12 w-15 rounded-xl object-contain bg-white shadow-lg shadow-brand-500/20"
+                            className="h-12 w-15 rounded-xl object-contain bg-card shadow-lg shadow-primary/20"
                         />
                     </div>
                     <button onClick={() => navigate('/')} className="text-xs font-black text-brand-600 uppercase tracking-wider pe-6">
@@ -238,14 +238,14 @@ export default function LoginPage() {
                     </button>
                 </div>
 
-                <div className="flex-1 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-slate-50/30">
+                <div className="flex-1 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-background/30">
                     <div className="w-full max-w-sm animate-slide-up">
                         {/* Boas vindas */}
                         <div className="mb-12 text-center lg:text-left">
-                            <h2 className="text-4xl font-black text-slate-900 tracking-tighter mb-3">
+                            <h2 className="text-4xl font-black text-text-primary tracking-tighter mb-3">
                                 {isRegistering ? 'Crie sua conta.' : 'Bem-vindo.'}
                             </h2>
-                            <p className="text-slate-500 font-semibold italic text-sm">
+                            <p className="text-text-secondary font-semibold italic text-sm">
                                 {isRegistering
                                     ? 'Cadastre-se para começar a gerenciar seu estoque.'
                                     : 'Insira suas credenciais para acessar a plataforma.'}
@@ -256,10 +256,10 @@ export default function LoginPage() {
                         <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
                             {isRegistering && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
+                                    <label className="text-[11px] font-black text-text-secondary uppercase tracking-widest ml-1">Nome Completo</label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                            <User className={`h-4 w-4 ${errors.fullName ? 'text-red-400' : 'text-slate-400'}`} />
+                                            <User className={`h-4 w-4 ${errors.fullName ? 'text-red-400' : 'text-text-secondary'}`} />
                                         </div>
                                         <input
                                             id="fullName"
@@ -273,20 +273,20 @@ export default function LoginPage() {
                                             }}
                                             placeholder="João da Silva"
                                             required
-                                            className={`w-full h-14 pl-12 pr-6 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.fullName
-                                                ? 'border-red-500 focus:ring-red-500/5 focus:border-red-500'
-                                                : 'border-slate-100 focus:ring-brand-500/5 focus:border-brand-500'}`}
+                                            className={`w-full h-14 pl-12 pr-6 bg-card border-2 rounded-2xl text-text-primary placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.fullName
+                                                ? 'border-error focus:ring-error/5 focus:border-error'
+                                                : 'border-border focus:ring-brand-500/5 focus:border-brand-500'}`}
                                         />
                                     </div>
-                                    {errors.fullName && <p className="text-[10px] font-black text-red-500 ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.fullName}</p>}
+                                    {errors.fullName && <p className="text-[10px] font-black text-error ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.fullName}</p>}
                                 </div>
                             )}
 
                             <div className="space-y-2">
-                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Endereço de Email</label>
+                                <label className="text-[11px] font-black text-text-secondary uppercase tracking-widest ml-1">Endereço de Email</label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                        <Mail className={`h-4 w-4 ${errors.email ? 'text-red-400' : 'text-slate-400'}`} />
+                                        <Mail className={`h-4 w-4 ${errors.email ? 'text-red-400' : 'text-text-secondary'}`} />
                                     </div>
                                     <input
                                         id="email"
@@ -300,17 +300,17 @@ export default function LoginPage() {
                                         }}
                                         placeholder="exemplo@email.com"
                                         required
-                                        className={`w-full h-14 pl-12 pr-6 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.email
-                                            ? 'border-red-500 focus:ring-red-500/5 focus:border-red-500'
-                                            : 'border-slate-100 focus:ring-brand-500/5 focus:border-brand-500'}`}
+                                        className={`w-full h-14 pl-12 pr-6 bg-card border-2 rounded-2xl text-text-primary placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.email
+                                            ? 'border-error focus:ring-error/5 focus:border-error'
+                                            : 'border-border focus:ring-brand-500/5 focus:border-brand-500'}`}
                                     />
                                 </div>
-                                {errors.email && <p className="text-[10px] font-black text-red-500 ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.email}</p>}
+                                {errors.email && <p className="text-[10px] font-black text-error ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.email}</p>}
                             </div>
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between px-1">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Senha de Acesso</label>
+                                    <label className="text-[11px] font-black text-text-secondary uppercase tracking-widest">Senha de Acesso</label>
                                     {!isRegistering && (
                                         <button
                                             type="button"
@@ -323,7 +323,7 @@ export default function LoginPage() {
                                 </div>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                        <Lock className={`h-4 w-4 ${errors.password ? 'text-red-400' : 'text-slate-400'}`} />
+                                        <Lock className={`h-4 w-4 ${errors.password ? 'text-red-400' : 'text-text-secondary'}`} />
                                     </div>
                                     <input
                                         key={isRegistering ? 'register-password' : 'login-password'}
@@ -338,27 +338,27 @@ export default function LoginPage() {
                                         }}
                                         placeholder="••••••••••••"
                                         required
-                                        className={`w-full h-14 pl-12 pr-14 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.password
-                                            ? 'border-red-500 focus:ring-red-500/5 focus:border-red-500'
-                                            : 'border-slate-100 focus:ring-brand-500/5 focus:border-brand-500'}`}
+                                        className={`w-full h-14 pl-12 pr-14 bg-card border-2 rounded-2xl text-text-primary placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.password
+                                            ? 'border-error focus:ring-error/5 focus:border-error'
+                                            : 'border-border focus:ring-brand-500/5 focus:border-brand-500'}`}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-brand-600 p-2 transition-colors"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary/60 hover:text-brand-600 p-2 transition-colors"
                                     >
                                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
                                 </div>
-                                {errors.password && <p className="text-[10px] font-black text-red-500 ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.password}</p>}
+                                {errors.password && <p className="text-[10px] font-black text-error ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.password}</p>}
                             </div>
 
                             {isRegistering && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirme a Senha</label>
+                                    <label className="text-[11px] font-black text-text-secondary uppercase tracking-widest ml-1">Confirme a Senha</label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                            <Lock className={`h-4 w-4 ${errors.confirmPassword ? 'text-red-400' : 'text-slate-400'}`} />
+                                            <Lock className={`h-4 w-4 ${errors.confirmPassword ? 'text-red-400' : 'text-text-secondary'}`} />
                                         </div>
                                         <input
                                             id="confirmPassword"
@@ -372,26 +372,26 @@ export default function LoginPage() {
                                             }}
                                             placeholder="••••••••••••"
                                             required
-                                            className={`w-full h-14 pl-12 pr-14 bg-white border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.confirmPassword
-                                                ? 'border-red-500 focus:ring-red-500/5 focus:border-red-500'
-                                                : 'border-slate-100 focus:ring-brand-500/5 focus:border-brand-500'}`}
+                                            className={`w-full h-14 pl-12 pr-14 bg-card border-2 rounded-2xl text-text-primary placeholder-slate-300 focus:outline-none focus:ring-4 transition-all font-bold text-sm shadow-sm ${errors.confirmPassword
+                                                ? 'border-error focus:ring-error/5 focus:border-error'
+                                                : 'border-border focus:ring-brand-500/5 focus:border-brand-500'}`}
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-brand-600 p-2 transition-colors"
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary/60 hover:text-brand-600 p-2 transition-colors"
                                         >
                                             {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                         </button>
                                     </div>
-                                    {errors.confirmPassword && <p className="text-[10px] font-black text-red-500 ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.confirmPassword}</p>}
+                                    {errors.confirmPassword && <p className="text-[10px] font-black text-error ml-1 mt-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">{errors.confirmPassword}</p>}
                                 </div>
                             )}
 
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full h-16 bg-brand-600 text-white font-black rounded-2xl shadow-xl shadow-brand-500/20 hover:bg-brand-700 hover:shadow-brand-500/30 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-4 text-sm tracking-tight"
+                                className="w-full h-16 bg-brand-600 text-card font-black rounded-2xl shadow-xl shadow-primary/20 hover:bg-brand-700 hover:shadow-primary/30 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-4 text-sm tracking-tight"
                             >
                                 {isLoading ? (
                                     <>
@@ -405,7 +405,7 @@ export default function LoginPage() {
                         </form>
 
                         <div className="mt-16 text-center">
-                            <p className="text-xs text-slate-400 font-bold tracking-tight">
+                            <p className="text-xs text-text-secondary font-bold tracking-tight">
                                 {isRegistering ? 'Já tem uma conta?' : 'Não tem uma conta ainda?'}
                                 <button
                                     onClick={toggleMode}

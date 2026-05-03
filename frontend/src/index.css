@@ -1,6 +1,16 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 @theme {
+  --color-primary: #2563EB;
+  --color-primary-dark: #1D4ED8;
+  --color-background: #F8FAFC;
+  --color-card: #FFFFFF;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #64748B;
+  --color-border: #E2E8F0;
+  --color-success: #16A34A;
+  --color-warning: #F59E0B;
+  --color-error: #DC2626;
   --color-brand-50: #eff6ff;
   --color-brand-100: #dbeafe;
   --color-brand-200: #bfdbfe;
@@ -30,20 +40,26 @@
   --app-radius-xl: 6px;
   --app-radius-2xl: 8px;
   --app-radius-3xl: 10px;
-  --app-border-color: #d5dbe6;
-  --app-border-color-strong: #c4ccd9;
+  --app-border-color: #E2E8F0;
+  --app-border-color-strong: #cbd5e1;
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
   body {
-    @apply antialiased text-slate-800 bg-slate-50/50 min-h-screen;
+    @apply min-h-screen bg-background text-text-primary antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-white/70 backdrop-blur-md border transition-all duration-300;
+    @apply border bg-card/70 backdrop-blur-md transition-all duration-300;
     border-color: var(--app-border-color);
   }
 
@@ -52,11 +68,11 @@
   }
 
   .premium-gradient {
-    @apply bg-gradient-to-br from-brand-600 to-brand-700;
+    @apply bg-gradient-to-br from-primary to-primary-dark;
   }
 
   .nav-link-active {
-    @apply bg-brand-50 text-brand-700 ring-1 ring-brand-100/50;
+    @apply bg-brand-50 text-primary-dark ring-1 ring-brand-100/50;
   }
 
   .grabbing {
@@ -88,7 +104,7 @@
 }
 
 #reader button {
-  @apply bg-brand-600 text-white rounded-xl px-6 py-2.5 text-sm font-bold border-none mt-4 cursor-pointer transition-all duration-200 hover:bg-brand-700 active:scale-95;
+  @apply mt-4 cursor-pointer rounded-xl border-none bg-primary px-6 py-2.5 text-sm font-bold text-card transition-all duration-200 hover:bg-primary-dark active:scale-95;
 }
 
 #reader img {
@@ -114,7 +130,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+  @apply rounded-full bg-border transition-colors hover:bg-text-secondary/30;
 }
 
 /* Animations */
@@ -265,24 +281,24 @@
 }
 
 :where(
-  .border-slate-50,
-  .border-slate-100,
-  .border-slate-200,
-  [class~="border-slate-50/50"],
-  [class~="border-slate-100/50"],
-  [class~="border-slate-100/80"],
-  [class~="border-slate-200/60"],
-  [class~="border-slate-200/80"],
-  .border-gray-100,
-  .border-gray-200,
-  .border-white,
-  [class~="border-white/10"],
-  [class~="border-white/20"],
-  [class~="border-white/30"],
-  [class~="border-white/40"],
-  [class~="border-white/50"],
-  [class~="border-white/60"],
-  [class~="border-white/80"]
+  .border-border,
+  .border-border,
+  .border-border,
+  [class~="border-border/50"],
+  [class~="border-border/50"],
+  [class~="border-border/80"],
+  [class~="border-border/60"],
+  [class~="border-border/80"],
+  .border-border,
+  .border-border,
+  .border-card,
+  [class~="border-card/10"],
+  [class~="border-card/20"],
+  [class~="border-card/30"],
+  [class~="border-card/40"],
+  [class~="border-card/50"],
+  [class~="border-card/60"],
+  [class~="border-card/80"]
 ) {
   border-color: var(--app-border-color) !important;
 }
@@ -377,3 +393,4 @@
     padding-right: 0.75rem !important;
   }
 }
+

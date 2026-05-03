@@ -322,18 +322,18 @@ export default function ClientsPage() {
             {/* HEADER */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                    <h1 className="text-3xl font-black text-text-primary tracking-tight flex items-center gap-3">
                         <Users className="w-8 h-8 text-brand-600" />
                         Gerenciar Clientes
                     </h1>
-                    <p className="text-sm font-semibold text-slate-400">Cadastre e organize seus clientes para emiti-los no romaneio.</p>
+                    <p className="text-sm font-semibold text-text-secondary">Cadastre e organize seus clientes para emiti-los no romaneio.</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                     {selectedIds.length > 0 && (
                         <button
                             onClick={() => handleExportClientsPDF('selected')}
-                            className="h-12 px-5 font-bold bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-100 transition-all flex items-center justify-center gap-2 active:scale-95"
+                            className="h-12 px-5 font-bold bg-brand-50 text-primary rounded-2xl hover:bg-brand-100 transition-all flex items-center justify-center gap-2 active:scale-95"
                         >
                             <Download className="w-4 h-4" />
                             <span>Exportar Selecionados ({selectedIds.length})</span>
@@ -341,25 +341,25 @@ export default function ClientsPage() {
                     )}
                     <button
                         onClick={() => handleExportClientsPDF('all')}
-                        className="h-12 px-5 font-bold bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all flex items-center justify-center gap-2 active:scale-95"
+                        className="h-12 px-5 font-bold bg-border/50 text-text-secondary rounded-2xl hover:bg-border transition-all flex items-center justify-center gap-2 active:scale-95"
                     >
                         <Download className="w-4 h-4" />
                         <span>Exportar Todos</span>
                     </button>
                     <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-brand-500 transition-colors" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary/60 group-focus-within:text-brand-500 transition-colors" />
                         <input
                             type="text"
                             placeholder="Buscar cliente..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyDown={handleSearchKeyDown}
-                            className="w-full sm:w-64 h-12 pl-12 pr-4 text-sm bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 font-semibold shadow-sm transition-all"
+                            className="w-full sm:w-64 h-12 pl-12 pr-4 text-sm bg-card border border-border rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 font-semibold shadow-sm transition-all"
                         />
                     </div>
                     <button
                         onClick={openCreate}
-                        className="h-12 px-6 font-bold bg-brand-600 text-white rounded-2xl hover:bg-brand-700 transition-all shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 group shrink-0 active:scale-95"
+                        className="h-12 px-6 font-bold bg-brand-600 text-card rounded-2xl hover:bg-brand-700 transition-all shadow-lg shadow-primary/25 flex items-center justify-center gap-2 group shrink-0 active:scale-95"
                     >
                         <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
                         <span>Novo Cliente</span>
@@ -372,30 +372,30 @@ export default function ClientsPage() {
                 <div className="hidden md:block overflow-x-auto min-h-[400px] scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="bg-slate-50/50">
+                            <tr className="bg-background/50">
                                 <th className="px-8 py-4 w-10">
                                     <button
                                         onClick={toggleSelectAll}
-                                        className="p-1 rounded-lg hover:bg-slate-200 transition-colors"
+                                        className="p-1 rounded-lg hover:bg-border transition-colors"
                                     >
                                         {selectedIds.length === totalClients && totalClients > 0 ? (
                                             <CheckSquare className="w-5 h-5 text-brand-600" />
                                         ) : (
-                                            <Square className="w-5 h-5 text-slate-300" />
+                                            <Square className="w-5 h-5 text-text-secondary/60" />
                                         )}
                                     </button>
                                 </th>
-                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Cliente</th>
-                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Documento</th>
-                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Contato</th>
-                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Observação</th>
-                                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right">Ações</th>
+                                <th className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-[0.15em]">Cliente</th>
+                                <th className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-[0.15em]">Documento</th>
+                                <th className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-[0.15em]">Contato</th>
+                                <th className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-[0.15em]">Observação</th>
+                                <th className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-[0.15em] text-right">Ações</th>
                             </tr>
                         </thead>
                         <tbody ref={tableBodyRef} className="divide-y divide-slate-100">
                             {clients.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-20 text-center text-sm font-bold text-slate-400 italic">
+                                    <td colSpan={5} className="py-20 text-center text-sm font-bold text-text-secondary italic">
                                         Nenhum cliente {searchQuery ? 'encontrado' : 'cadastrado'}.
                                     </td>
                                 </tr>
@@ -403,43 +403,43 @@ export default function ClientsPage() {
                                 clients.map((c, index) => (
                                     <tr
                                         key={c.id}
-                                        className={`transition-colors border-b border-slate-100/50 ${focusedIndex === index ? 'bg-brand-50 border-l-4 border-brand-500 shadow-inner' : selectedIds.includes(c.id) ? 'bg-brand-50/50' : 'hover:bg-slate-50/50'}`}
+                                        className={`transition-colors border-b border-border/50 ${focusedIndex === index ? 'bg-brand-50 border-l-4 border-brand-500 shadow-inner' : selectedIds.includes(c.id) ? 'bg-brand-50/50' : 'hover:bg-background/50'}`}
                                     >
                                         <td className="px-8 py-5">
                                             <button
                                                 onClick={() => toggleSelectOne(c.id)}
-                                                className="p-1 rounded-lg hover:bg-slate-200 transition-colors"
+                                                className="p-1 rounded-lg hover:bg-border transition-colors"
                                             >
                                                 {selectedIds.includes(c.id) ? (
                                                     <CheckSquare className="w-5 h-5 text-brand-600" />
                                                 ) : (
-                                                    <Square className="w-5 h-5 text-slate-300" />
+                                                    <Square className="w-5 h-5 text-text-secondary/60" />
                                                 )}
                                             </button>
                                         </td>
                                         <td className="px-8 py-5" onClick={() => openEdit(c)}>
-                                            <p className="font-bold text-slate-800 text-sm truncate max-w-[200px]">{c.name}</p>
+                                            <p className="font-bold text-text-primary text-sm truncate max-w-[200px]">{c.name}</p>
                                         </td>
                                         <td className="px-8 py-5" onClick={() => openEdit(c)}>
-                                            <p className="font-mono text-xs font-bold text-slate-500">{c.document || '—'}</p>
+                                            <p className="font-mono text-xs font-bold text-text-secondary">{c.document || '—'}</p>
                                         </td>
                                         <td className="px-8 py-5 space-y-1">
                                             {c.phone && (
-                                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                                                <div className="flex items-center gap-2 text-xs font-semibold text-text-secondary">
                                                     <Phone className="w-3 h-3 text-brand-400" />
                                                     {maskPhone(c.phone)}
                                                 </div>
                                             )}
                                             {c.email && (
-                                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                                                <div className="flex items-center gap-2 text-xs font-semibold text-text-secondary">
                                                     <Mail className="w-3 h-3 text-brand-400" />
                                                     {c.email}
                                                 </div>
                                             )}
-                                            {!c.phone && !c.email && <span className="text-slate-300 text-xs italic">—</span>}
+                                            {!c.phone && !c.email && <span className="text-text-secondary/60 text-xs italic">—</span>}
                                         </td>
                                         <td className="px-8 py-5">
-                                            <p className="text-xs text-slate-500 italic truncate max-w-[200px]">{c.notes || '—'}</p>
+                                            <p className="text-xs text-text-secondary italic truncate max-w-[200px]">{c.notes || '—'}</p>
                                         </td>
                                         <td className="px-8 py-5">
                                             <div className="relative flex justify-end">
@@ -448,7 +448,7 @@ export default function ClientsPage() {
                                                         e.stopPropagation()
                                                         setOpenMenuId(openMenuId === c.id ? null : c.id)
                                                     }}
-                                                    className={`p-2.5 rounded-xl transition-all ${openMenuId === c.id ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
+                                                    className={`p-2.5 rounded-xl transition-all ${openMenuId === c.id ? 'text-brand-600 bg-brand-50' : 'text-text-secondary hover:text-text-primary hover:bg-border/50'}`}
                                                 >
                                                     <MoreVertical className="w-5 h-5" />
                                                 </button>
@@ -456,17 +456,17 @@ export default function ClientsPage() {
                                                 {openMenuId === c.id && (
                                                     <>
                                                         <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                                                        <div className={`absolute right-0 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 animate-in fade-in zoom-in-95 duration-200 
+                                                        <div className={`absolute right-0 w-44 bg-card rounded-2xl shadow-2xl border border-border z-50 py-2 animate-in fade-in zoom-in-95 duration-200 
                                                             ${index === clients.length - 1 && clients.length > 2 ? 'bottom-full mb-2 origin-bottom-right' : 'top-12 origin-top-right'}`}>
                                                             <button
                                                                 onClick={() => { openEdit(c); setOpenMenuId(null); }}
-                                                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition-colors"
+                                                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-text-secondary hover:bg-background hover:text-brand-600 transition-colors"
                                                             >
                                                                 <Pencil className="w-4 h-4" /> Editar
                                                             </button>
                                                             <button
                                                                 onClick={() => { setDeleteConfirm(c.id); setOpenMenuId(null); }}
-                                                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors"
+                                                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-error hover:bg-error/10 transition-colors"
                                                             >
                                                                 <Trash2 className="w-4 h-4" /> Excluir
                                                             </button>
@@ -486,19 +486,19 @@ export default function ClientsPage() {
                 {/* Mobile View - Cards */}
                 <div className="md:hidden divide-y divide-slate-100">
                     {clients.length === 0 ? (
-                        <div className="py-20 text-center text-sm font-bold text-slate-400 italic">
+                        <div className="py-20 text-center text-sm font-bold text-text-secondary italic">
                             Nenhum cliente {searchQuery ? 'encontrado' : 'cadastrado'}.
                         </div>
                     ) : (
                         clients.map((c) => (
                             <div
                                 key={c.id}
-                                className="p-4 space-y-3 active:bg-slate-50 transition-colors border-b border-slate-100/50"
+                                className="p-4 space-y-3 active:bg-background transition-colors border-b border-border/50"
                             >
                                 <div className="flex justify-between items-start">
                                     <div className="space-y-1 min-w-0" onClick={() => openEdit(c)}>
-                                        <h3 className="font-bold text-slate-800 text-sm truncate">{c.name}</h3>
-                                        <p className="font-mono text-[10px] font-bold text-slate-400 uppercase tracking-widest">{c.document || 'Sem Documento'}</p>
+                                        <h3 className="font-bold text-text-primary text-sm truncate">{c.name}</h3>
+                                        <p className="font-mono text-[10px] font-bold text-text-secondary uppercase tracking-widest">{c.document || 'Sem Documento'}</p>
                                     </div>
                                     <div className="relative">
                                         <button
@@ -506,23 +506,23 @@ export default function ClientsPage() {
                                                 e.stopPropagation()
                                                 setOpenMenuId(openMenuId === c.id ? null : c.id)
                                             }}
-                                            className="p-2 bg-slate-50 text-slate-400 rounded-xl"
+                                            className="p-2 bg-background text-text-secondary rounded-xl"
                                         >
                                             <MoreVertical className="w-5 h-5" />
                                         </button>
                                         {openMenuId === c.id && (
                                             <>
                                                 <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                                                <div className="absolute right-0 top-12 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-4 max-sm:top-auto max-sm:w-auto max-sm:rounded-2xl">
+                                                <div className="absolute right-0 top-12 w-44 bg-card rounded-2xl shadow-2xl border border-border z-50 py-2 max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-4 max-sm:top-auto max-sm:w-auto max-sm:rounded-2xl">
                                                     <button
                                                         onClick={() => { openEdit(c); setOpenMenuId(null); }}
-                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600"
+                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-text-secondary"
                                                     >
                                                         <Pencil className="w-4 h-4" /> Editar
                                                     </button>
                                                     <button
                                                         onClick={() => { setDeleteConfirm(c.id); setOpenMenuId(null); }}
-                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500"
+                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-error"
                                                     >
                                                         <Trash2 className="w-4 h-4" /> Excluir
                                                     </button>
@@ -533,15 +533,15 @@ export default function ClientsPage() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-3 pt-1">
                                     <div className="space-y-1">
-                                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter">Contato</p>
-                                        <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                        <p className="text-[9px] font-black text-text-secondary/60 uppercase tracking-tighter">Contato</p>
+                                        <p className="text-xs font-bold text-text-secondary flex items-center gap-1.5">
                                             <Phone className="w-3 h-3" />
                                             {c.phone ? maskPhone(c.phone) : '—'}
                                         </p>
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter">Email</p>
-                                        <p className="text-xs font-bold text-slate-600 truncate flex items-center gap-1.5">
+                                        <p className="text-[9px] font-black text-text-secondary/60 uppercase tracking-tighter">Email</p>
+                                        <p className="text-xs font-bold text-text-secondary truncate flex items-center gap-1.5">
                                             <Mail className="w-3 h-3" />
                                             {c.email || '—'}
                                         </p>
@@ -554,15 +554,15 @@ export default function ClientsPage() {
 
                 {/* Paginação */}
                 {totalPages > 1 && (
-                    <div className="px-8 py-6 border-t border-slate-100/50 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/30">
-                        <p className="text-xs font-bold text-slate-400 order-2 sm:order-1">
-                            Mostrando <span className="text-slate-600">{(page - 1) * perPage + 1}–{Math.min(page * perPage, totalClients)}</span> de <span className="text-slate-600">{totalClients}</span> clientes
+                    <div className="px-8 py-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4 bg-background/30">
+                        <p className="text-xs font-bold text-text-secondary order-2 sm:order-1">
+                            Mostrando <span className="text-text-secondary">{(page - 1) * perPage + 1}–{Math.min(page * perPage, totalClients)}</span> de <span className="text-text-secondary">{totalClients}</span> clientes
                         </p>
                         <div className="flex items-center gap-2 order-1 sm:order-2">
                             <button
                                 onClick={() => fetchClients(page - 1)}
                                 disabled={page <= 1}
-                                className="h-10 px-4 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+                                className="h-10 px-4 text-xs font-bold text-text-secondary bg-card border border-border rounded-xl hover:bg-background transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
                             >
                                 Anterior
                             </button>
@@ -571,12 +571,12 @@ export default function ClientsPage() {
                                     .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
                                     .map((p, i, arr) => (
                                         <React.Fragment key={p}>
-                                            {i > 0 && arr[i - 1] !== p - 1 && <span className="text-slate-300 px-1 font-bold">...</span>}
+                                            {i > 0 && arr[i - 1] !== p - 1 && <span className="text-text-secondary/60 px-1 font-bold">...</span>}
                                             <button
                                                 onClick={() => fetchClients(p)}
                                                 className={`w-10 h-10 text-xs font-bold rounded-xl transition-all shadow-sm ${p === page
-                                                    ? 'bg-brand-600 text-white'
-                                                    : 'bg-white text-slate-500 border border-slate-200 hover:border-brand-300 hover:text-brand-600'
+                                                    ? 'bg-brand-600 text-card'
+                                                    : 'bg-card text-text-secondary border border-border hover:border-brand-300 hover:text-brand-600'
                                                     }`}
                                             >
                                                 {p}
@@ -588,7 +588,7 @@ export default function ClientsPage() {
                             <button
                                 onClick={() => fetchClients(page + 1)}
                                 disabled={page >= totalPages}
-                                className="h-10 px-4 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+                                className="h-10 px-4 text-xs font-bold text-text-secondary bg-card border border-border rounded-xl hover:bg-background transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
                             >
                                 Próximo
                             </button>

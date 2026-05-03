@@ -64,24 +64,24 @@ export default function BulkEmailModal({
         <div className="fixed inset-0 z-[100] overflow-y-auto outline-none focus:outline-none">
             <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
                 <div
-                    className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+                    className="fixed inset-0 bg-text-primary/60 backdrop-blur-sm animate-in fade-in duration-300"
                     onClick={onClose}
                 />
 
-                <div className="bg-white rounded-[2.5rem] w-full max-w-3xl relative z-10 shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="bg-card rounded-[2.5rem] w-full max-w-3xl relative z-10 shadow-2xl animate-in zoom-in-95 duration-300 border border-border overflow-hidden flex flex-col max-h-[90vh]">
                     <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-brand-50 flex items-center justify-center text-brand-600">
                                 <Mail className="w-6 h-6" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-slate-900 tracking-tight">Enviar E-mail em Massa</h3>
-                                <p className="text-xs font-semibold text-slate-400">Base atual: {totalCount} usuários cadastrados</p>
+                                <h3 className="text-xl font-black text-text-primary tracking-tight">Enviar E-mail em Massa</h3>
+                                <p className="text-xs font-semibold text-text-secondary">Base atual: {totalCount} usuários cadastrados</p>
                             </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors"
+                            className="p-2 rounded-xl hover:bg-border/50 text-text-secondary transition-colors"
                         >
                             <X className="w-6 h-6" />
                         </button>
@@ -100,8 +100,8 @@ export default function BulkEmailModal({
                                     disabled={sending}
                                     className={`h-12 rounded-2xl text-xs font-black uppercase tracking-wider border transition-all flex items-center justify-center gap-2 ${
                                         recipientScope === option.value
-                                            ? 'bg-brand-600 text-white border-brand-600 shadow-lg shadow-brand-500/20'
-                                            : 'bg-white text-slate-500 border-slate-200 hover:border-brand-200'
+                                            ? 'bg-brand-600 text-card border-brand-600 shadow-lg shadow-primary/20'
+                                            : 'bg-card text-text-secondary border-border hover:border-brand-200'
                                     }`}
                                 >
                                     {recipientScope === option.value && <CheckCircle2 className="w-4 h-4" />}
@@ -112,12 +112,12 @@ export default function BulkEmailModal({
 
                         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Plano</label>
+                                <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">Plano</label>
                                 <select
                                     value={planId}
                                     onChange={(e) => setPlanId(e.target.value)}
                                     disabled={sending}
-                                    className="w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 transition-all"
+                                    className="w-full h-12 bg-background border border-border rounded-2xl px-4 text-sm font-bold text-text-secondary focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 transition-all"
                                 >
                                     <option value="all">Todos os planos</option>
                                     {plans.map((plan) => (
@@ -134,7 +134,7 @@ export default function BulkEmailModal({
                                 className={`h-12 px-5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
                                     excludeAdmins
                                         ? 'bg-orange-50 text-orange-700 border-orange-100'
-                                        : 'bg-slate-50 text-slate-500 border-slate-100'
+                                        : 'bg-background text-text-secondary border-border'
                                 }`}
                             >
                                 <Shield className="w-4 h-4" />
@@ -143,35 +143,35 @@ export default function BulkEmailModal({
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assunto</label>
+                            <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">Assunto</label>
                             <input
                                 value={subject}
                                 onChange={(e) => setSubject(e.target.value)}
                                 maxLength={120}
                                 disabled={sending}
                                 placeholder="Assunto do e-mail"
-                                className="w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 text-sm font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 transition-all"
+                                className="w-full h-12 bg-background border border-border rounded-2xl px-4 text-sm font-bold text-text-primary focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 transition-all"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mensagem</label>
+                            <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">Mensagem</label>
                             <textarea
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
                                 maxLength={10000}
                                 disabled={sending}
                                 placeholder="Escreva a mensagem para os usuários"
-                                className="w-full min-h-56 bg-slate-50 border border-slate-100 rounded-3xl p-5 text-sm font-semibold text-slate-700 leading-7 resize-y focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 transition-all"
+                                className="w-full min-h-56 bg-background border border-border rounded-3xl p-5 text-sm font-semibold text-text-secondary leading-7 resize-y focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 transition-all"
                             />
                         </div>
                     </div>
 
-                    <div className="px-8 py-6 bg-slate-50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-slate-100">
+                    <div className="px-8 py-6 bg-background flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-border">
                         <button
                             onClick={onClose}
                             disabled={sending}
-                            className="px-6 h-12 rounded-2xl font-bold text-slate-500 hover:text-slate-800 transition-all"
+                            className="px-6 h-12 rounded-2xl font-bold text-text-secondary hover:text-text-primary transition-all"
                         >
                             Cancelar
                         </button>
@@ -181,12 +181,12 @@ export default function BulkEmailModal({
                             disabled={!canSend}
                             className={`px-8 h-12 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all ${
                                 canSend
-                                    ? 'bg-brand-600 text-white shadow-xl shadow-brand-500/20 hover:scale-[1.02] active:scale-95'
-                                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                    ? 'bg-brand-600 text-card shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95'
+                                    : 'bg-border text-text-secondary cursor-not-allowed'
                             }`}
                         >
                             {sending ? (
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <div className="w-5 h-5 border-2 border-card/30 border-t-white rounded-full animate-spin" />
                             ) : (
                                 <Send className="w-5 h-5" />
                             )}
