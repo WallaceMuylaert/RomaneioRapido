@@ -33,8 +33,8 @@ function RouteLoader() {
   )
 }
 
-function LazyPage({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<RouteLoader />}>{children}</Suspense>
+function LazyPage({ children, fallback = <RouteLoader /> }: { children: React.ReactNode; fallback?: React.ReactNode }) {
+  return <Suspense fallback={fallback}>{children}</Suspense>
 }
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -51,10 +51,14 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return token ? <>{children}</> : <Navigate to="/login" replace />
 }
 
-function PublicRoute({ children }: { children: React.ReactNode }) {
+function PublicRoute({ children, loadingFallback }: { children: React.ReactNode; loadingFallback?: React.ReactNode }) {
   const { token, isLoading } = useAuth()
 
   if (isLoading) {
+    if (loadingFallback !== undefined) {
+      return <>{loadingFallback}</>
+    }
+
     return (
       <div className="min-h-screen bg-background p-6 flex items-center justify-center">
         <LoadingOverlay compact message="Verificando sessão" />
@@ -92,8 +96,8 @@ const router = createBrowserRouter([
   {
     path: "/login",
     element: (
-      <PublicRoute>
-        <LazyPage><LoginPage /></LazyPage>
+      <PublicRoute loadingFallback={null}>
+        <LazyPage fallback={null}><LoginPage /></LazyPage>
       </PublicRoute>
     ),
   },
