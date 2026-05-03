@@ -193,7 +193,7 @@ export default function LandingPage() {
                     <div className="relative mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-8">
                         <div className="grid gap-10 py-12 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:py-16">
                             <div>
-                                <p className="relative mb-5 inline-flex items-center rounded-2xl border border-brand-100 bg-card px-5 py-2.5 text-sm font-black text-primary-dark">
+                                <p className="relative mb-2 inline-flex items-center rounded-2xl border border-brand-100 bg-card px-5 py-2.5 text-sm font-black text-primary-dark">
                                     Planos a partir de R$99
                                     <span className="absolute -bottom-1 left-6 h-2.5 w-2.5 rotate-45 border-b border-r border-brand-100 bg-card" />
                                 </p>
@@ -230,12 +230,12 @@ export default function LandingPage() {
                                 </div>
                             </div>
 
-                            <div className="relative rounded-2xl bg-card pb-8 sm:pb-10" aria-label="Profissionais usando o Romaneio Rápido">
-                                <div className="relative rounded-2xl border border-border bg-card [perspective:1100px]">
+                            <div className="relative rounded-2xl sm:bg-card sm:pb-10" aria-label="Demonstração do Romaneio Rápido">
+                                <div className="relative flex justify-center sm:block rounded-2xl sm:border sm:border-border sm:bg-card sm:[perspective:1100px]">
                                     <img
                                         src={heroTeamImage}
                                         alt="Profissionais conferindo informações no computador"
-                                        className="h-full min-h-[340px] w-full rounded-2xl object-cover sm:min-h-[460px]"
+                                        className="hidden h-full w-full rounded-2xl object-cover sm:block sm:min-h-[460px]"
                                     />
                                     <RomaneioImagePreview />
                                 </div>
@@ -245,15 +245,15 @@ export default function LandingPage() {
                 </section>
 
                 <section
-                    className="border-b border-primary-dark bg-primary py-8 text-card"
+                    className="border-b border-primary-dark bg-primary py-6 sm:py-8 text-card"
                 >
-                    <div className="mx-auto grid max-w-[90rem] gap-6 px-4 sm:px-6 lg:grid-cols-[auto_1fr] lg:items-center lg:px-8">
+                    <div className="mx-auto grid max-w-[90rem] gap-4 sm:gap-6 px-4 sm:px-6 lg:grid-cols-[auto_1fr] lg:items-center lg:px-8">
                         <div className="flex justify-center lg:justify-start">
-                            <div className="flex -space-x-3">
+                            <div className="flex -space-x-2 sm:-space-x-3">
                                 {userPhotos.map((photo, index) => (
                                     <div
                                         key={photo}
-                                        className="h-14 w-14 shrink-0 overflow-hidden rounded-full border-[3px] border-card bg-brand-50"
+                                        className="h-10 w-10 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-full border-2 sm:border-[3px] border-primary bg-brand-50"
                                         style={{ zIndex: userPhotos.length - index }}
                                     >
                                         <img
@@ -266,17 +266,17 @@ export default function LandingPage() {
                                         />
                                     </div>
                                 ))}
-                                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-[3px] border-card bg-card text-3xl font-black text-primary">
+                                <div className="flex h-10 w-10 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-full border-2 sm:border-[3px] border-primary bg-card text-xl sm:text-3xl font-black text-primary">
                                     +
                                 </div>
                             </div>
                         </div>
 
                         <div className="text-center lg:text-left">
-                            <p className="text-2xl font-black tracking-tight sm:text-3xl">
+                            <p className="text-xl font-black tracking-tight sm:text-3xl">
                                 +1.500 usuários organizam estoque e romaneios com o Romaneio Rápido
                             </p>
-                            <p className="mt-2 text-sm font-bold text-brand-50/90">
+                            <p className="mt-1 sm:mt-2 text-xs sm:text-sm font-bold text-brand-50/90">
                                 Uma rotina mais clara para cadastrar produtos, separar pedidos e registrar saídas sem complicação.
                             </p>
                         </div>
@@ -349,16 +349,6 @@ export default function LandingPage() {
                             >
                                 Recursos que transformam seu estoque.
                             </h3>
-
-                            <div className="flex lg:justify-end">
-                                <button
-                                    onClick={start}
-                                    className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-8 text-sm font-black text-card hover:bg-primary-dark active:scale-[0.98] transition-all sm:h-14 sm:px-10"
-                                >
-                                    Saiba mais
-                                    <ArrowRight className="h-4 w-4" />
-                                </button>
-                            </div>
                         </div>
 
                         <div className="mt-10 border-y border-border sm:mt-12">
@@ -589,7 +579,7 @@ export default function LandingPage() {
 
 function RomaneioImagePreview() {
     return (
-        <div className="absolute -bottom-7 right-3 w-[min(82%,330px)] origin-bottom-right rotate-[0.2deg] rounded-2xl border border-card/80 bg-card/95 p-3 backdrop-blur-md shadow-[0_24px_55px_rgba(15,23,42,0.28),0_8px_18px_rgba(37,99,235,0.16)] [transform:translateZ(34px)_rotateX(5deg)_rotateY(-8deg)] sm:-bottom-8 sm:right-5 sm:w-[20.5rem]">
+        <div className="relative mx-auto w-full max-w-[300px] rounded-2xl border border-card/80 bg-card/95 p-3 shadow-[0_24px_55px_rgba(15,23,42,0.18),0_8px_18px_rgba(37,99,235,0.12)] sm:absolute sm:-bottom-8 sm:right-5 sm:w-[20.5rem] sm:max-w-none sm:origin-bottom-right sm:rotate-[0.2deg] sm:backdrop-blur-md sm:shadow-[0_24px_55px_rgba(15,23,42,0.28),0_8px_18px_rgba(37,99,235,0.16)] sm:[transform:translateZ(34px)_rotateX(5deg)_rotateY(-8deg)]">
             <div className="pointer-events-none absolute -inset-2 -z-10 rounded-2xl bg-primary/10 blur-xl" />
             <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
