@@ -3,7 +3,7 @@
 @theme {
   --color-primary: #2563EB;
   --color-primary-dark: #1D4ED8;
-  --color-background: #F8FAFC;
+  --color-background: #EEF2F7;
   --color-card: #FFFFFF;
   --color-text-primary: #0F172A;
   --color-text-secondary: #64748B;
@@ -40,7 +40,7 @@
   --app-radius-xl: 6px;
   --app-radius-2xl: 8px;
   --app-radius-3xl: 10px;
-  --app-border-color: #E2E8F0;
+  --app-border-color: #D7DEE8;
   --app-border-color-strong: #cbd5e1;
 }
 
@@ -352,7 +352,7 @@
   }
 
   body {
-    background: #f8fafc;
+    background: #eef2f7;
   }
 
   :where(button, a, input, select, textarea) {

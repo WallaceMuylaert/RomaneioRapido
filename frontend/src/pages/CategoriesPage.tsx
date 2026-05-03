@@ -5,7 +5,7 @@ import api from '../services/api'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
 import { translateError } from '../utils/errors'
-import { Plus, Pencil, Trash2, X, Loader2, Tags, GripVertical, Check, MoreVertical, ArrowDownAZ } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Loader2, Tags, GripVertical, Check, MoreVertical, ArrowDownAZ, ArrowUp, ArrowDown } from 'lucide-react'
 import ConfirmModal from '../components/ConfirmModal'
 
 interface Category {
@@ -132,6 +132,14 @@ export default function CategoriesPage() {
         toast.success('Categorias ordenadas de A-Z (clique em Salvar para confirmar)', { id: 'category-success' })
     }
 
+    const moveCategory = (fromIndex: number, toIndex: number) => {
+        if (toIndex < 0 || toIndex >= reorderList.length || fromIndex === toIndex) return
+        const newList = [...reorderList]
+        const [movedItem] = newList.splice(fromIndex, 1)
+        newList.splice(toIndex, 0, movedItem)
+        setReorderList(newList)
+    }
+
     // Drag and Drop handlers
     const handleDragStart = (index: number) => {
         dragItem.current = index
@@ -231,7 +239,7 @@ export default function CategoriesPage() {
                             {categories.length > 1 && (
                                 <button
                                     onClick={startReorder}
-                                    className="h-9 flex-1 sm:flex-none px-4 text-[13px] font-semibold border border-border text-text-secondary rounded-lg hover:bg-background transition-colors flex items-center justify-center gap-2"
+                                    className="h-9 flex-1 sm:flex-none px-4 text-[13px] font-semibold border border-border bg-card text-text-secondary rounded-lg hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 transition-colors flex items-center justify-center gap-2"
                                 >
                                     <GripVertical className="w-4 h-4" /> Reorganizar
                                 </button>
@@ -269,9 +277,18 @@ export default function CategoriesPage() {
             </div>
 
             {isReordering && (
-                <div className="mb-4 px-4 py-2.5 bg-warning/10 border border-warning/30 rounded-xl text-xs font-medium text-warning flex items-center gap-2">
-                    <GripVertical className="w-4 h-4 text-warning" />
-                    Arraste e solte as categorias para reorganizar. Clique em "Salvar Ordem" para confirmar.
+                <div className="mb-4 rounded-2xl border border-brand-100 bg-card p-4 text-sm text-text-secondary">
+                    <div className="flex items-start gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-brand-100 bg-brand-50 text-primary">
+                            <GripVertical className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <p className="font-black text-text-primary">Reorganize a ordem das categorias</p>
+                            <p className="mt-1 text-xs font-semibold leading-5 text-text-secondary">
+                                No computador, arraste os itens. No celular, use as setas para subir ou descer e depois salve a ordem.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -298,24 +315,46 @@ export default function CategoriesPage() {
                             onDragEnd={handleDragEnd}
                             onDragOver={handleDragOver}
                             className={`
-                                bg-card rounded-xl border p-4 flex items-center gap-4 cursor-grab active:cursor-grabbing select-none
+                                bg-card rounded-2xl border p-3 sm:p-4 flex items-center gap-3 sm:gap-4 cursor-grab active:cursor-grabbing select-none
                                 transition-all duration-200
                                 ${dragIndex === index ? 'opacity-40 scale-95 border-blue-300 shadow-lg' : 'border-border shadow-sm hover:shadow-md'}
                                 ${dragOverIndex === index && dragIndex !== index ? 'border-blue-400 border-2 bg-brand-50/30' : ''}
                             `}
                         >
-                            <div className="text-text-secondary/60 hover:text-text-secondary transition-colors">
+                            <div className="hidden sm:flex text-text-secondary/60 hover:text-text-secondary transition-colors">
                                 <GripVertical className="w-5 h-5" />
                             </div>
-                            <div className="w-8 h-8 rounded-lg bg-border/50 text-text-secondary flex items-center justify-center text-sm font-bold shrink-0">
+                            <div className="w-9 h-9 rounded-xl border border-border bg-background text-text-secondary flex items-center justify-center text-sm font-black shrink-0">
                                 {index + 1}
                             </div>
-                            <div className="w-9 h-9 rounded-lg bg-brand-50 text-primary flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 rounded-xl border border-brand-100 bg-brand-50 text-primary flex items-center justify-center shrink-0">
                                 <Tags className="w-4 h-4" />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h3 className="text-sm font-bold text-text-primary">{c.name}</h3>
                                 {c.description && <p className="text-xs text-text-secondary mt-0.5 truncate">{c.description}</p>}
+                            </div>
+                            <div className="flex shrink-0 items-center gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => moveCategory(index, index - 1)}
+                                    disabled={index === 0}
+                                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-text-secondary transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-35"
+                                    title="Subir categoria"
+                                    aria-label={`Subir ${c.name}`}
+                                >
+                                    <ArrowUp className="h-4 w-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => moveCategory(index, index + 1)}
+                                    disabled={index === displayList.length - 1}
+                                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-text-secondary transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-35"
+                                    title="Descer categoria"
+                                    aria-label={`Descer ${c.name}`}
+                                >
+                                    <ArrowDown className="h-4 w-4" />
+                                </button>
                             </div>
                         </div>
                     ))}

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import LoadingOverlay from '../components/LoadingOverlay'
@@ -12,12 +12,14 @@ import loginWarehouseImage from '../assets/pexels-erwinfhm-24862481.jpg'
 export default function LoginPage() {
     const { login } = useAuth()
     const navigate = useNavigate()
+    const authFormRef = useRef<HTMLFormElement>(null)
 
     // Estados Compartilhados
     const [isLoading, setIsLoading] = useState(false)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
+    const [isHeroImageLoaded, setIsHeroImageLoaded] = useState(false)
 
     // Estado de Alternância (Login vs Cadastro)
     const [isRegistering, setIsRegistering] = useState(false)
@@ -49,6 +51,19 @@ export default function LoginPage() {
         type: 'info'
     })
 
+    useEffect(() => {
+        const link = document.createElement('link')
+        link.rel = 'preload'
+        link.as = 'image'
+        link.href = loginWarehouseImage
+        link.fetchPriority = 'high'
+        document.head.appendChild(link)
+
+        return () => {
+            document.head.removeChild(link)
+        }
+    }, [])
+
     const validateForm = () => {
         const newErrors: typeof errors = {}
 
@@ -69,6 +84,19 @@ export default function LoginPage() {
 
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
+    }
+
+    const storeBrowserCredentials = async () => {
+        if (isRegistering || !authFormRef.current || !('credentials' in navigator) || !('PasswordCredential' in window)) {
+            return
+        }
+
+        try {
+            const credential = new (window as any).PasswordCredential(authFormRef.current)
+            await navigator.credentials.store(credential)
+        } catch (err) {
+            console.warn('Navegador não permitiu salvar credenciais automaticamente.', err)
+        }
     }
 
     const handleSubmit = async (e: FormEvent) => {
@@ -96,6 +124,7 @@ export default function LoginPage() {
             } else {
                 // Fluxo de Login
                 await login(normalizedEmail, password)
+                await storeBrowserCredentials()
                 navigate('/dashboard')
             }
         } catch (err: any) {
@@ -170,7 +199,11 @@ export default function LoginPage() {
                     src={loginWarehouseImage}
                     alt=""
                     aria-hidden="true"
-                    className="absolute inset-0 h-full w-full scale-[1.03]"
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
+                    onLoad={() => setIsHeroImageLoaded(true)}
+                    className={`absolute inset-0 h-full w-full scale-[1.03] object-cover transition-opacity duration-300 ${isHeroImageLoaded ? 'opacity-100' : 'opacity-0'}`}
                 />
                 <div className="absolute inset-0 bg-brand-950/55 mix-blend-multiply" />
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-900/78 via-slate-950/66 to-slate-950/88" />
@@ -251,7 +284,14 @@ export default function LoginPage() {
                         </div>
 
                         {/* Formulário */}
-                        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
+                        <form
+                            ref={authFormRef}
+                            onSubmit={handleSubmit}
+                            className="space-y-6"
+                            autoComplete="on"
+                            method="post"
+                            action="/login"
+                        >
                             {isRegistering && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                                     <label className="text-[11px] font-black text-text-secondary uppercase tracking-widest ml-1">Nome Completo</label>
@@ -286,10 +326,10 @@ export default function LoginPage() {
                                     <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                         <Mail className={`h-4 w-4 ${errors.email ? 'text-red-400' : 'text-text-secondary'}`} />
                                     </div>
-                                    <input
-                                        id="email"
-                                        name="username"
-                                        type="email"
+                                        <input
+                                            id="email"
+                                            name="username"
+                                            type="email"
                                         value={email}
                                         autoComplete="username"
                                         onChange={(e) => {

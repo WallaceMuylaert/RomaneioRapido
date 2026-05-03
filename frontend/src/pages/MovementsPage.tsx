@@ -764,17 +764,17 @@ export default function MovementsPage() {
                     </div>
                 </div>
 
-                <div className="flex justify-center pt-8 border-t border-border">
-                    <div className="grid w-full grid-cols-2 gap-1 rounded-2xl bg-border/50/50 p-1.5 sm:w-auto sm:flex sm:items-center">
+                <div className="hidden">
+                    <div className="grid w-full grid-cols-2 gap-1.5 rounded-2xl border border-border bg-card p-1.5 sm:w-auto sm:flex sm:items-center">
                         <button
                             onClick={() => {
                                 setViewMode('movements');
                                 setTypeFilter('');
                                 setPage(1);
                             }}
-                            className={`flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl px-3 text-[11px] font-black uppercase tracking-widest transition-all sm:px-8 sm:text-xs ${viewMode === 'movements'
-                                ? 'bg-card text-text-primary shadow-sm border border-border'
-                                : 'text-text-secondary hover:text-text-secondary hover:bg-card/50'}`}
+                            className={`flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-[11px] font-black uppercase tracking-widest transition-all sm:px-8 sm:text-xs ${viewMode === 'movements'
+                                ? 'border-brand-200 bg-brand-50 text-brand-800'
+                                : 'border-transparent text-text-secondary hover:border-border hover:bg-background hover:text-text-primary'}`}
                         >
                             <Settings2 className="h-3.5 w-3.5 shrink-0" />
                             Relatório
@@ -785,9 +785,9 @@ export default function MovementsPage() {
                                 setTypeFilter('OUT');
                                 setPage(1);
                             }}
-                            className={`flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl px-3 text-[11px] font-black uppercase tracking-widest transition-all sm:px-8 sm:text-xs ${viewMode === 'romaneios'
-                                ? 'bg-card text-text-primary shadow-sm border border-border'
-                                : 'text-text-secondary hover:text-text-secondary hover:bg-card/50'}`}
+                            className={`flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-[11px] font-black uppercase tracking-widest transition-all sm:px-8 sm:text-xs ${viewMode === 'romaneios'
+                                ? 'border-brand-200 bg-brand-50 text-brand-800'
+                                : 'border-transparent text-text-secondary hover:border-border hover:bg-background hover:text-text-primary'}`}
                         >
                             <Share2 className="h-3.5 w-3.5 shrink-0" />
                             Romaneios
@@ -798,6 +798,36 @@ export default function MovementsPage() {
 
             {/* Table Area */}
             <div className="glass-card rounded-[2rem] overflow-hidden">
+                <div className="flex justify-center border-b border-border bg-card px-4 py-4">
+                    <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-border bg-background p-1 sm:w-auto sm:min-w-[22rem]">
+                        <button
+                            onClick={() => {
+                                setViewMode('movements');
+                                setTypeFilter('');
+                                setPage(1);
+                            }}
+                            className={`flex h-10 min-w-0 items-center justify-center gap-2 rounded-lg border px-3 text-[11px] font-black uppercase tracking-widest transition-all sm:px-8 sm:text-xs ${viewMode === 'movements'
+                                ? 'border-brand-200 bg-card text-brand-800'
+                                : 'border-transparent text-text-secondary hover:border-border hover:bg-card hover:text-text-primary'}`}
+                        >
+                            <Settings2 className="h-3.5 w-3.5 shrink-0" />
+                            RelatÃ³rio
+                        </button>
+                        <button
+                            onClick={() => {
+                                setViewMode('romaneios');
+                                setTypeFilter('OUT');
+                                setPage(1);
+                            }}
+                            className={`flex h-10 min-w-0 items-center justify-center gap-2 rounded-lg border px-3 text-[11px] font-black uppercase tracking-widest transition-all sm:px-8 sm:text-xs ${viewMode === 'romaneios'
+                                ? 'border-brand-200 bg-card text-brand-800'
+                                : 'border-transparent text-text-secondary hover:border-border hover:bg-card hover:text-text-primary'}`}
+                        >
+                            <Share2 className="h-3.5 w-3.5 shrink-0" />
+                            Romaneios
+                        </button>
+                    </div>
+                </div>
                 <div className="overflow-x-auto -mx-6 md:mx-0 pb-4 custom-scrollbar">
                     <div className="min-w-[1000px] md:min-w-full inline-block align-middle px-6 md:px-0">
                         <table className="w-full text-left">

@@ -377,6 +377,33 @@ export default function RomaneioPage() {
         }
     }
 
+    const getEmptyDraftMessage = async () => {
+        try {
+            const res = await api.get('/inventory/stock-levels', {
+                params: {
+                    skip: 0,
+                    limit: 1,
+                    sort_by: 'stock_quantity',
+                    order: 'desc'
+                }
+            })
+            const total = res.data.total || 0
+            const highestStock = res.data.items?.[0]?.stock_quantity || 0
+
+            if (total === 0) {
+                return 'Cadastre um produto no estoque antes de salvar uma separação.'
+            }
+
+            if (highestStock <= 0) {
+                return 'Nenhum produto possui saldo em estoque. Dê entrada em produtos antes de salvar a separação.'
+            }
+        } catch (err) {
+            console.error('Erro ao verificar estoque para salvar rascunho:', err)
+        }
+
+        return 'Adicione itens ao romaneio antes de salvar a separação.'
+    }
+
     const handleCancelRomaneio = () => {
         setConfirmConfig({
             isOpen: true,
@@ -403,7 +430,7 @@ export default function RomaneioPage() {
 
     const handleSavePending = async () => {
         if (cartItems.length === 0) {
-            toast.error('Adicione itens ao romaneio primeiro', { id: 'romaneio-error' })
+            toast.error(await getEmptyDraftMessage(), { id: 'romaneio-error' })
             return
         }
 
@@ -446,7 +473,11 @@ export default function RomaneioPage() {
             fetchPendingRomaneios()
             setActiveTab('separacao')
         } catch (err: any) {
-            toast.error(translateError(err), { id: 'romaneio-error' })
+            const detail = err.response?.data?.detail
+            const message = typeof detail === 'string' && detail.toLowerCase().includes('estoque insuficiente')
+                ? 'Não foi possível salvar a separação porque não há estoque suficiente para empenhar os itens. Ajuste as quantidades ou dê entrada no estoque.'
+                : translateError(detail ?? err)
+            toast.error(message, { id: 'romaneio-error' })
         } finally {
             setIsSavingPending(false)
         }
@@ -1164,7 +1195,7 @@ export default function RomaneioPage() {
                                 </button>
                                 <button
                                     onClick={handleSavePending}
-                                    disabled={isSavingPending || cartItems.length === 0}
+                                    disabled={isSavingPending}
                                     className="w-full h-12 bg-warning/10 hover:bg-warning/20 disabled:opacity-50 text-warning font-bold rounded-xl border border-warning/30 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
                                 >
                                     {isSavingPending ? 'Salvando...' : (
@@ -1275,7 +1306,7 @@ export default function RomaneioPage() {
                             </button>
                             <button
                                 onClick={handleSavePending}
-                                disabled={isSavingPending || cartItems.length === 0}
+                                disabled={isSavingPending}
                                 className="flex h-11 w-11 items-center justify-center rounded-xl border border-warning/30 bg-warning/10 text-warning disabled:opacity-40"
                                 title="Salvar separação"
                             >

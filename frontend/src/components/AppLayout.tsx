@@ -86,7 +86,7 @@ export default function AppLayout() {
     }
 
     return (
-        <div className="min-h-screen bg-background/50 flex transition-colors duration-500">
+        <div className="min-h-screen bg-background flex transition-colors duration-500">
             {/* Sidebar */}
             <aside className={`
         fixed inset-y-0 left-0 z-50 bg-card/80 backdrop-blur-xl border-r border-border flex flex-col

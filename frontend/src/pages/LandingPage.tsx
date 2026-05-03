@@ -7,7 +7,6 @@ import {
     Check,
     ClipboardList,
     FileText,
-    LifeBuoy,
     Mail,
     Menu,
     MessageCircle,
@@ -149,15 +148,6 @@ export default function LandingPage() {
                     </nav>
 
                     <div className="hidden items-center gap-2 md:flex">
-                        <a
-                            href={getWhatsAppLink('Olá! Gostaria de tirar dúvidas sobre o Romaneio Rápido.')}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex h-8 items-center gap-2 rounded-xl border border-success/20 bg-success/10 px-3 text-xs font-black text-success hover:border-success/30 transition-colors lg:h-9"
-                        >
-                            <LifeBuoy className="h-4 w-4" />
-                            Suporte
-                        </a>
                         <button
                             onClick={() => navigate('/login')}
                             className="h-8 px-3 text-[13px] font-bold text-text-secondary hover:text-primary transition-colors lg:h-9"
@@ -583,10 +573,11 @@ export default function LandingPage() {
                 href={getWhatsAppLink('Olá! Estou na Landing Page e gostaria de falar com o suporte.')}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="fixed bottom-5 right-5 z-[100] flex h-12 w-12 items-center justify-center rounded-xl border border-success/30 bg-success text-card hover:bg-success transition-colors"
+                className="fixed bottom-5 right-5 z-[100] inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-success/30 bg-success px-4 text-sm font-black text-card hover:bg-success transition-colors"
                 title="Falar com suporte"
             >
-                <MessageCircle className="h-6 w-6" />
+                <MessageCircle className="h-5 w-5" />
+                Suporte
             </a>
         </div>
     )
