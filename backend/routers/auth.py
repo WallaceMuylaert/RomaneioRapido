@@ -9,6 +9,7 @@ from backend.crud.users import get_user_by_email
 from backend.schemas.auth import Token, LoginRequest, UserResponse, UserUpdate, ForgotPasswordRequest, ResetPasswordRequest
 from backend.models.users import User
 from backend.config.logger import get_dynamic_logger
+from backend.utils.images import compress_image_base64
 
 logger = get_dynamic_logger("auth")
 
@@ -95,7 +96,7 @@ def update_me(request: Request, update_data: UserUpdate, db: Session = Depends(g
         if update_data.store_name is not None:
             current_user.store_name = update_data.store_name
         if update_data.photo_base64 is not None:
-            current_user.photo_base64 = update_data.photo_base64
+            current_user.photo_base64 = compress_image_base64(update_data.photo_base64)
         if update_data.pix_key is not None:
             current_user.pix_key = update_data.pix_key
         if update_data.password:

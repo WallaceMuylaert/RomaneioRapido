@@ -42,6 +42,16 @@ const parseCurrency = (value: string | number) => {
     return Number(cleaned) / 100;
 }
 
+const validateNonNegative = (value: number, label: string) => {
+    if (!Number.isFinite(value) || value < 0) {
+        throw new Error(`${label} deve ser maior ou igual a 0.`)
+    }
+}
+
+const numberChanged = (current: number, previous?: number | null) => {
+    return previous == null || Math.abs(current - previous) > 0.000001
+}
+
 interface Category {
     id: number
     name: string
@@ -349,15 +359,16 @@ export default function ProductsPage() {
         e.preventDefault()
         setSaving(true)
         try {
-            const payload = {
+            const price = typeof form.price === 'string' ? parseCurrency(form.price) : (parseFloat(form.price) || 0)
+            const costPrice = typeof form.cost_price === 'string' ? parseCurrency(form.cost_price) : (parseFloat(form.cost_price) || 0)
+            const stockQuantity = parseFloat(form.stock_quantity) || 0
+            const minStock = parseFloat(form.min_stock) || 0
+
+            const payload: any = {
                 name: form.name,
                 sku: form.sku || null,
                 barcode: form.barcode || null,
                 description: form.description || null,
-                price: typeof form.price === 'string' ? parseCurrency(form.price) : (parseFloat(form.price) || 0),
-                cost_price: typeof form.cost_price === 'string' ? parseCurrency(form.cost_price) : (parseFloat(form.cost_price) || 0),
-                stock_quantity: parseFloat(form.stock_quantity) || 0,
-                min_stock: parseFloat(form.min_stock) || 0,
                 unit: form.unit,
                 category_id: form.category_id ? parseInt(form.category_id) : null,
                 image_base64: form.image_base64 || null,
@@ -366,8 +377,32 @@ export default function ProductsPage() {
             }
 
             if (editingProduct) {
+                if (numberChanged(price, editingProduct.price) || price >= 0) {
+                    validateNonNegative(price, 'Preço de venda')
+                    payload.price = price
+                }
+                if (numberChanged(costPrice, editingProduct.cost_price) || costPrice >= 0) {
+                    validateNonNegative(costPrice, 'Preço de custo')
+                    payload.cost_price = costPrice
+                }
+                if (numberChanged(stockQuantity, editingProduct.stock_quantity) || stockQuantity >= 0) {
+                    validateNonNegative(stockQuantity, 'Quantidade')
+                    payload.stock_quantity = stockQuantity
+                }
+                if (numberChanged(minStock, editingProduct.min_stock) || minStock >= 0) {
+                    validateNonNegative(minStock, 'Estoque mínimo')
+                    payload.min_stock = minStock
+                }
                 await api.put(`/products/${editingProduct.id}`, payload)
             } else {
+                validateNonNegative(price, 'Preço de venda')
+                validateNonNegative(costPrice, 'Preço de custo')
+                validateNonNegative(stockQuantity, 'Quantidade')
+                validateNonNegative(minStock, 'Estoque mínimo')
+                payload.price = price
+                payload.cost_price = costPrice
+                payload.stock_quantity = stockQuantity
+                payload.min_stock = minStock
                 await api.post('/products/', payload)
             }
 
@@ -375,7 +410,7 @@ export default function ProductsPage() {
             fetchProducts()
             toast.success('Produto salvo com sucesso!', { id: 'product-success' })
         } catch (err: any) {
-            toast.error(translateError(err.response?.data?.detail) || 'Erro ao salvar produto', { id: 'product-error' })
+            toast.error(!err.response && err.message ? err.message : translateError(err.response?.data?.detail) || 'Erro ao salvar produto', { id: 'product-error' })
         } finally {
             setSaving(false)
         }
@@ -1282,6 +1317,7 @@ export default function ProductsPage() {
                                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Quantidade</label>
                                     <input
                                         type="number"
+                                        min="0"
                                         step={form.unit === 'UN' ? '1' : '0.01'}
                                         value={form.stock_quantity}
                                         onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })}
@@ -1293,6 +1329,7 @@ export default function ProductsPage() {
                                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Mínimo</label>
                                     <input
                                         type="number"
+                                        min="0"
                                         step={form.unit === 'UN' ? '1' : '0.01'}
                                         value={form.min_stock}
                                         onChange={(e) => setForm({ ...form, min_stock: e.target.value })}
