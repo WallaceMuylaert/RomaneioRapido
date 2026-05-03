@@ -765,18 +765,18 @@ export default function MovementsPage() {
                 </div>
 
                 <div className="flex justify-center pt-8 border-t border-slate-100">
-                    <div className="bg-slate-100/50 p-1.5 rounded-2xl flex items-center gap-1">
+                    <div className="grid w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100/50 p-1.5 sm:w-auto sm:flex sm:items-center">
                         <button
                             onClick={() => {
                                 setViewMode('movements');
                                 setTypeFilter('');
                                 setPage(1);
                             }}
-                            className={`px-8 h-10 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${viewMode === 'movements'
+                            className={`flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl px-3 text-[11px] font-black uppercase tracking-widest transition-all sm:px-8 sm:text-xs ${viewMode === 'movements'
                                 ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
                                 : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`}
                         >
-                            <Settings2 className="w-3.5 h-3.5" />
+                            <Settings2 className="h-3.5 w-3.5 shrink-0" />
                             Relatório
                         </button>
                         <button
@@ -785,11 +785,11 @@ export default function MovementsPage() {
                                 setTypeFilter('OUT');
                                 setPage(1);
                             }}
-                            className={`px-8 h-10 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${viewMode === 'romaneios'
+                            className={`flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl px-3 text-[11px] font-black uppercase tracking-widest transition-all sm:px-8 sm:text-xs ${viewMode === 'romaneios'
                                 ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
                                 : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`}
                         >
-                            <Share2 className="w-3.5 h-3.5" />
+                            <Share2 className="h-3.5 w-3.5 shrink-0" />
                             Romaneios
                         </button>
                     </div>
@@ -803,11 +803,11 @@ export default function MovementsPage() {
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="bg-slate-50/50">
-                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] sticky left-0 z-10">Data/Hora</th>
-                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] shrink-0">{viewMode === 'romaneios' ? 'Cliente / Romaneio' : 'Produto'}</th>
-                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-center">Tipo</th>
-                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">{viewMode === 'romaneios' ? 'Produto / Variantes' : 'Notas/Variantes'}</th>
-                                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right sticky right-0 z-10">Ações</th>
+                                    <th className="w-[132px] min-w-[132px] whitespace-nowrap bg-slate-50 px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 md:sticky md:left-0 md:z-10 md:shadow-[8px_0_16px_-16px_rgba(15,23,42,0.45)]">Data/Hora</th>
+                                    <th className="min-w-[240px] shrink-0 whitespace-nowrap px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">{viewMode === 'romaneios' ? 'Cliente / Romaneio' : 'Produto'}</th>
+                                    <th className="min-w-[120px] whitespace-nowrap px-8 py-4 text-center text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Tipo</th>
+                                    <th className="min-w-[260px] whitespace-nowrap px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">{viewMode === 'romaneios' ? 'Produto / Variantes' : 'Notas/Variantes'}</th>
+                                    <th className="w-[108px] min-w-[108px] whitespace-nowrap bg-slate-50 px-8 py-4 text-right text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 md:sticky md:right-0 md:z-10 md:shadow-[-8px_0_16px_-16px_rgba(15,23,42,0.45)]">Ações</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100/50 relative">
