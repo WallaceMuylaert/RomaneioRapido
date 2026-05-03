@@ -50,11 +50,6 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
         const ctx = canvas.getContext('2d')
         if (!ctx) return
 
-        const pixelRatio = window.devicePixelRatio || 1
-        canvas.width = exportSize * pixelRatio
-        canvas.height = exportSize * pixelRatio
-        ctx.scale(pixelRatio, pixelRatio)
-
         const cropX = completedCrop.x * scaleX
         const cropY = completedCrop.y * scaleY
         const cropWidth = completedCrop.width * scaleX
@@ -75,7 +70,7 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
 
         canvas.toBlob((blob) => {
             if (blob) onCropComplete(blob)
-        }, 'image/jpeg', 0.95)
+        }, 'image/jpeg', 0.82)
     }
 
     return (
