@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import type { FormEvent } from 'react'
-import api from '../services/api'
-import { useAuth } from '../context/AuthContext'
+import api from '@/services/api'
+import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
-import { translateError } from '../utils/errors'
-import { useSubscription } from '../hooks/useSubscription'
-import PlansGrid from '../components/PlansGrid'
+import { translateError } from '@/utils/errors'
+import { useSubscription } from '@/hooks/useSubscription'
+import PlansGrid from '@/components/PlansGrid'
 import {
     Camera,
     Loader2,
@@ -33,12 +33,12 @@ import {
     Sparkles,
     AlertTriangle
 } from 'lucide-react'
-import ImageCropper from '../components/ImageCropper'
-import { PLANS } from '../constants/plans'
-import LoadingOverlay from '../components/LoadingOverlay'
-import { maskPhone } from '../utils/masks'
-import PaymentStatusModal from '../components/PaymentStatusModal'
-import type { PaymentStatus } from '../components/PaymentStatusModal'
+import ImageCropper from '@/components/ImageCropper'
+import { PLANS } from '@/constants/plans'
+import LoadingOverlay from '@/components/LoadingOverlay'
+import { maskPhone } from '@/utils/masks'
+import PaymentStatusModal from '@/components/PaymentStatusModal'
+import type { PaymentStatus } from '@/components/PaymentStatusModal'
 
 interface ApiKeyItem {
     id: number

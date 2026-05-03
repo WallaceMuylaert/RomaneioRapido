@@ -1,5 +1,5 @@
 import { X, ShoppingBag, ArrowRight } from 'lucide-react'
-import type { CartItem } from './RomaneioExportModal'
+import type { CartItem } from '@/components/RomaneioExportModal'
 
 interface MovementDetailsModalProps {
     clientId: number | null

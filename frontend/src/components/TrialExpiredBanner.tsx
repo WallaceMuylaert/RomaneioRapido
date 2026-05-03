@@ -1,5 +1,5 @@
-import { useAuth } from '../context/AuthContext'
-import { PLANS } from '../constants/plans'
+import { useAuth } from '@/context/AuthContext'
+import { PLANS } from '@/constants/plans'
 import { Crown, ArrowUpRight, Clock, ShieldAlert } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 

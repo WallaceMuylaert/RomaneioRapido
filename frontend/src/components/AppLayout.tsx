@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
-import logo from '../assets/romaneiorapido_logo.png'
+import logo from '@/assets/romaneiorapido_logo.png'
 import {
     LayoutDashboard,
     Boxes,
@@ -20,12 +20,12 @@ import {
     AlertTriangle,
     LifeBuoy
 } from 'lucide-react'
-import { getWhatsAppLink } from '../constants/contacts'
+import { getWhatsAppLink } from '@/constants/contacts'
 import { useState, useEffect } from 'react'
-import TrialExpiredBanner from './TrialExpiredBanner'
-import PaymentFailedBanner from './PaymentFailedBanner'
-import { useSubscription } from '../hooks/useSubscription'
-import PlansGrid from './PlansGrid'
+import TrialExpiredBanner from '@/components/TrialExpiredBanner'
+import PaymentFailedBanner from '@/components/PaymentFailedBanner'
+import { useSubscription } from '@/hooks/useSubscription'
+import PlansGrid from '@/components/PlansGrid'
 
 const navItems = [
     { to: '/dashboard', label: 'Painel', icon: LayoutDashboard },

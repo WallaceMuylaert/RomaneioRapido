@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useBlocker } from 'react-router-dom'
-import api from '../services/api'
+import api from '@/services/api'
 import { toast } from 'react-hot-toast'
-import { translateError } from '../utils/errors'
+import { translateError } from '@/utils/errors'
 import {
     ScanBarcode,
     Plus,
@@ -23,15 +23,15 @@ import {
     ChevronDown,
     ChevronUp
 } from 'lucide-react'
-import BarcodeScanner from '../components/BarcodeScanner'
-import RomaneioExportModal from '../components/RomaneioExportModal'
-import type { CartItem } from '../components/RomaneioExportModal'
-import { isIntegerUnit } from '../utils/units'
-import ClientModal from '../components/ClientModal'
-import ConfirmModal from '../components/ConfirmModal'
-import DiscountCalculatorModal from '../components/DiscountCalculatorModal'
-import { maskCurrency, unmaskCurrency } from '../utils/masks'
-import { soundEffects } from '../utils/sounds'
+import BarcodeScanner from '@/components/BarcodeScanner'
+import RomaneioExportModal from '@/components/RomaneioExportModal'
+import type { CartItem } from '@/components/RomaneioExportModal'
+import { isIntegerUnit } from '@/utils/units'
+import ClientModal from '@/components/ClientModal'
+import ConfirmModal from '@/components/ConfirmModal'
+import DiscountCalculatorModal from '@/components/DiscountCalculatorModal'
+import { maskCurrency, unmaskCurrency } from '@/utils/masks'
+import { soundEffects } from '@/utils/sounds'
 
 interface Product {
     id: number

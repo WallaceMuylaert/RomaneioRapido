@@ -1,4 +1,4 @@
-import logo from '../assets/romaneiorapido_logo.png'
+import logo from '@/assets/romaneiorapido_logo.png'
 
 interface LoadingOverlayProps {
     message?: string;

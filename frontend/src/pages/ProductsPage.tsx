@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, type FormEvent, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
-import api from '../services/api'
-import LoadingOverlay from '../components/LoadingOverlay'
+import api from '@/services/api'
+import LoadingOverlay from '@/components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
-import { translateError } from '../utils/errors'
+import { translateError } from '@/utils/errors'
 import {
     Plus,
     Search,
@@ -22,11 +22,11 @@ import {
     ChevronDown,
     Download
 } from 'lucide-react'
-import BarcodeScanner from '../components/BarcodeScanner'
-import ImageCropper from '../components/ImageCropper'
-import ConfirmModal from '../components/ConfirmModal'
-import { getBase64FromUrl } from '../utils/imageUtils'
-import logoImg from '../assets/romaneiorapido_logo.png'
+import BarcodeScanner from '@/components/BarcodeScanner'
+import ImageCropper from '@/components/ImageCropper'
+import ConfirmModal from '@/components/ConfirmModal'
+import { getBase64FromUrl } from '@/utils/imageUtils'
+import logoImg from '@/assets/romaneiorapido_logo.png'
 
 const applyCurrencyMask = (value: string) => {
     const cleaned = value.replace(/\D/g, "");

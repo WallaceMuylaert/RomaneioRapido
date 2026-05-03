@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '@/context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import LoadingOverlay from '../components/LoadingOverlay'
+import LoadingOverlay from '@/components/LoadingOverlay'
 import { Eye, EyeOff, Loader2, ArrowLeft, Zap, BarChart3, ScanBarcode, User, Mail, Lock } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import api from '../services/api'
-import AlertModal from '../components/AlertModal'
-import logo from '../assets/romaneiorapido_logo.png'
-import loginWarehouseImage from '../assets/pexels-erwinfhm-24862481.jpg'
+import api from '@/services/api'
+import AlertModal from '@/components/AlertModal'
+import logo from '@/assets/romaneiorapido_logo.png'
+import loginWarehouseImage from '@/assets/pexels-erwinfhm-24862481.jpg'
 
 export default function LoginPage() {
     const { login } = useAuth()

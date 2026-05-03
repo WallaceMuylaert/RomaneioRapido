@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import api from '../services/api'
-import LoadingOverlay from '../components/LoadingOverlay'
+import api from '@/services/api'
+import LoadingOverlay from '@/components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
-import { translateError } from '../utils/errors'
+import { translateError } from '@/utils/errors'
 import {
     ArrowLeft,
     Plus,
@@ -23,8 +23,8 @@ import {
     ChevronUp,
     ChevronDown
 } from 'lucide-react'
-import BarcodeScanner from '../components/BarcodeScanner'
-import ImageCropper from '../components/ImageCropper'
+import BarcodeScanner from '@/components/BarcodeScanner'
+import ImageCropper from '@/components/ImageCropper'
 
 const applyCurrencyMask = (value: string) => {
     const cleaned = value.replace(/\D/g, "");

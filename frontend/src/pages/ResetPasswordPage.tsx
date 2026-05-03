@@ -2,8 +2,8 @@ import { useState, type FormEvent, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Lock, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import api from '../services/api'
-import LoadingOverlay from '../components/LoadingOverlay'
+import api from '@/services/api'
+import LoadingOverlay from '@/components/LoadingOverlay'
 
 export default function ResetPasswordPage() {
     const navigate = useNavigate()

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import api from '../services/api'
-import LoadingOverlay from '../components/LoadingOverlay'
-import UserManagementModal from '../components/UserManagementModal'
-import BulkEmailModal from '../components/BulkEmailModal'
+import api from '@/services/api'
+import LoadingOverlay from '@/components/LoadingOverlay'
+import UserManagementModal from '@/components/UserManagementModal'
+import BulkEmailModal from '@/components/BulkEmailModal'
 import { toast } from 'react-hot-toast'
 import { 
     ShieldCheck, 

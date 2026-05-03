@@ -1,7 +1,7 @@
 import { PartyPopper, Check, X, Sparkles, Loader2, AlertCircle, Clock, LifeBuoy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getWhatsAppLink } from '../constants/contacts'
+import { getWhatsAppLink } from '@/constants/contacts'
 
 export type PaymentStatus = 'processing' | 'success' | 'failed' | 'pending'
 

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api from '../services/api'
-import { useAuth } from '../context/AuthContext'
-import LoadingOverlay from '../components/LoadingOverlay'
+import api from '@/services/api'
+import { useAuth } from '@/context/AuthContext'
+import LoadingOverlay from '@/components/LoadingOverlay'
 import {
     Plus,
     Boxes,

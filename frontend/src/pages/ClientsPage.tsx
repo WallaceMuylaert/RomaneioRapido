@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react'
-import api from '../services/api'
-import LoadingOverlay from '../components/LoadingOverlay'
+import api from '@/services/api'
+import LoadingOverlay from '@/components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
 import { Plus, Pencil, Trash2, Search, Users, Phone, Mail, MoreVertical, Download, CheckSquare, Square } from 'lucide-react'
-import ConfirmModal from '../components/ConfirmModal'
-import ClientModal from '../components/ClientModal'
-import { maskPhone } from '../utils/masks'
-import { getBase64FromUrl } from '../utils/imageUtils'
-import logoImg from '../assets/romaneiorapido_logo.png'
+import ConfirmModal from '@/components/ConfirmModal'
+import ClientModal from '@/components/ClientModal'
+import { maskPhone } from '@/utils/masks'
+import { getBase64FromUrl } from '@/utils/imageUtils'
+import logoImg from '@/assets/romaneiorapido_logo.png'
 
 interface Client {
     id: number

@@ -1,5 +1,5 @@
 import { Zap, Check, Loader2, ChevronRight, ChevronLeft } from 'lucide-react'
-import { PLANS } from '../constants/plans'
+import { PLANS } from '@/constants/plans'
 import { useRef, useState, useEffect, useCallback } from 'react'
 
 interface PlansGridProps {

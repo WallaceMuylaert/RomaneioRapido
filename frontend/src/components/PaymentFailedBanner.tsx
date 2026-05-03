@@ -1,7 +1,7 @@
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '@/context/AuthContext'
 import { AlertTriangle, CreditCard, X } from 'lucide-react'
 import { useState } from 'react'
-import { useSubscription } from '../hooks/useSubscription'
+import { useSubscription } from '@/hooks/useSubscription'
 
 export default function PaymentFailedBanner() {
     const { user } = useAuth()

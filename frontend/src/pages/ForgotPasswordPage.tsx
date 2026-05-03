@@ -2,8 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Package, Mail, ArrowLeft, Loader2, Send } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import api from '../services/api'
-import LoadingOverlay from '../components/LoadingOverlay'
+import api from '@/services/api'
+import LoadingOverlay from '@/components/LoadingOverlay'
 
 export default function ForgotPasswordPage() {
     const navigate = useNavigate()

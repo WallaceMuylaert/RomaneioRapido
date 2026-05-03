@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
-import api from '../services/api'
+import api from '@/services/api'
 import { toast } from 'react-hot-toast'
 import { X } from 'lucide-react'
-import { maskDocument, maskPhone } from '../utils/masks'
-import { translateError } from '../utils/errors'
+import { maskDocument, maskPhone } from '@/utils/masks'
+import { translateError } from '@/utils/errors'
 
 interface Client {
     id: number

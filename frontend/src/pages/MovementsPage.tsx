@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
-import api from '../services/api'
+import api from '@/services/api'
 import {
     Search,
     ArrowUpCircle,
@@ -21,17 +21,17 @@ import {
     XCircle,
     AlertCircle
 } from 'lucide-react'
-import MovementDetailsModal from '../components/MovementDetailsModal'
-import RomaneioExportModal from '../components/RomaneioExportModal'
-import ConfirmModal from '../components/ConfirmModal'
-import type { CartItem } from '../components/RomaneioExportModal'
+import MovementDetailsModal from '@/components/MovementDetailsModal'
+import RomaneioExportModal from '@/components/RomaneioExportModal'
+import ConfirmModal from '@/components/ConfirmModal'
+import type { CartItem } from '@/components/RomaneioExportModal'
 import { format, startOfMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { Copy } from 'lucide-react'
-import { getBase64FromUrl } from '../utils/imageUtils'
-import logoImg from '../assets/romaneiorapido_logo.png'
+import { getBase64FromUrl } from '@/utils/imageUtils'
+import logoImg from '@/assets/romaneiorapido_logo.png'
 
 interface Movement {
     id: number
@@ -798,8 +798,8 @@ export default function MovementsPage() {
 
             {/* Table Area */}
             <div className="glass-card rounded-[2rem] overflow-hidden">
-                <div className="flex justify-center border-b border-border bg-card px-4 py-4">
-                    <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-border bg-background p-1 sm:w-auto sm:min-w-[22rem]">
+                <div className="flex justify-center bg-card px-4 pt-4">
+                    <div className="grid w-full grid-cols-2 gap-1 rounded-t  bg-background p-1 sm:w-auto sm:min-w-[22rem]">
                         <button
                             onClick={() => {
                                 setViewMode('movements');
@@ -811,7 +811,7 @@ export default function MovementsPage() {
                                 : 'border-transparent text-text-secondary hover:border-border hover:bg-card hover:text-text-primary'}`}
                         >
                             <Settings2 className="h-3.5 w-3.5 shrink-0" />
-                            RelatÃ³rio
+                            Relatório
                         </button>
                         <button
                             onClick={() => {

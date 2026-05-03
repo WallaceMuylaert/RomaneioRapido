@@ -14,19 +14,19 @@ import {
     Truck,
     X
 } from 'lucide-react'
-import logo from '../assets/romaneiorapido_logo.png'
-import heroTeamImage from '../assets/two-business-partners-working-together-office-computer.jpg'
-import operationImage from '../assets/colleagues-discussing-their-work-laptop.jpg'
-import personOne from '../assets/pessoas/pexels-claudio-emanuel-709239809-18935832.jpg'
-import personTwo from '../assets/pessoas/pexels-ilayda0700-36593091.jpg'
-import personThree from '../assets/pessoas/pexels-josepheulo-nyc-12311550.jpg'
-import personFour from '../assets/pessoas/pexels-leonardodourado-14059688.jpg'
-import personFive from '../assets/pessoas/pexels-marina-endzhirgli-725723515-31510092.jpg'
-import personSix from '../assets/pessoas/pexels-olly-3778603.jpg'
-import personSeven from '../assets/pessoas/pexels-sandro-tavares-260503371-15728334.jpg'
-import personEight from '../assets/pessoas/pexels-silverkblack-36713164.jpg'
-import { getWhatsAppLink } from '../constants/contacts'
-import { PLANS } from '../constants/plans'
+import logo from '@/assets/romaneiorapido_logo.png'
+import heroTeamImage from '@/assets/two-business-partners-working-together-office-computer.jpg'
+import operationImage from '@/assets/colleagues-discussing-their-work-laptop.jpg'
+import personOne from '@/assets/pessoas/pexels-claudio-emanuel-709239809-18935832.jpg'
+import personTwo from '@/assets/pessoas/pexels-ilayda0700-36593091.jpg'
+import personThree from '@/assets/pessoas/pexels-josepheulo-nyc-12311550.jpg'
+import personFour from '@/assets/pessoas/pexels-leonardodourado-14059688.jpg'
+import personFive from '@/assets/pessoas/pexels-marina-endzhirgli-725723515-31510092.jpg'
+import personSix from '@/assets/pessoas/pexels-olly-3778603.jpg'
+import personSeven from '@/assets/pessoas/pexels-sandro-tavares-260503371-15728334.jpg'
+import personEight from '@/assets/pessoas/pexels-silverkblack-36713164.jpg'
+import { getWhatsAppLink } from '@/constants/contacts'
+import { PLANS } from '@/constants/plans'
 
 type IconType = ComponentType<{ className?: string }>
 

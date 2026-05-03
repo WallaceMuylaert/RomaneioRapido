@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api from '../services/api'
-import LoadingOverlay from '../components/LoadingOverlay'
+import api from '@/services/api'
+import LoadingOverlay from '@/components/LoadingOverlay'
 import { toast } from 'react-hot-toast'
-import { translateError } from '../utils/errors'
+import { translateError } from '@/utils/errors'
 import { Plus, Pencil, Trash2, X, Loader2, Tags, GripVertical, Check, MoreVertical, ArrowDownAZ, ArrowUp, ArrowDown } from 'lucide-react'
-import ConfirmModal from '../components/ConfirmModal'
+import ConfirmModal from '@/components/ConfirmModal'
 
 interface Category {
     id: number
