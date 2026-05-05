@@ -24,11 +24,12 @@ api.interceptors.response.use(
         const isPollingRequest = error.config?.url?.includes('/plans/session-status')
         const isGetRequest = error.config?.method?.toLowerCase() === 'get'
         const skipAuthRedirect = Boolean(error.config?.skipAuthRedirect)
+        const skipErrorRedirect = Boolean(error.config?.skipErrorRedirect)
 
         if (!error.response || (error.response.status >= 500 && error.response.status <= 504)) {
             const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout')
 
-            if (!isPollingRequest && isGetRequest && window.location.pathname !== '/error') {
+            if (!isPollingRequest && isGetRequest && !skipErrorRedirect && window.location.pathname !== '/error') {
                 const code = error.response?.status || (isTimeout ? 504 : 503)
                 console.warn(`[API] Erro de infraestrutura (${code}). Mantendo sessao.`)
                 window.location.href = `/error?code=${code}`

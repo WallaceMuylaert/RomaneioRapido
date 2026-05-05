@@ -38,6 +38,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true)
     const validatingTokenRef = useRef<string | null>(null)
 
+    const doRefreshToken = async () => {
+        try {
+            const res = await api.post('/auth/refresh', null, {
+                skipAuthRedirect: true,
+                skipErrorRedirect: true,
+            } as any)
+            if (res.data?.access_token) {
+                localStorage.setItem('token', res.data.access_token)
+                setToken(res.data.access_token)
+            }
+        } catch (err: any) {
+            if (err.response?.status === 401) {
+                console.warn('[Auth] Token expirado. Encerrando sessao.')
+                localStorage.removeItem('token')
+                setToken(null)
+                setUser(null)
+            } else {
+                console.error('[Auth] Falha na renovacao silenciosa do token', err?.code || err?.message)
+            }
+        }
+    }
+
     useEffect(() => {
         if (!token) {
             setIsLoading(false)
@@ -55,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             api.get('/auth/me', {
                 headers: { Authorization: `Bearer ${tokenBeingValidated}` },
                 skipAuthRedirect: true,
+                skipErrorRedirect: true,
             } as any)
                 .then((res) => setUser(res.data))
                 .catch((err) => {
@@ -80,21 +103,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsLoading(false)
         }
 
-        // Auto-refresh: renova antes de tokens curtos expirarem.
-        const interval = setInterval(async () => {
-            try {
-                const res = await api.post('/auth/refresh')
-                if (res.data?.access_token) {
-                    localStorage.setItem('token', res.data.access_token)
-                    setToken(res.data.access_token)
-                }
-            } catch (err) {
-                console.error('Falha na renovacao silenciosa do token', err)
-            }
-        }, TOKEN_REFRESH_INTERVAL_MS)
+        const interval = setInterval(doRefreshToken, TOKEN_REFRESH_INTERVAL_MS)
 
         return () => clearInterval(interval)
     }, [token, user])
+
+    // Re-valida/renova o token quando o usuario volta para a aba após longo periodo em background.
+    useEffect(() => {
+        const lastRefreshRef = { time: Date.now() }
+        const RECHECK_THRESHOLD_MS = 5 * 60 * 1000
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState !== 'visible') return
+            const elapsed = Date.now() - lastRefreshRef.time
+            if (elapsed >= RECHECK_THRESHOLD_MS && localStorage.getItem('token')) {
+                lastRefreshRef.time = Date.now()
+                doRefreshToken()
+            }
+        }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }, [])
 
     const login = async (email: string, password: string) => {
         const res = await api.post('/auth/login', { email, password })
@@ -103,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userRes = await api.get('/auth/me', {
             headers: { Authorization: `Bearer ${access_token}` },
             skipAuthRedirect: true,
+            skipErrorRedirect: true,
         } as any)
         setUser(userRes.data)
         setToken(access_token)
@@ -114,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const res = await api.get('/auth/me', {
                 headers: currentToken ? { Authorization: `Bearer ${currentToken}` } : undefined,
                 skipAuthRedirect: true,
+                skipErrorRedirect: true,
             } as any)
             setUser(res.data)
         } catch {
