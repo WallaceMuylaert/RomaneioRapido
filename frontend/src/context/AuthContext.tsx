@@ -1,6 +1,11 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import api, { setAccessToken } from '@/services/api'
+import api, {
+    getAccessToken,
+    refreshAccessToken,
+    setAccessToken,
+    setSessionExpiredHandler,
+} from '@/services/api'
 
 export interface User {
     id: number
@@ -30,155 +35,173 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
-const TOKEN_REFRESH_INTERVAL_MS = 10 * 60 * 1000
+
+// Refresh proativo do access token (antes da expiracao). O backend tem
+// ACCESS_TOKEN_EXPIRE_MINUTES=720 mas o silent refresh roda mais rapido
+// para que abas abertas por horas continuem com token sempre valido.
+const PROACTIVE_REFRESH_INTERVAL_MS = 10 * 60 * 1000
+// Quando o usuario volta a aba apos esse periodo, dispara um refresh.
+const VISIBILITY_REFRESH_THRESHOLD_MS = 5 * 60 * 1000
+
+const SESSION_FLAG_KEY = 'auth_session'
+
+const hasPersistedSession = () => {
+    try {
+        return localStorage.getItem(SESSION_FLAG_KEY) === '1'
+    } catch {
+        return false
+    }
+}
+
+const markPersistedSession = () => {
+    try {
+        localStorage.setItem(SESSION_FLAG_KEY, '1')
+    } catch {
+        // ignore storage errors
+    }
+}
+
+const clearPersistedSession = () => {
+    try {
+        localStorage.removeItem(SESSION_FLAG_KEY)
+    } catch {
+        // ignore storage errors
+    }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
     const [token, setToken] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
-    const validatingTokenRef = useRef<string | null>(null)
-    const loggingOutRef = useRef(false)
+    const bootstrappedRef = useRef(false)
 
-    const doRefreshToken = async () => {
+    const clearSession = useCallback(() => {
+        setAccessToken(null)
+        clearPersistedSession()
         try {
-            const res = await api.post('/auth/refresh', null, {
+            localStorage.removeItem('token')
+        } catch {
+            // ignore
+        }
+        setToken(null)
+        setUser(null)
+    }, [])
+
+    const loadCurrentUser = useCallback(async (): Promise<User | null> => {
+        try {
+            const res = await api.get('/auth/me', {
+                skipAutoRefresh: true,
                 skipAuthRedirect: true,
                 skipErrorRedirect: true,
             } as any)
-            if (res.data?.access_token) {
-                setAccessToken(res.data.access_token)
-                setToken(res.data.access_token)
-                return res.data.access_token as string
-            }
-        } catch (err: any) {
-            if (err.response?.status === 401) {
-                console.warn('[Auth] Token expirado. Encerrando sessao.')
-                setAccessToken(null)
-                localStorage.removeItem('token')
-                setToken(null)
-                setUser(null)
-            } else {
-                console.error('[Auth] Falha na renovacao silenciosa do token', err?.code || err?.message)
-            }
+            return res.data as User
+        } catch {
+            return null
         }
-    }
+    }, [])
 
+    // Bootstrap inicial: tenta restaurar sessao via refresh token (cookie httpOnly).
     useEffect(() => {
-        localStorage.removeItem('token')
+        if (bootstrappedRef.current) return
+        bootstrappedRef.current = true
 
-        if (loggingOutRef.current) {
-            setIsLoading(false)
-            return
-        }
-
-        if (!token) {
-            doRefreshToken()
-                .then((newToken) => {
-                    if (!newToken) {
-                        setIsLoading(false)
-                    }
-                })
-            return
-        }
-
-        const tokenBeingValidated = token
-
-        if (!user) {
-            if (validatingTokenRef.current === tokenBeingValidated) {
+        const bootstrap = async () => {
+            // Sem indicio de sessao previa -> nao chama refresh para evitar 401 inutil.
+            if (!hasPersistedSession()) {
+                setIsLoading(false)
                 return
             }
 
-            validatingTokenRef.current = tokenBeingValidated
-            api.get('/auth/me', {
-                headers: { Authorization: `Bearer ${tokenBeingValidated}` },
-                skipAuthRedirect: true,
-                skipErrorRedirect: true,
-            } as any)
-                .then((res) => setUser(res.data))
-                .catch((err) => {
-                    if (err.response?.status === 401) {
-                        if (token === tokenBeingValidated) {
-                            console.error('[Auth] Token invalido ou expirado. Limpando sessao.')
-                            setAccessToken(null)
-                            localStorage.removeItem('token')
-                            setToken(null)
-                        } else {
-                            console.warn('[Auth] 401 de validacao antiga ignorado; token atual foi mantido.')
-                        }
-                    } else {
-                        console.warn('[Auth] Erro ao validar usuario (infraestrutura). Mantendo token.', err.response?.status || err.code)
-                    }
-                })
-                .finally(() => {
-                    if (validatingTokenRef.current === tokenBeingValidated) {
-                        validatingTokenRef.current = null
-                    }
-                    setIsLoading(false)
-                })
-        } else {
+            const newToken = await refreshAccessToken()
+            if (!newToken) {
+                clearSession()
+                setIsLoading(false)
+                return
+            }
+
+            setToken(newToken)
+            markPersistedSession()
+            const me = await loadCurrentUser()
+            if (me) {
+                setUser(me)
+            } else {
+                clearSession()
+            }
             setIsLoading(false)
         }
 
-        const interval = setInterval(doRefreshToken, TOKEN_REFRESH_INTERVAL_MS)
+        bootstrap()
+    }, [clearSession, loadCurrentUser])
 
-        return () => clearInterval(interval)
-    }, [token, user])
-
-    // Re-valida/renova o token quando o usuario volta para a aba após longo periodo em background.
+    // Refresh proativo enquanto a sessao estiver ativa.
     useEffect(() => {
-        const lastRefreshRef = { time: Date.now() }
-        const RECHECK_THRESHOLD_MS = 5 * 60 * 1000
+        if (!token) return
+        const interval = setInterval(async () => {
+            const newToken = await refreshAccessToken()
+            if (newToken) {
+                setToken(newToken)
+                markPersistedSession()
+            }
+        }, PROACTIVE_REFRESH_INTERVAL_MS)
+        return () => clearInterval(interval)
+    }, [token])
 
-        const handleVisibilityChange = () => {
+    // Refresh ao voltar para aba apos um tempo em background.
+    useEffect(() => {
+        if (!token) return
+        let lastCheck = Date.now()
+        const handleVisibilityChange = async () => {
             if (document.visibilityState !== 'visible') return
-            const elapsed = Date.now() - lastRefreshRef.time
-            if (elapsed >= RECHECK_THRESHOLD_MS && token) {
-                lastRefreshRef.time = Date.now()
-                doRefreshToken()
+            const elapsed = Date.now() - lastCheck
+            if (elapsed < VISIBILITY_REFRESH_THRESHOLD_MS) return
+            lastCheck = Date.now()
+            const newToken = await refreshAccessToken()
+            if (newToken) {
+                setToken(newToken)
+                markPersistedSession()
             }
         }
-
         document.addEventListener('visibilitychange', handleVisibilityChange)
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
     }, [token])
 
-    const login = async (email: string, password: string) => {
-        loggingOutRef.current = false
+    // Permite que o interceptor avise o context quando o refresh falha.
+    useEffect(() => {
+        setSessionExpiredHandler(() => {
+            setToken(null)
+            setUser(null)
+        })
+        return () => setSessionExpiredHandler(null)
+    }, [])
+
+    const login = useCallback(async (email: string, password: string) => {
         const res = await api.post('/auth/login', { email, password })
         const { access_token } = res.data
         setAccessToken(access_token)
-        const userRes = await api.get('/auth/me', {
-            headers: { Authorization: `Bearer ${access_token}` },
-            skipAuthRedirect: true,
-            skipErrorRedirect: true,
-        } as any)
-        setUser(userRes.data)
-        setToken(access_token)
-    }
-
-    const refreshUser = async () => {
-        try {
-            const res = await api.get('/auth/me', {
-                skipAuthRedirect: true,
-                skipErrorRedirect: true,
-            } as any)
-            setUser(res.data)
-        } catch {
-            // silently fail
+        markPersistedSession()
+        const me = await loadCurrentUser()
+        if (!me) {
+            clearSession()
+            throw new Error('Falha ao carregar dados do usuario apos login')
         }
-    }
+        setUser(me)
+        setToken(access_token)
+    }, [clearSession, loadCurrentUser])
 
-    const logout = () => {
-        loggingOutRef.current = true
+    const refreshUser = useCallback(async () => {
+        if (!getAccessToken()) return
+        const me = await loadCurrentUser()
+        if (me) setUser(me)
+    }, [loadCurrentUser])
+
+    const logout = useCallback(() => {
         api.post('/auth/logout', null, {
             skipAuthRedirect: true,
             skipErrorRedirect: true,
+            skipAutoRefresh: true,
         } as any).catch(() => undefined)
-        setAccessToken(null)
-        localStorage.removeItem('token')
-        setToken(null)
-        setUser(null)
-    }
+        clearSession()
+    }, [clearSession])
 
     return (
         <AuthContext.Provider value={{ user, token, login, logout, refreshUser, isLoading }}>

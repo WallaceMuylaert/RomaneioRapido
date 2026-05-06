@@ -100,6 +100,9 @@ def update_me(request: Request, update_data: UserUpdate, db: Session = Depends(g
         if update_data.full_name is not None:
             current_user.full_name = update_data.full_name
         if update_data.email is not None:
+            existing = get_user_by_email(db, update_data.email)
+            if existing and existing.id != current_user.id:
+                raise HTTPException(status_code=400, detail="Este e-mail já está em uso.")
             current_user.email = update_data.email
         if update_data.phone is not None:
             current_user.phone = update_data.phone
@@ -117,6 +120,8 @@ def update_me(request: Request, update_data: UserUpdate, db: Session = Depends(g
         db.refresh(current_user)
         logger.info(f"Usuário {current_user.email} atualizou o perfil.")
         return current_user
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         logger.exception("Erro ao atualizar perfil do usuário")

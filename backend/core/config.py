@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     REFRESH_TOKEN_COOKIE_NAME: str = "rr_refresh_token"
-    REFRESH_TOKEN_COOKIE_PATH: str = "/auth"
+    REFRESH_TOKEN_COOKIE_PATH: str = "/"
     REFRESH_TOKEN_COOKIE_SAMESITE: str = "lax"
     REFRESH_TOKEN_COOKIE_SECURE: bool = False
     PROJECT_NAME: str = "RomaneioRapido"

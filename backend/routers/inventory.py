@@ -62,8 +62,8 @@ def list_movements(
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
     include_cancelled: bool = Query(False),
-    skip: int = 0,
-    limit: int = 1000,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_flexible)
 ):
