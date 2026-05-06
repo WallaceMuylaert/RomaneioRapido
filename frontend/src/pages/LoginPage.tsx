@@ -5,6 +5,7 @@ import { Eye, EyeOff, Loader2, ArrowLeft, Zap, BarChart3, ScanBarcode, User, Mai
 import { toast } from 'react-hot-toast'
 import api from '@/services/api'
 import AlertModal from '@/components/AlertModal'
+import SEO from '@/components/SEO'
 
 const loginLogo = '/login-logo-192.png'
 const loginWarehouseImage = '/login-warehouse-1200.jpg'
@@ -189,6 +190,11 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen flex flex-col lg:flex-row bg-background/30 font-sans selection:bg-brand-500/30">
+            <SEO
+                title={isRegistering ? 'Criar Conta | Romaneio Rápido' : 'Entrar | Romaneio Rápido'}
+                description="Acesse o Romaneio Rápido para emitir romaneios, controlar estoque e organizar saídas de produtos. Plataforma 100% web para pequenos negócios."
+                path="/login"
+            />
             {/* Seção Esquerda - Marketing (Oculta em Mobile) */}
             <div className="hidden lg:flex lg:w-1/2 bg-text-primary relative flex-col justify-between p-20 overflow-hidden">
                 {isDesktop && (

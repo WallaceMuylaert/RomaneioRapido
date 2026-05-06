@@ -1,11 +1,17 @@
 import { ArrowLeft, Cookie } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import SEO from '@/components/SEO'
 
 export default function CookiesPage() {
     const navigate = useNavigate()
 
     return (
         <div className="min-h-screen bg-background py-12 px-6 font-sans">
+            <SEO
+                title="Política de Cookies | Romaneio Rápido"
+                description="Política de Cookies do Romaneio Rápido — como utilizamos cookies para melhorar sua experiência."
+                path="/cookies"
+            />
             <div className="max-w-3xl mx-auto">
                 <button
                     onClick={() => navigate('/')}

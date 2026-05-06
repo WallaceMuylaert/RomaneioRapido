@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Package, Mail, ArrowLeft, Loader2, Send } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import api from '@/services/api'
+import SEO from '@/components/SEO'
 
 export default function ForgotPasswordPage() {
     const navigate = useNavigate()
@@ -27,6 +28,12 @@ export default function ForgotPasswordPage() {
 
     return (
         <div className="min-h-screen relative flex items-center justify-center bg-text-primary overflow-hidden font-sans p-6 selection:bg-brand-500/30">
+            <SEO
+                title="Recuperar Senha | Romaneio Rápido"
+                description="Recupere sua senha de acesso ao Romaneio Rápido."
+                path="/forgot-password"
+                noindex
+            />
             {/* Glowing Blobs */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-600/30 rounded-full blur-[120px] -mr-40 -mt-40 animate-pulse duration-10000" />
             <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[120px] -ml-40 -mb-40 animate-pulse duration-7000" />

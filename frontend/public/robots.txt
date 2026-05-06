@@ -1,0 +1,27 @@
+# Padrão deny-by-default: bloqueia tudo e libera apenas o que é público.
+# Evita enumerar rotas privadas (/dashboard, /super-admin, /clientes, etc.).
+# Regra: nos crawlers compatíveis com longest-match (Google, Bing) o Allow mais
+# específico vence o Disallow / genérico.
+
+User-agent: *
+Allow: /$
+Allow: /login
+Allow: /termos
+Allow: /privacidade
+Allow: /cookies
+Allow: /robots.txt
+Allow: /sitemap.xml
+Allow: /favicon.svg
+Allow: /site.webmanifest
+Allow: /assets/
+Allow: /login-logo-192.png
+Allow: /login-warehouse-1200.jpg
+Allow: /onboarding-preview.png
+Disallow: /
+
+# AdsBot-Google precisa ler a página de destino integralmente para avaliar a qualidade do anúncio.
+User-agent: AdsBot-Google
+Allow: /
+
+Sitemap: https://romaneiorapido.com.br/sitemap.xml
+Host: https://romaneiorapido.com.br
