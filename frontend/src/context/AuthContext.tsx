@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import api from '@/services/api'
+import api, { setAccessToken } from '@/services/api'
 
 export interface User {
     id: number
@@ -34,9 +34,10 @@ const TOKEN_REFRESH_INTERVAL_MS = 10 * 60 * 1000
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
-    const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
+    const [token, setToken] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const validatingTokenRef = useRef<string | null>(null)
+    const loggingOutRef = useRef(false)
 
     const doRefreshToken = async () => {
         try {
@@ -45,12 +46,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 skipErrorRedirect: true,
             } as any)
             if (res.data?.access_token) {
-                localStorage.setItem('token', res.data.access_token)
+                setAccessToken(res.data.access_token)
                 setToken(res.data.access_token)
+                return res.data.access_token as string
             }
         } catch (err: any) {
             if (err.response?.status === 401) {
                 console.warn('[Auth] Token expirado. Encerrando sessao.')
+                setAccessToken(null)
                 localStorage.removeItem('token')
                 setToken(null)
                 setUser(null)
@@ -61,8 +64,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     useEffect(() => {
-        if (!token) {
+        localStorage.removeItem('token')
+
+        if (loggingOutRef.current) {
             setIsLoading(false)
+            return
+        }
+
+        if (!token) {
+            doRefreshToken()
+                .then((newToken) => {
+                    if (!newToken) {
+                        setIsLoading(false)
+                    }
+                })
             return
         }
 
@@ -82,8 +97,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .then((res) => setUser(res.data))
                 .catch((err) => {
                     if (err.response?.status === 401) {
-                        if (localStorage.getItem('token') === tokenBeingValidated) {
+                        if (token === tokenBeingValidated) {
                             console.error('[Auth] Token invalido ou expirado. Limpando sessao.')
+                            setAccessToken(null)
                             localStorage.removeItem('token')
                             setToken(null)
                         } else {
@@ -116,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const handleVisibilityChange = () => {
             if (document.visibilityState !== 'visible') return
             const elapsed = Date.now() - lastRefreshRef.time
-            if (elapsed >= RECHECK_THRESHOLD_MS && localStorage.getItem('token')) {
+            if (elapsed >= RECHECK_THRESHOLD_MS && token) {
                 lastRefreshRef.time = Date.now()
                 doRefreshToken()
             }
@@ -124,12 +140,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         document.addEventListener('visibilitychange', handleVisibilityChange)
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }, [])
+    }, [token])
 
     const login = async (email: string, password: string) => {
+        loggingOutRef.current = false
         const res = await api.post('/auth/login', { email, password })
         const { access_token } = res.data
-        localStorage.setItem('token', access_token)
+        setAccessToken(access_token)
         const userRes = await api.get('/auth/me', {
             headers: { Authorization: `Bearer ${access_token}` },
             skipAuthRedirect: true,
@@ -141,9 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const refreshUser = async () => {
         try {
-            const currentToken = localStorage.getItem('token')
             const res = await api.get('/auth/me', {
-                headers: currentToken ? { Authorization: `Bearer ${currentToken}` } : undefined,
                 skipAuthRedirect: true,
                 skipErrorRedirect: true,
             } as any)
@@ -154,6 +169,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const logout = () => {
+        loggingOutRef.current = true
+        api.post('/auth/logout', null, {
+            skipAuthRedirect: true,
+            skipErrorRedirect: true,
+        } as any).catch(() => undefined)
+        setAccessToken(null)
         localStorage.removeItem('token')
         setToken(null)
         setUser(null)

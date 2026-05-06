@@ -4,13 +4,21 @@ const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 const api = axios.create({
     baseURL: API_URL,
+    withCredentials: true,
 })
+
+let accessToken: string | null = null
+
+export const setAccessToken = (token: string | null) => {
+    accessToken = token
+}
+
+export const getAccessToken = () => accessToken
 
 // Interceptor para adicionar token JWT
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`
+    if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`
     }
     return config
 })
@@ -44,10 +52,11 @@ api.interceptors.response.use(
                 const requestToken = typeof authorization === 'string' && authorization.startsWith('Bearer ')
                     ? authorization.slice(7)
                     : null
-                const currentToken = localStorage.getItem('token')
+                const currentToken = getAccessToken()
 
                 if (!requestToken || requestToken === currentToken) {
                     console.error('[API] Sessao expirada ou invalida (401). Redirecionando para login.')
+                    setAccessToken(null)
                     localStorage.removeItem('token')
                     window.location.href = '/login'
                 } else {

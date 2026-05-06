@@ -6,8 +6,14 @@ import os
 class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 720
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    REFRESH_TOKEN_COOKIE_NAME: str = "rr_refresh_token"
+    REFRESH_TOKEN_COOKIE_PATH: str = "/auth"
+    REFRESH_TOKEN_COOKIE_SAMESITE: str = "lax"
+    REFRESH_TOKEN_COOKIE_SECURE: bool = False
     PROJECT_NAME: str = "RomaneioRapido"
+    ENVIRONMENT: str = "development"
 
     # Email Settings
     SMTP_HOST: Optional[str] = None

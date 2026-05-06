@@ -19,6 +19,8 @@ class User(Base):
     trial_days = Column(Integer, default=7)
     is_active = Column(Boolean, default=True)
     is_unlimited = Column(Boolean, default=False)
+    token_version = Column(Integer, default=0, nullable=False)
+    password_changed_at = Column(DateTime(timezone=True), nullable=True)
 
     # Stripe
     stripe_customer_id = Column(String, unique=True, index=True, nullable=True)

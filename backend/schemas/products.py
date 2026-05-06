@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List, Any
 from datetime import datetime
+from backend.core.quantity_limits import MAX_QUANTITY
 
 # Tamanho máximo de imagem base64 ≈ 3 MB em base64
 _MAX_IMAGE_BASE64 = 4_000_000
@@ -13,8 +14,8 @@ class ProductBase(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     price: float = Field(0.0, ge=0)
     cost_price: Optional[float] = Field(0.0, ge=0)
-    stock_quantity: float = Field(0.0, ge=0)
-    min_stock: float = Field(0.0, ge=0)
+    stock_quantity: float = Field(0.0, ge=0, le=MAX_QUANTITY)
+    min_stock: float = Field(0.0, ge=0, le=MAX_QUANTITY)
     unit: str = Field("UN", max_length=20)
     category_id: Optional[int] = None
     image_base64: Optional[str] = Field(None, max_length=_MAX_IMAGE_BASE64)
@@ -34,8 +35,8 @@ class ProductUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     price: Optional[float] = Field(None, ge=0)
     cost_price: Optional[float] = Field(None, ge=0)
-    stock_quantity: Optional[float] = Field(None, ge=0)
-    min_stock: Optional[float] = Field(None, ge=0)
+    stock_quantity: Optional[float] = Field(None, ge=0, le=MAX_QUANTITY)
+    min_stock: Optional[float] = Field(None, ge=0, le=MAX_QUANTITY)
     unit: Optional[str] = Field(None, max_length=20)
     category_id: Optional[int] = None
     image_base64: Optional[str] = Field(None, max_length=_MAX_IMAGE_BASE64)

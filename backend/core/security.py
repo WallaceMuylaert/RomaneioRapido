@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import uuid
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -23,13 +24,31 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
+    now = datetime.now(timezone.utc)
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = now + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+        expire = now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({
+        "exp": expire,
+        "iat": now,
+        "nbf": now,
+        "jti": str(uuid.uuid4()),
+        "iss": settings.PROJECT_NAME,
+    })
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
+
+
+def create_user_access_token(user: "User", expires_delta: Optional[timedelta] = None) -> str:
+    return create_access_token(
+        data={
+            "sub": user.email,
+            "uid": user.id,
+            "tv": getattr(user, "token_version", 0) or 0,
+        },
+        expires_delta=expires_delta,
+    )
 
 def get_current_user(request: Request, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -60,6 +79,14 @@ def get_current_user(request: Request, token: str = Depends(oauth2_scheme), db: 
     user = db.query(User).filter(func.lower(User.email) == email).first()
     if user is None:
         _security_logger.warning(f"Token válido mas usuário não encontrado: {email} | IP: {client_ip}")
+        raise credentials_exception
+    token_version = payload.get("tv")
+    user_token_version = getattr(user, "token_version", 0) or 0
+    if token_version is not None and int(token_version) != user_token_version:
+        _security_logger.warning(f"Token com versao revogada para {email} | IP: {client_ip}")
+        raise credentials_exception
+    if token_version is None and user_token_version > 0:
+        _security_logger.warning(f"Token legado revogado para {email} | IP: {client_ip}")
         raise credentials_exception
     if not user.is_active:
         _security_logger.warning(f"Usuário inativo tentou acessar: {email} | IP: {client_ip} | Path: {request.url.path}")
@@ -99,7 +126,16 @@ def get_current_user_flexible(request: Request, db: Session = Depends(get_db)):
                 email = email.strip().lower()
                 from backend.models.users import User
                 user = db.query(User).filter(func.lower(User.email) == email).first()
-                if user and user.is_active:
+                token_version = payload.get("tv")
+                user_token_version = getattr(user, "token_version", 0) or 0 if user else 0
+                token_is_current = (
+                    user
+                    and (
+                        (token_version is None and user_token_version == 0)
+                        or (token_version is not None and int(token_version) == user_token_version)
+                    )
+                )
+                if user and user.is_active and token_is_current:
                     return user
                 elif user and not user.is_active:
                     _security_logger.warning(f"[flexible] Usuário inativo: {email} | IP: {client_ip}")

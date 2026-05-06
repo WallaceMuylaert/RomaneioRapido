@@ -1,8 +1,18 @@
-from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, Request, status, BackgroundTasks
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
-from backend.core.security import verify_password, create_access_token, get_current_user, get_password_hash
+from backend.core.auth_tokens import (
+    clear_refresh_cookie,
+    create_refresh_session,
+    get_active_refresh_session,
+    hash_token,
+    mark_user_credentials_changed,
+    revoke_refresh_token,
+    rotate_refresh_session,
+    set_refresh_cookie,
+)
+from backend.core.security import verify_password, create_user_access_token, get_current_user, get_password_hash
 from backend.core.config import settings
 from backend.core.limiter import limiter
 from backend.crud.users import get_user_by_email
@@ -18,7 +28,7 @@ router = APIRouter(prefix="/auth")
 
 @router.post("/login", response_model=Token)
 @limiter.limit("15/minute")
-def login(request: Request, login_data: LoginRequest, db: Session = Depends(get_db)):
+def login(request: Request, response: Response, login_data: LoginRequest, db: Session = Depends(get_db)):
     # Extrair contexto de rede
     forwarded = request.headers.get("x-forwarded-for", "")
     client_ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
@@ -46,9 +56,9 @@ def login(request: Request, login_data: LoginRequest, db: Session = Depends(get_
                 detail="Usuário desativado"
             )
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": user.email}, expires_delta=access_token_expires
-        )
+        access_token = create_user_access_token(user, expires_delta=access_token_expires)
+        refresh_token = create_refresh_session(db, user, request)
+        set_refresh_cookie(response, refresh_token)
         logger.info(
             f"Login bem-sucedido: {user.email} (id={user.id}) "
             f"| IP: {client_ip} | UA: {user_agent} "
@@ -101,6 +111,7 @@ def update_me(request: Request, update_data: UserUpdate, db: Session = Depends(g
             current_user.pix_key = update_data.pix_key
         if update_data.password:
             current_user.hashed_password = get_password_hash(update_data.password)
+            mark_user_credentials_changed(db, current_user)
             
         db.commit()
         db.refresh(current_user)
@@ -118,13 +129,12 @@ def forgot_password(request: Request, data: ForgotPasswordRequest, background_ta
     try:
         user = get_user_by_email(db, data.email)
         if user:
-            import uuid
-            from datetime import datetime, timedelta
+            import secrets
             from backend.core.mail_utils import send_reset_password_email
             
-            token = str(uuid.uuid4())
-            user.reset_token = token
-            user.reset_token_expires = datetime.now() + timedelta(minutes=30)
+            token = secrets.token_urlsafe(48)
+            user.reset_token = hash_token(token)
+            user.reset_token_expires = datetime.now(timezone.utc) + timedelta(minutes=30)
             db.commit()
             
             # Executa o envio de e-mail em segundo plano para evitar 502/Timeout
@@ -146,16 +156,18 @@ def forgot_password(request: Request, data: ForgotPasswordRequest, background_ta
 @limiter.limit("5/minute")
 def reset_password(request: Request, data: ResetPasswordRequest, db: Session = Depends(get_db)):
     try:
-        from datetime import datetime
+        from sqlalchemy import or_
+        token_hash = hash_token(data.token)
         user = db.query(User).filter(
-            User.reset_token == data.token,
-            User.reset_token_expires > datetime.now()
+            or_(User.reset_token == token_hash, User.reset_token == data.token),
+            User.reset_token_expires > datetime.now(timezone.utc)
         ).first()
         
         if not user:
             raise HTTPException(status_code=400, detail="Token inválido ou expirado")
             
         user.hashed_password = get_password_hash(data.new_password)
+        mark_user_credentials_changed(db, user)
         user.reset_token = None
         user.reset_token_expires = None
         db.commit()
@@ -172,14 +184,49 @@ def reset_password(request: Request, data: ResetPasswordRequest, db: Session = D
 
 @router.post("/refresh", response_model=Token)
 @limiter.limit("5/minute")
-def refresh_token(request: Request, current_user: User = Depends(get_current_user)):
+def refresh_token(request: Request, response: Response, db: Session = Depends(get_db)):
     try:
-        from datetime import timedelta
+        current_user = None
+        refresh_cookie = request.cookies.get(settings.REFRESH_TOKEN_COOKIE_NAME)
+        if refresh_cookie:
+            refresh_session = get_active_refresh_session(db, refresh_cookie)
+            if not refresh_session or not refresh_session.user or not refresh_session.user.is_active:
+                clear_refresh_cookie(response)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Sessao expirada ou invalida",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            current_user = refresh_session.user
+            new_refresh_token = rotate_refresh_session(db, refresh_session, request)
+            set_refresh_cookie(response, new_refresh_token)
+        else:
+            auth = request.headers.get("authorization", "")
+            if not auth.startswith("Bearer "):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Sessao expirada ou invalida",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            from backend.core.security import get_current_user as _get_current_user
+            current_user = _get_current_user(request, auth[7:], db)
+
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": current_user.email}, expires_delta=access_token_expires
-        )
+        access_token = create_user_access_token(current_user, expires_delta=access_token_expires)
         return {"access_token": access_token, "token_type": "bearer"}
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.exception(f"Erro ao atualizar token para {current_user.email}: {e}")
+        user_email = getattr(current_user, "email", "unknown")
+        logger.exception(f"Erro ao atualizar token para {user_email}: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+
+@router.post("/logout")
+@limiter.limit("30/minute")
+def logout(request: Request, response: Response, db: Session = Depends(get_db)):
+    refresh_cookie = request.cookies.get(settings.REFRESH_TOKEN_COOKIE_NAME)
+    if refresh_cookie:
+        revoke_refresh_token(db, refresh_cookie)
+    clear_refresh_cookie(response)
+    return {"message": "Sessao encerrada com sucesso"}

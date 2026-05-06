@@ -90,6 +90,8 @@ def add_column_if_not_exists(table_name, column_name, column_type, nullable=True
                 default_val = None
                 if column_name in ['user_id', 'created_by']:
                     default_val = get_first_admin_id()
+                elif column_name == 'token_version':
+                    default_val = 0
                 
                 if default_val is not None:
                     print(f"  [⚡] Filling existing rows for '{column_name}' with admin ID {default_val}...")
@@ -129,6 +131,10 @@ def add_column_if_not_exists(table_name, column_name, column_type, nullable=True
             elif column_name == 'is_unlimited':
                 print(f"  [⚡] Filling existing rows for 'is_unlimited' with default (False)...")
                 conn.execute(text(f"UPDATE {table_name} SET is_unlimited = False WHERE is_unlimited IS NULL;"))
+                conn.commit()
+            elif column_name == 'token_version':
+                print(f"  [⚡] Filling existing rows for 'token_version' with default (0)...")
+                conn.execute(text(f"UPDATE {table_name} SET token_version = 0 WHERE token_version IS NULL;"))
                 conn.commit()
             
             return True
@@ -184,6 +190,7 @@ def run_migrations():
     from backend.models.inventory import InventoryMovement, MovementType as _MT
     from backend.models.clients import Client
     from backend.models.api_keys import ApiKey
+    from backend.models.auth_sessions import RefreshSession
     from backend.models.pending_romaneio import PendingRomaneio
     from sqlalchemy import Enum as _SAEnum
 
@@ -208,7 +215,8 @@ def run_migrations():
         PendingRomaneio,
         InventoryMovement,
         Client,
-        ApiKey
+        ApiKey,
+        RefreshSession
     ]
 
     for model in models:
