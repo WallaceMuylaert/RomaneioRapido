@@ -1,11 +1,17 @@
 import { ArrowLeft, ShieldCheck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import SEO from '@/components/SEO'
 
 export default function PrivacyPage() {
     const navigate = useNavigate()
 
     return (
         <div className="min-h-screen bg-background py-12 px-6 font-sans">
+            <SEO
+                title="Política de Privacidade | Romaneio Rápido"
+                description="Política de Privacidade do Romaneio Rápido — como coletamos, usamos e protegemos seus dados."
+                path="/privacidade"
+            />
             <div className="max-w-3xl mx-auto">
                 <button
                     onClick={() => navigate('/')}

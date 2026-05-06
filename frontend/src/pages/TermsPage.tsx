@@ -1,11 +1,17 @@
 import { ArrowLeft, ScrollText } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import SEO from '@/components/SEO'
 
 export default function TermsPage() {
     const navigate = useNavigate()
 
     return (
         <div className="min-h-screen bg-background py-12 px-6 font-sans">
+            <SEO
+                title="Termos de Uso | Romaneio Rápido"
+                description="Termos de Uso do Romaneio Rápido — sistema web para emissão de romaneios e controle de estoque."
+                path="/termos"
+            />
             <div className="max-w-3xl mx-auto">
                 <button
                     onClick={() => navigate('/')}

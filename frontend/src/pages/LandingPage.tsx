@@ -27,6 +27,7 @@ import personSeven from '@/assets/pessoas/pexels-sandro-tavares-260503371-157283
 import personEight from '@/assets/pessoas/pexels-silverkblack-36713164.jpg'
 import { getWhatsAppLink } from '@/constants/contacts'
 import { PLANS } from '@/constants/plans'
+import SEO from '@/components/SEO'
 
 type IconType = ComponentType<{ className?: string }>
 
@@ -127,6 +128,12 @@ export default function LandingPage() {
 
     return (
         <div className="min-h-screen overflow-x-hidden bg-background font-sans text-text-primary selection:bg-brand-100 selection:text-brand-900">
+            <SEO
+                title="Romaneio Rápido | Sistema de Romaneio e Controle de Estoque para Pequenos Negócios"
+                description="Emita romaneios, controle estoque e organize saídas em uma plataforma web simples e ágil. Cadastre, bipe, separe pedidos e mantenha histórico. Planos a partir de R$99. Teste sem compromisso."
+                path="/"
+                keywords="romaneio, sistema de romaneio, romaneio digital, romaneio online, controle de estoque, gestão de estoque, separação de pedidos, romaneio de saída, software para estoque, emitir romaneio, romaneio rápido"
+            />
             {isLoaderVisible && <LandingWelcomeLoader step={loaderStep} isLeaving={isLoaderLeaving} />}
 
             <header

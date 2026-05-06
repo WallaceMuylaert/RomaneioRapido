@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation, isRouteErrorResponse, useRouteError } from 'react-router-dom';
 import { AlertTriangle, Home, ArrowLeft } from 'lucide-react';
+import SEO from '@/components/SEO';
 
 const errorDetails: Record<number, { title: string; message: string }> = {
     400: { title: 'Requisição Inválida', message: 'Houve um problema com a sua requisição. Verifique os dados e tente novamente.' },
@@ -53,6 +54,12 @@ export default function ErrorPage({ code }: ErrorPageProps) {
 
     return (
         <div className="min-h-screen bg-border/50 flex items-center justify-center p-4">
+            <SEO
+                title={`${details.title} | Romaneio Rápido`}
+                description={details.message}
+                path={location.pathname}
+                noindex
+            />
             <div className="max-w-md w-full bg-card rounded-3xl shadow-xl p-8 text-center animate-fade-in border border-border">
                 <div className="w-24 h-24 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-error/20">
                     <AlertTriangle className="w-12 h-12 text-error" />
