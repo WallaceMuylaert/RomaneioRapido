@@ -21,7 +21,8 @@ import {
     Printer,
     HelpCircle,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Copy
 } from 'lucide-react'
 import type { CartItem } from '@/components/RomaneioExportModal'
 import { isIntegerUnit } from '@/utils/units'
@@ -708,8 +709,20 @@ export default function RomaneioPage() {
                     const res = await api.post('/pending/', payload);
                     setActivePendingId(res.data.id);
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.error('Erro no auto-save:', err);
+                const status = err?.response?.status;
+                if (status === 422 || status === 413) {
+                    toast.error('Limite de itens atingido. Reduza o carrinho para que o auto-save volte a funcionar.', {
+                        id: 'auto-save-limit',
+                        duration: 5000
+                    });
+                } else {
+                    toast.error('Falha no auto-save. Suas alterações podem não estar sendo salvas.', {
+                        id: 'auto-save-error',
+                        duration: 4000
+                    });
+                }
             } finally {
                 isAutoSavingRef.current = false;
             }
@@ -725,22 +738,50 @@ export default function RomaneioPage() {
         const qtyToAdd = quantityOverride !== undefined ? quantityOverride : 1;
         if (qtyToAdd <= 0) return;
 
-        const newKey = `${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const MAX_ITEMS = 1000;
+        const WARN_THRESHOLD = 800;
 
-        setCartItems((prev: CartItem[]) => [
-            {
-                selectedKey: newKey,
-                id: product.id,
-                name: product.name,
-                barcode: product.barcode,
-                quantity: qtyToAdd,
-                unit: product.unit,
-                price: product.price || 0,
-                color: product.color,
-                size: product.size
-            },
-            ...prev
-        ])
+        setCartItems((prev: CartItem[]) => {
+            const existingIndex = prev.findIndex(
+                item => item.id === product.id &&
+                    (item.color ?? null) === (product.color ?? null) &&
+                    (item.size ?? null) === (product.size ?? null)
+            );
+            if (existingIndex !== -1) {
+                const updated = [...prev];
+                updated[existingIndex] = { ...updated[existingIndex], quantity: updated[existingIndex].quantity + qtyToAdd };
+                return updated;
+            }
+            if (prev.length >= MAX_ITEMS) {
+                toast.error(`Limite máximo de ${MAX_ITEMS} itens atingido. Remova itens antes de adicionar novos.`, {
+                    id: 'cart-limit',
+                    duration: 4000
+                });
+                return prev;
+            }
+            if (prev.length + 1 >= WARN_THRESHOLD && prev.length + 1 < MAX_ITEMS) {
+                toast(`Atenção: ${prev.length + 1} de ${MAX_ITEMS} itens no carrinho.`, {
+                    id: 'cart-warn',
+                    icon: '⚠️',
+                    duration: 3000
+                });
+            }
+            const newKey = `${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            return [
+                {
+                    selectedKey: newKey,
+                    id: product.id,
+                    name: product.name,
+                    barcode: product.barcode,
+                    quantity: qtyToAdd,
+                    unit: product.unit,
+                    price: product.price || 0,
+                    color: product.color,
+                    size: product.size
+                },
+                ...prev
+            ];
+        })
 
         toast.success(`${product.name} adicionado!`, {
             id: 'add-to-cart-toast',
@@ -779,6 +820,26 @@ export default function RomaneioPage() {
 
     const removeFromCart = (selectedKey: string) => {
         setCartItems(prev => prev.filter(item => item.selectedKey !== selectedKey))
+    }
+
+    const duplicateCartItem = (item: CartItem) => {
+        if (cartItems.length >= 1000) {
+            toast.error('Limite máximo de 1000 itens atingido.', { id: 'cart-limit', duration: 4000 });
+            return;
+        }
+        const newKey = `${item.id}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        setCartItems(prev => {
+            const idx = prev.findIndex(i => i.selectedKey === item.selectedKey);
+            const copy = { ...item, selectedKey: newKey };
+            const next = [...prev];
+            next.splice(idx + 1, 0, copy);
+            return next;
+        });
+        toast('Linha duplicada — ajuste o preço conforme necessário.', {
+            id: 'duplicate-line',
+            icon: '📋',
+            duration: 2500
+        });
     }
 
     const handleBarcodeScan = async (code: string) => {
@@ -1095,7 +1156,7 @@ export default function RomaneioPage() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="grid grid-cols-[1fr_auto_auto] sm:flex sm:items-center sm:justify-end gap-2 sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
+                                            <div className="grid grid-cols-[1fr_auto_auto_auto] sm:flex sm:items-center sm:justify-end gap-2 sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
                                                 <div className="text-left sm:text-right min-w-0 sm:w-32 shrink-0">
                                                     <p className="text-[9px] text-text-secondary uppercase font-black">Total</p>
                                                     <p className="text-[13px] sm:text-[15px] font-black text-text-primary truncate">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}</p>
@@ -1122,6 +1183,13 @@ export default function RomaneioPage() {
                                                         <Plus className="w-3.5 h-3.5" />
                                                     </button>
                                                 </div>
+                                                <button
+                                                    onClick={() => duplicateCartItem(item)}
+                                                    title="Adicionar linha separada (para preço diferente)"
+                                                    className="w-10 h-10 flex items-center justify-center text-text-secondary hover:text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-90"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </button>
                                                 <button
                                                     onClick={() => setItemToRemove(item.selectedKey)}
                                                     className="w-10 h-10 flex items-center justify-center text-text-secondary hover:text-error hover:bg-error/10 rounded-xl transition-all active:scale-90"

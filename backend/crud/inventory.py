@@ -454,8 +454,7 @@ def get_daily_reports(db: Session, user_id: int, start_date=None, end_date=None,
         rid = m.romaneio_id or f"single-{m.id}"
         if rid not in romaneios:
             romaneios[rid] = 0
-        current_price = m.product.price if m.product else None
-        unit_price = current_price if current_price is not None else (m.unit_price_snapshot or 0)
+        unit_price = m.unit_price_snapshot if m.unit_price_snapshot is not None else (m.product.price if m.product else 0)
         gross_value = m.quantity * unit_price
         romaneios[rid] += gross_value - (m.discount_snapshot or 0)
         

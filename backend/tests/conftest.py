@@ -12,6 +12,7 @@ def prepare_sqlite_test_database():
 
     from backend.core.database import Base, engine
     from backend.models.api_keys import ApiKey
+    from backend.models.auth_sessions import RefreshSession
     from backend.models.categories import Category
     from backend.models.clients import Client
     from backend.models.inventory import InventoryMovement

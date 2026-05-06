@@ -4,6 +4,7 @@ from typing import List, Optional
 from backend.core.database import get_db
 from backend.core.limiter import limiter
 from backend.core.security import get_current_superadmin, get_password_hash
+from backend.core.auth_tokens import mark_user_credentials_changed, revoke_user_sessions_and_tokens
 from backend.models.users import User
 from backend.schemas.auth import UserResponse, UserUpdate, PaginatedUserResponse
 from backend.schemas.admin import BulkEmailRequest, BulkEmailResponse
@@ -131,10 +132,13 @@ def update_user_system(
 
         if update_data.password is not None:
             user.hashed_password = get_password_hash(update_data.password)
+            mark_user_credentials_changed(db, user)
         if update_data.plan_id is not None:
             user.plan_id = update_data.plan_id
         if update_data.is_active is not None:
             user.is_active = update_data.is_active
+            if not update_data.is_active:
+                revoke_user_sessions_and_tokens(db, user)
         if update_data.is_admin is not None:
             user.is_admin = update_data.is_admin
         if update_data.trial_days is not None:

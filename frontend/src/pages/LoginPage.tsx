@@ -288,11 +288,11 @@ export default function LoginPage() {
                             className="space-y-6"
                             autoComplete="on"
                             method="post"
-                            action="/login"
+                            action={isRegistering ? '/register' : '/login'}
                         >
                             {isRegistering && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                    <label className="text-[11px] font-black text-text-secondary uppercase tracking-widest ml-1">Nome Completo</label>
+                                    <label htmlFor="fullName" className="text-[11px] font-black text-text-secondary uppercase tracking-widest ml-1">Nome Completo</label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                             <User className={`h-4 w-4 ${errors.fullName ? 'text-red-400' : 'text-text-secondary'}`} />
@@ -319,7 +319,7 @@ export default function LoginPage() {
                             )}
 
                             <div className="space-y-2">
-                                <label className="text-[11px] font-black text-text-secondary uppercase tracking-widest ml-1">Endereço de Email</label>
+                                <label htmlFor="email" className="text-[11px] font-black text-text-secondary uppercase tracking-widest ml-1">Endereço de Email</label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                         <Mail className={`h-4 w-4 ${errors.email ? 'text-red-400' : 'text-text-secondary'}`} />
@@ -346,7 +346,7 @@ export default function LoginPage() {
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between px-1">
-                                    <label className="text-[11px] font-black text-text-secondary uppercase tracking-widest">Senha de Acesso</label>
+                                    <label htmlFor="password" className="text-[11px] font-black text-text-secondary uppercase tracking-widest">Senha de Acesso</label>
                                     {!isRegistering && (
                                         <button
                                             type="button"
@@ -362,7 +362,6 @@ export default function LoginPage() {
                                         <Lock className={`h-4 w-4 ${errors.password ? 'text-red-400' : 'text-text-secondary'}`} />
                                     </div>
                                     <input
-                                        key={isRegistering ? 'register-password' : 'login-password'}
                                         id="password"
                                         name="password"
                                         type={showPassword ? 'text' : 'password'}
@@ -391,7 +390,7 @@ export default function LoginPage() {
 
                             {isRegistering && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                    <label className="text-[11px] font-black text-text-secondary uppercase tracking-widest ml-1">Confirme a Senha</label>
+                                    <label htmlFor="confirmPassword" className="text-[11px] font-black text-text-secondary uppercase tracking-widest ml-1">Confirme a Senha</label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                             <Lock className={`h-4 w-4 ${errors.confirmPassword ? 'text-red-400' : 'text-text-secondary'}`} />

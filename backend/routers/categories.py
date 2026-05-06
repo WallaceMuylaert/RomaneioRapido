@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from backend.core.database import get_db
 from backend.core.security import get_current_user_flexible
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/categories")
 
 @router.get("/", response_model=List[CategoryResponse])
 @limiter.limit("200/minute")
-def list_categories(request: Request, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user_flexible)):
+def list_categories(request: Request, skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=500), db: Session = Depends(get_db), current_user: User = Depends(get_current_user_flexible)):
     try:
         return crud.get_categories(db, user_id=current_user.id, skip=skip, limit=limit)
     except HTTPException:

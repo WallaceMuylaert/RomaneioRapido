@@ -1,12 +1,13 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from typing import Optional, Any, List
 from datetime import datetime
+from backend.core.quantity_limits import MAX_QUANTITY
 from backend.models.inventory import MovementType
 
 
 class InventoryMovementBase(BaseModel):
     product_id: int = Field(..., gt=0)
-    quantity: float = Field(..., ge=0, le=999_999_999)
+    quantity: float = Field(..., ge=0, le=MAX_QUANTITY)
     movement_type: MovementType
     notes: Optional[str] = Field(None, max_length=1000)
     product_name_snapshot: Optional[str] = Field(None, max_length=250)
@@ -41,6 +42,7 @@ class ClientInfo(BaseModel):
 
 class InventoryMovementResponse(InventoryMovementBase):
     id: int
+    quantity: float = Field(..., ge=0)
     is_cancelled: bool = False
     created_by: Optional[int] = None
     created_at: Optional[datetime] = None
@@ -90,7 +92,7 @@ class StockLevelPaginatedResponse(BaseModel):
 
 class RomaneioFinalizeItem(BaseModel):
     product_id: int = Field(..., gt=0)
-    quantity: float = Field(..., gt=0, le=999_999_999)
+    quantity: float = Field(..., gt=0, le=MAX_QUANTITY)
     product_name_snapshot: Optional[str] = Field(None, max_length=250)
     product_barcode_snapshot: Optional[str] = Field(None, max_length=100)
     unit_price_snapshot: Optional[float] = Field(None, ge=0)
