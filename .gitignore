@@ -57,3 +57,8 @@ venv/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Test databases (locais — nunca commitar)
+*.sqlite
+*.sqlite3
+*.db

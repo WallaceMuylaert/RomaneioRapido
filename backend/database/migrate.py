@@ -265,6 +265,44 @@ def run_migrations():
         except Exception as e:
             print(f"  ⚠️ Warning creating case-insensitive index: {e}")
 
+    # Índices trigram (pg_trgm) para tornar buscas ILIKE '%termo%' indexáveis.
+    # Sem isso, a busca incremental de clientes/produtos faz sequential scan
+    # e degrada conforme a base cresce para milhares de linhas por usuário.
+    print("\n🔧 Ensuring pg_trgm extension and trigram indexes for fuzzy search...")
+    try:
+        with database.engine.connect() as conn:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
+            conn.commit()
+        print("  ✅ pg_trgm extension ensured")
+    except Exception as e:
+        # Provedores Postgres gerenciados podem não permitir CREATE EXTENSION
+        # ao usuário do app. Se a extensão já existir, os índices abaixo ainda
+        # vão funcionar; senão, o ILIKE cai em sequential scan (não quebra).
+        print(f"  ⚠️ Could not create pg_trgm extension (may need superuser): {e}")
+
+    trigram_indexes = [
+        ("ix_clients_name_trgm", "clients", "name"),
+        ("ix_clients_phone_trgm", "clients", "phone"),
+        ("ix_clients_document_trgm", "clients", "document"),
+        ("ix_products_name_trgm", "products", "name"),
+        ("ix_products_barcode_trgm", "products", "barcode"),
+        ("ix_products_sku_trgm", "products", "sku"),
+    ]
+    # Cada índice em sua própria conexão garante que falha em um não derruba os
+    # outros (uma transação Postgres abortada bloqueia comandos subsequentes
+    # até rollback).
+    for idx_name, table_name, column_name in trigram_indexes:
+        try:
+            with database.engine.connect() as conn:
+                conn.execute(text(
+                    f"CREATE INDEX IF NOT EXISTS {idx_name} "
+                    f"ON {table_name} USING gin ({column_name} gin_trgm_ops);"
+                ))
+                conn.commit()
+                print(f"  [✓] Index {idx_name} ensured")
+        except Exception as inner:
+            print(f"  ⚠️ Warning creating {idx_name}: {inner}")
+
     print("\n" + "=" * 50)
     print("✅ Migration completed!")
     print("=" * 50)
