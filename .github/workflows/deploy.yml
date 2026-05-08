@@ -83,32 +83,33 @@ jobs:
             echo "🚀 Subindo novos containers..."
             docker compose -f docker-compose.prod.yml up -d
 
-            echo "⏳ Aguardando backend ficar saudável (até 60s)..."
-            set +e
+            echo "⏳ Aguardando backend ficar saudável (até 90s)..."
+            # Tempo inicial para o uvicorn subir e a migração rodar.
+            sleep 10
             backend_ready=false
-            for i in $(seq 1 30); do
-              docker compose -f docker-compose.prod.yml exec -T backend \
-                python -c "import urllib.request; urllib.request.urlopen('http://localhost:8002/health', timeout=2).read()" \
-                >/dev/null 2>&1
-              if [ $? -eq 0 ]; then
+            for i in $(seq 1 40); do
+              # Comando dentro de `if` não dispara script_stop nem set -e,
+              # mesmo se o exec retornar não-zero.
+              if docker compose -f docker-compose.prod.yml exec -T backend python -c "import urllib.request; urllib.request.urlopen('http://localhost:8002/health', timeout=2).read()" >/dev/null 2>&1; then
                 backend_ready=true
                 echo "  ✓ backend respondeu na tentativa $i"
                 break
               fi
               sleep 2
             done
-            set -e
 
-            if [ "$backend_ready" = "false" ]; then
-              echo "❌ Backend não respondeu em 60s — abortando deploy"
+            if [ "$backend_ready" != "true" ]; then
+              echo "❌ Backend não respondeu em 90s — abortando deploy"
               echo "Logs do backend:"
-              docker compose -f docker-compose.prod.yml logs --tail=80 backend
+              docker compose -f docker-compose.prod.yml logs --tail=80 backend || true
               exit 1
             fi
 
             echo "🔍 Rodando smoke-tests pós-deploy (pg_trgm, índices, plano de query)..."
-            docker compose -f docker-compose.prod.yml exec -T backend \
-              python -m backend.scripts.post_deploy_check
+            if ! docker compose -f docker-compose.prod.yml exec -T backend python -m backend.scripts.post_deploy_check; then
+              echo "❌ Smoke-tests pós-deploy falharam — abortando"
+              exit 1
+            fi
 
             echo "✅ Verificando status..."
             docker compose -f docker-compose.prod.yml ps
