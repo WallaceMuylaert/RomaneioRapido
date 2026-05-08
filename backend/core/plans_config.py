@@ -2,13 +2,13 @@ import os
 
 # Configuração de Planos - Replicado para validação backend
 PLANS_CONFIG = {
-    "trial": {"limit_products": 10, "limit_categories": 3, "limit_api_keys": 0, "api_rate_limit": "0/minute", "trial_days": 7},
-    "basic": {"limit_products": 100, "limit_categories": 10, "limit_api_keys": 0, "api_rate_limit": "0/minute"},
-    "plus": {"limit_products": 200, "limit_categories": 20, "limit_api_keys": 0, "api_rate_limit": "0/minute"},
-    "pro": {"limit_products": 999999, "limit_categories": 999999, "limit_api_keys": 0, "api_rate_limit": "0/minute"},
-    "api": {"limit_products": 999999, "limit_categories": 999999, "limit_api_keys": 10, "api_rate_limit": "500/minute"},
-    "enterprise": {"limit_products": 999999, "limit_categories": 999999, "limit_api_keys": 20, "api_rate_limit": "300/minute"},
-    "unlimited": {"limit_products": 999999, "limit_categories": 999999, "limit_api_keys": 999999, "api_rate_limit": "999/minute"},
+    "trial": {"limit_products": 10, "limit_categories": 3, "limit_groups": 3, "limit_api_keys": 0, "api_rate_limit": "0/minute", "trial_days": 7},
+    "basic": {"limit_products": 100, "limit_categories": 10, "limit_groups": 10, "limit_api_keys": 0, "api_rate_limit": "0/minute"},
+    "plus": {"limit_products": 200, "limit_categories": 20, "limit_groups": 20, "limit_api_keys": 0, "api_rate_limit": "0/minute"},
+    "pro": {"limit_products": 999999, "limit_categories": 999999, "limit_groups": 999999, "limit_api_keys": 0, "api_rate_limit": "0/minute"},
+    "api": {"limit_products": 999999, "limit_categories": 999999, "limit_groups": 999999, "limit_api_keys": 10, "api_rate_limit": "500/minute"},
+    "enterprise": {"limit_products": 999999, "limit_categories": 999999, "limit_groups": 999999, "limit_api_keys": 20, "api_rate_limit": "300/minute"},
+    "unlimited": {"limit_products": 999999, "limit_categories": 999999, "limit_groups": 999999, "limit_api_keys": 999999, "api_rate_limit": "999/minute"},
 }
 
 PLANS_WITH_API_ACCESS = {"api", "enterprise"}

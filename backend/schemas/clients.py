@@ -7,6 +7,7 @@ class ClientBase(BaseModel):
     phone: Optional[str] = Field(None, max_length=30)
     document: Optional[str] = Field(None, max_length=30)
     email: Optional[EmailStr] = None
+    address: Optional[str] = Field(None, max_length=500)
     notes: Optional[str] = Field(None, max_length=1000)
 
 class ClientCreate(ClientBase):

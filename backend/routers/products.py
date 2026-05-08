@@ -26,6 +26,7 @@ def list_products(
     per_page: int = Query(20, ge=1, le=2000, description="Itens por página"),
     search: Optional[str] = Query(None, description="Busca por nome, barcode ou SKU"),
     category_id: Optional[int] = Query(None, description="Filtrar por categoria"),
+    group_id: Optional[int] = Query(None, description="Filtrar por grupo (use 0 para 'sem grupo')"),
     color: Optional[str] = Query(None, description="Filtrar por cor"),
     size: Optional[str] = Query(None, description="Filtrar por tamanho"),
     sort_by: str = Query("name", description="Coluna para ordenação"),
@@ -41,8 +42,8 @@ def list_products(
             include_images = per_page <= 50
 
         skip = (page - 1) * per_page
-        total = crud.count_products(db, user_id=current_user.id, search=search, category_id=category_id, color=color, size=size)
-        db_items = crud.get_products(db, user_id=current_user.id, skip=skip, limit=per_page, search=search, category_id=category_id, color=color, size=size, sort_by=sort_by, order=order, include_images=include_images)
+        total = crud.count_products(db, user_id=current_user.id, search=search, category_id=category_id, group_id=group_id, color=color, size=size)
+        db_items = crud.get_products(db, user_id=current_user.id, skip=skip, limit=per_page, search=search, category_id=category_id, group_id=group_id, color=color, size=size, sort_by=sort_by, order=order, include_images=include_images)
         pages = math.ceil(total / per_page) if total > 0 else 1
         
         # Converte explicitamente para o schema correto para evitar Erro 500 de validação

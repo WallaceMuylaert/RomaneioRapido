@@ -29,6 +29,7 @@ interface RomaneioExportModalProps {
     clientId?: number | null
     customerName: string
     customerPhone: string | null
+    customerAddress?: string | null
     items: CartItem[]
     createdAt?: string | null
     title?: string
@@ -38,16 +39,17 @@ interface RomaneioExportModalProps {
     isDraft?: boolean
 }
 
-export default function RomaneioExportModal({ 
-    isOpen, 
-    clientId, 
-    customerName, 
-    customerPhone, 
-    items, 
-    createdAt, 
-    title, 
-    onClose, 
-    onPhoneUpdated, 
+export default function RomaneioExportModal({
+    isOpen,
+    clientId,
+    customerName,
+    customerPhone,
+    customerAddress = null,
+    items,
+    createdAt,
+    title,
+    onClose,
+    onPhoneUpdated,
     discount = 0,
     isDraft = false
 }: RomaneioExportModalProps) {
@@ -132,6 +134,12 @@ export default function RomaneioExportModal({
         let text = isDraft ? `*--- RASCUNHO EXECUTIVO ---*\n*ESTA NÃO É UMA VENDA FINALIZADA*\n\n` : ''
         text += `*ROMANEIO RÁPIDO*\n`
         text += `*Cliente:* ${customerName || 'Não informado'}\n`
+        if (currentPhone) {
+            text += `*Telefone:* ${maskPhone(currentPhone)}\n`
+        }
+        if (customerAddress) {
+            text += `*Endereço:* ${customerAddress}\n`
+        }
         text += `*Data:* ${dateStr}\n\n`
         text += `*ITENS DO PEDIDO:*\n`
 
@@ -281,17 +289,20 @@ export default function RomaneioExportModal({
                     .doc-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; color: #111827; margin-bottom: 4px; }
                     .doc-date { font-size: 12px; color: #6b7280; font-weight: 500; }
 
-                    .customer-card { 
-                        background: #f9fafb; 
-                        padding: 20px; 
-                        border-radius: 12px; 
-                        margin-bottom: 30px; 
+                    .customer-card {
+                        background: #f9fafb;
+                        padding: 20px;
+                        border-radius: 12px;
+                        margin-bottom: 30px;
                         border: 1px solid #f3f4f6;
                         position: relative;
                         z-index: 1;
                     }
                     .card-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #9ca3af; letter-spacing: 0.05em; margin-bottom: 4px; }
                     .card-value { font-size: 15px; font-weight: 700; color: #111827; }
+                    .card-row { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e5e7eb; }
+                    .card-row > div { min-width: 0; }
+                    .card-detail { font-size: 12px; font-weight: 600; color: #374151; white-space: pre-wrap; }
 
                     table { width: 100%; border-collapse: separate; border-spacing: 0; position: relative; z-index: 1; }
                     th { 
@@ -365,6 +376,22 @@ export default function RomaneioExportModal({
                     <div class="customer-card">
                         <div class="card-label">Cliente / Destino</div>
                         <div class="card-value">${customerName || 'Consumidor Final'}</div>
+                        ${(customerAddress || currentPhone) ? `
+                            <div class="card-row">
+                                ${customerAddress ? `
+                                    <div style="flex: 1 1 60%;">
+                                        <div class="card-label">Endereço de Entrega</div>
+                                        <div class="card-detail">${customerAddress}</div>
+                                    </div>
+                                ` : ''}
+                                ${currentPhone ? `
+                                    <div style="flex: 0 1 auto;">
+                                        <div class="card-label">Telefone</div>
+                                        <div class="card-detail">${maskPhone(currentPhone)}</div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
                     </div>
                     
                     <table>
@@ -493,6 +520,8 @@ export default function RomaneioExportModal({
                     .info-block { margin-bottom: 10px; }
                     .info-row { display: flex; justify-content: space-between; }
                     .customer-name { font-size: 12px; margin-top: 4px; border: 1px solid #000; padding: 4px; text-align: center; }
+                    .customer-detail { font-size: 10px; margin-top: 4px; padding: 0 2px; word-break: break-word; }
+                    .customer-detail strong { font-size: 9px; }
 
                     .item { margin-bottom: 6px; }
                     .item-header { font-weight: bold; font-size: 11px; }
@@ -534,6 +563,12 @@ export default function RomaneioExportModal({
                     </div>
                     <div class="bold" style="margin-top: 6px;">CLIENTE:</div>
                     <div class="customer-name bold">${customerName || 'CONSUMIDOR'}</div>
+                    ${customerAddress ? `
+                        <div class="customer-detail"><strong>END.:</strong> ${customerAddress}</div>
+                    ` : ''}
+                    ${currentPhone ? `
+                        <div class="customer-detail"><strong>TEL.:</strong> ${maskPhone(currentPhone)}</div>
+                    ` : ''}
                 </div>
 
                 <div class="divider"></div>

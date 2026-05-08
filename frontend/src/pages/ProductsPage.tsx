@@ -58,6 +58,12 @@ interface Category {
     name: string
 }
 
+interface ProductGroup {
+    id: number
+    code: string
+    name: string
+}
+
 interface Product {
     id: number
     name: string
@@ -69,6 +75,7 @@ interface Product {
     stock_quantity: number
     min_stock: number
     category_id: number | null
+    group_id: number | null
     unit: string
     image_base64: string | null
     is_active: boolean
@@ -79,6 +86,7 @@ interface Product {
 export default function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([])
     const [categories, setCategories] = useState<Category[]>([])
+    const [groups, setGroups] = useState<ProductGroup[]>([])
     const [search, setSearch] = useState('')
     const [loading, setLoading] = useState(true)
     const [modalOpen, setModalOpen] = useState(false)
@@ -121,6 +129,7 @@ export default function ProductsPage() {
         min_stock: '',
         unit: 'UN',
         category_id: '',
+        group_id: '',
         image_base64: '',
         color: '',
         size: ''
@@ -129,6 +138,7 @@ export default function ProductsPage() {
     const [colorFilter, setColorFilter] = useState('')
     const [sizeFilter, setSizeFilter] = useState('')
     const [categoryFilter, setCategoryFilter] = useState('')
+    const [groupFilter, setGroupFilter] = useState('')
     const [logoBase64, setLogoBase64] = useState<string>('')
     const [reportMenuOpen, setReportMenuOpen] = useState(false)
     const [stockModalOpen, setStockModalOpen] = useState(false)
@@ -153,6 +163,7 @@ export default function ProductsPage() {
             if (colorFilter) params.color = colorFilter
             if (sizeFilter) params.size = sizeFilter
             if (categoryFilter) params.category_id = categoryFilter
+            if (groupFilter) params.group_id = groupFilter
             const res = await api.get('/products/', { params })
             setProducts(res.data.items)
             setTotalPages(res.data.pages)
@@ -174,12 +185,22 @@ export default function ProductsPage() {
         }
     }
 
+    const fetchGroups = async () => {
+        try {
+            const res = await api.get('/product-groups/')
+            setGroups(res.data)
+        } catch (err) {
+            console.error('Erro ao buscar grupos:', err)
+        }
+    }
+
     useEffect(() => {
         fetchProducts(1)
     }, [sortBy, sortOrder, search])
 
     useEffect(() => {
         fetchCategories()
+        fetchGroups()
     }, [])
 
     const handleScanResult = async (code: string) => {
@@ -232,7 +253,7 @@ export default function ProductsPage() {
             fetchProducts(1)
         }, 300)
         return () => clearTimeout(timeout)
-    }, [search, colorFilter, sizeFilter, categoryFilter])
+    }, [search, colorFilter, sizeFilter, categoryFilter, groupFilter])
 
     const handleSearchKeyDown = (e: React.KeyboardEvent) => {
         if (products.length === 0) return
@@ -277,6 +298,7 @@ export default function ProductsPage() {
             min_stock: '0',
             unit: 'UN',
             category_id: '',
+            group_id: '',
             image_base64: '',
             color: '',
             size: ''
@@ -302,6 +324,7 @@ export default function ProductsPage() {
             min_stock: String(p.min_stock),
             unit: p.unit || 'UN',
             category_id: p.category_id ? String(p.category_id) : '',
+            group_id: p.group_id ? String(p.group_id) : '',
             image_base64: p.image_base64 || '',
             color: p.color || '',
             size: p.size || ''
@@ -372,6 +395,7 @@ export default function ProductsPage() {
                 description: form.description || null,
                 unit: form.unit,
                 category_id: form.category_id ? parseInt(form.category_id) : null,
+                group_id: form.group_id ? parseInt(form.group_id) : null,
                 image_base64: form.image_base64 || null,
                 color: form.color || null,
                 size: form.size || null
@@ -850,7 +874,7 @@ export default function ProductsPage() {
             </div>
 
             {/* Filters */}
-            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <div className="relative sm:col-span-2">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/60" />
                     <input
@@ -871,6 +895,19 @@ export default function ProductsPage() {
                         <option value="">Todas Categorias</option>
                         {categories.map(cat => (
                             <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="sm:col-span-2 lg:col-span-1">
+                    <select
+                        value={groupFilter}
+                        onChange={(e) => setGroupFilter(e.target.value)}
+                        className="w-full h-10 px-3 text-sm bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all font-medium text-text-secondary"
+                    >
+                        <option value="">Todos os Grupos</option>
+                        <option value="0">Sem grupo</option>
+                        {groups.map(g => (
+                            <option key={g.id} value={g.id}>{g.code} — {g.name}</option>
                         ))}
                     </select>
                 </div>
@@ -1356,6 +1393,22 @@ export default function ProductsPage() {
                                         <option value="DZ">DZ — Dúzia</option>
                                     </select>
                                 </div>
+                            </div>
+
+                            {/* Grupo */}
+                            <div>
+                                <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Grupo (modelo)</label>
+                                <select
+                                    value={form.group_id}
+                                    onChange={(e) => setForm({ ...form, group_id: e.target.value })}
+                                    className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all appearance-none"
+                                >
+                                    <option value="">Sem grupo</option>
+                                    {groups.map(g => (
+                                        <option key={g.id} value={g.id}>{g.code} — {g.name}</option>
+                                    ))}
+                                </select>
+                                <p className="mt-1 text-[10px] text-text-secondary">Use grupos para reunir variações de um mesmo modelo (ex.: AIRFLOW DUNA com cores diferentes).</p>
                             </div>
 
                             {/* Categoria */}

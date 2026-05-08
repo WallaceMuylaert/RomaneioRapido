@@ -12,6 +12,9 @@ const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
 const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
 const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'))
 const CategoryProductsPage = lazy(() => import('@/pages/CategoryProductsPage'))
+const ProductGroupsPage = lazy(() => import('@/pages/ProductGroupsPage'))
+const ProductGroupDetailPage = lazy(() => import('@/pages/ProductGroupDetailPage'))
+const ProductGroupsReportPage = lazy(() => import('@/pages/ProductGroupsReportPage'))
 const RomaneioPage = lazy(() => import('@/pages/RomaneioPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const ClientsPage = lazy(() => import('@/pages/ClientsPage'))
@@ -144,6 +147,18 @@ const router = createBrowserRouter([
       {
         path: "/categorias/:id",
         element: <LazyPage><CategoryProductsPage /></LazyPage>,
+      },
+      {
+        path: "/grupos",
+        element: <LazyPage><ProductGroupsPage /></LazyPage>,
+      },
+      {
+        path: "/grupos/relatorio",
+        element: <LazyPage><ProductGroupsReportPage /></LazyPage>,
+      },
+      {
+        path: "/grupos/:id",
+        element: <LazyPage><ProductGroupDetailPage /></LazyPage>,
       },
       {
         path: "/clientes",

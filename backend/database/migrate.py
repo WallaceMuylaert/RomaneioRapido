@@ -187,6 +187,7 @@ def run_migrations():
     from backend.models.users import User
     from backend.models.products import Product
     from backend.models.categories import Category
+    from backend.models.product_groups import ProductGroup
     from backend.models.inventory import InventoryMovement, MovementType as _MT
     from backend.models.clients import Client
     from backend.models.api_keys import ApiKey
@@ -211,6 +212,7 @@ def run_migrations():
     models = [
         User,
         Category,
+        ProductGroup,
         Product,
         PendingRomaneio,
         InventoryMovement,
@@ -245,6 +247,23 @@ def run_migrations():
             print("  ✅ is_cancelled NULL fix completed")
         except Exception as e:
             print(f"  ⚠️ Warning fixing is_cancelled: {e}")
+
+    # Case-insensitive uniqueness for product_groups.code (defense against race
+    # conditions where the app-level lower() check passes for two concurrent
+    # requests with differing-case codes that would otherwise collide).
+    with database.engine.connect() as conn:
+        try:
+            print("\n🔧 Ensuring case-insensitive unique index on product_groups(user_id, lower(code))...")
+            conn.execute(text(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS uix_product_groups_user_code_lower
+                ON product_groups (user_id, lower(code));
+                """
+            ))
+            conn.commit()
+            print("  ✅ Case-insensitive index ensured")
+        except Exception as e:
+            print(f"  ⚠️ Warning creating case-insensitive index: {e}")
 
     print("\n" + "=" * 50)
     print("✅ Migration completed!")

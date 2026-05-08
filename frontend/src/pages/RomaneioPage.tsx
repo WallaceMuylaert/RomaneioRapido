@@ -53,6 +53,7 @@ interface ClientResult {
     name: string
     document: string | null
     phone: string | null
+    address: string | null
 }
 
 interface StockLevel {
@@ -102,6 +103,7 @@ export default function RomaneioPage() {
     const [stockQuantities, setStockQuantities] = useState<Record<number, string>>({})
     const [customerName, setCustomerName] = useState('')
     const [customerPhone, setCustomerPhone] = useState<string | null>(null)
+    const [customerAddress, setCustomerAddress] = useState<string | null>(null)
     const [selectedClientId, setSelectedClientId] = useState<number | null>(null)
     const [showExportModal, setShowExportModal] = useState(false)
     const [showDraftModal, setShowDraftModal] = useState(false)
@@ -279,6 +281,7 @@ export default function RomaneioPage() {
         setSelectedClientId(client.id)
         setCustomerName(client.name)
         setCustomerPhone(client.phone)
+        setCustomerAddress(client.address)
         setShowClientDropdown(false)
         setActiveClientIndex(-1)
     }
@@ -528,6 +531,15 @@ export default function RomaneioPage() {
             setCustomerName(pending.customer_name || '')
             setCustomerPhone(pending.customer_phone)
             setSelectedClientId(pending.client_id)
+            setCustomerAddress(null)
+            if (pending.client_id) {
+                api.get(`/clients/`, { params: { search: pending.customer_name || '', per_page: 5 } })
+                    .then(res => {
+                        const match = (res.data.items || []).find((c: ClientResult) => c.id === pending.client_id)
+                        if (match) setCustomerAddress(match.address)
+                    })
+                    .catch(() => {})
+            }
             setDiscountPercentage(pending.discount_percentage || 0)
 
             try {
@@ -991,6 +1003,7 @@ export default function RomaneioPage() {
         setCartItems([])
         setCustomerName('')
         setCustomerPhone(null)
+        setCustomerAddress(null)
         setSelectedClientId(null)
         setShowExportModal(false)
         setBarcodeInput('')
@@ -1452,6 +1465,15 @@ export default function RomaneioPage() {
                                                 setCustomerName(p.customer_name || '')
                                                 setCustomerPhone(p.customer_phone)
                                                 setSelectedClientId(p.client_id)
+                                                setCustomerAddress(null)
+                                                if (p.client_id) {
+                                                    api.get(`/clients/`, { params: { search: p.customer_name || '', per_page: 5 } })
+                                                        .then(res => {
+                                                            const match = (res.data.items || []).find((c: ClientResult) => c.id === p.client_id)
+                                                            if (match) setCustomerAddress(match.address)
+                                                        })
+                                                        .catch(() => {})
+                                                }
                                                 setDiscountPercentage(0)
                                                 setShowDraftModal(true)
                                             }}
@@ -1686,16 +1708,16 @@ export default function RomaneioPage() {
 
             {showExportModal && (
                 <Suspense fallback={null}>
-                    <RomaneioExportModal isOpen={showExportModal} onClose={resetCart} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} discount={discountAmount} />
+                    <RomaneioExportModal isOpen={showExportModal} onClose={resetCart} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} customerAddress={customerAddress} clientId={selectedClientId} items={cartItems} discount={discountAmount} />
                 </Suspense>
             )}
             {showDraftModal && (
                 <Suspense fallback={null}>
-                    <RomaneioExportModal isOpen={showDraftModal} onClose={() => setShowDraftModal(false)} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} discount={discountAmount} isDraft={true} />
+                    <RomaneioExportModal isOpen={showDraftModal} onClose={() => setShowDraftModal(false)} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} customerAddress={customerAddress} clientId={selectedClientId} items={cartItems} discount={discountAmount} isDraft={true} />
                 </Suspense>
             )}
             <DiscountCalculatorModal isOpen={showDiscountModal} subtotal={romaneioSubtotal} currentPercentage={discountPercentage} onClose={() => setShowDiscountModal(false)} onApply={(_, pct) => { setDiscountPercentage(pct); if (pct > 0) { toast.success(`Desconto de ${pct.toFixed(2)}% aplicado!`, { id: 'discount-toast' }) } else { toast.success('Desconto removido!', { id: 'discount-toast' }) } }} />
-            <ClientModal isOpen={clientModalOpen} onClose={() => setClientModalOpen(false)} onSuccess={(newClient) => { setCustomerName(newClient.name); setSelectedClientId(newClient.id); setCustomerPhone(newClient.phone); }} />
+            <ClientModal isOpen={clientModalOpen} onClose={() => setClientModalOpen(false)} onSuccess={(newClient) => { setCustomerName(newClient.name); setSelectedClientId(newClient.id); setCustomerPhone(newClient.phone); setCustomerAddress(newClient.address); }} />
             {cameraOpen && (
                 <Suspense fallback={null}>
                     <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setCameraOpen(false)} status={scanStatus} />

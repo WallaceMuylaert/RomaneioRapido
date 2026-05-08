@@ -2,8 +2,19 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, defer
 from fastapi import HTTPException
 from backend.models.products import Product
+from backend.models.product_groups import ProductGroup
 from backend.schemas.products import ProductCreate, ProductUpdate
 from backend.utils.images import compress_image_base64
+
+
+def _validate_group_ownership(db: Session, group_id, user_id: int):
+    if group_id is None:
+        return
+    exists = db.query(ProductGroup.id).filter(
+        ProductGroup.id == group_id, ProductGroup.user_id == user_id
+    ).first()
+    if not exists:
+        raise HTTPException(status_code=400, detail="Grupo de produtos inválido")
 
 
 # Colunas permitidas para ordenação — whitelist explícita para evitar inference attacks
@@ -13,9 +24,9 @@ _ALLOWED_SORT_COLUMNS = {
 }
 
 
-def get_products(db: Session, user_id: int, skip: int = 0, limit: int = 2000, search: str = None, category_id: int = None, color: str = None, size: str = None, sort_by: str = "name", order: str = "asc", include_images: bool = True):
+def get_products(db: Session, user_id: int, skip: int = 0, limit: int = 2000, search: str = None, category_id: int = None, group_id: int = None, color: str = None, size: str = None, sort_by: str = "name", order: str = "asc", include_images: bool = True):
     query = db.query(Product).filter(Product.is_active == True, Product.user_id == user_id)
-    
+
     # Otimização: Não carregar o campo pesado de imagem se não for solicitado
     if not include_images:
         query = query.options(defer(Product.image_base64))
@@ -28,6 +39,11 @@ def get_products(db: Session, user_id: int, skip: int = 0, limit: int = 2000, se
         )
     if category_id:
         query = query.filter(Product.category_id == category_id)
+    if group_id is not None:
+        if group_id == 0:
+            query = query.filter(Product.group_id.is_(None))
+        else:
+            query = query.filter(Product.group_id == group_id)
     if color:
         query = query.filter(Product.color.ilike(f"%{color}%"))
     if size:
@@ -52,7 +68,7 @@ def get_products(db: Session, user_id: int, skip: int = 0, limit: int = 2000, se
     return query.offset(skip).limit(limit).all()
 
 
-def count_products(db: Session, user_id: int, search: str = None, category_id: int = None, color: str = None, size: str = None):
+def count_products(db: Session, user_id: int, search: str = None, category_id: int = None, group_id: int = None, color: str = None, size: str = None):
     query = db.query(Product).filter(Product.is_active == True, Product.user_id == user_id)
     if search:
         query = query.filter(
@@ -62,6 +78,11 @@ def count_products(db: Session, user_id: int, search: str = None, category_id: i
         )
     if category_id:
         query = query.filter(Product.category_id == category_id)
+    if group_id is not None:
+        if group_id == 0:
+            query = query.filter(Product.group_id.is_(None))
+        else:
+            query = query.filter(Product.group_id == group_id)
     if color:
         query = query.filter(Product.color.ilike(f"%{color}%"))
     if size:
@@ -86,6 +107,7 @@ def create_product(db: Session, product: ProductCreate, user_id: int):
     product_data = product.model_dump()
     if product_data.get("image_base64"):
         product_data["image_base64"] = compress_image_base64(product_data["image_base64"])
+    _validate_group_ownership(db, product_data.get("group_id"), user_id)
 
     db_product = Product(**product_data, user_id=user_id)
     db.add(db_product)
@@ -121,6 +143,8 @@ def update_product(db: Session, product_id: int, product: ProductUpdate, user_id
     update_data = product.model_dump(exclude_unset=True)
     if update_data.get("image_base64"):
         update_data["image_base64"] = compress_image_base64(update_data["image_base64"])
+    if "group_id" in update_data:
+        _validate_group_ownership(db, update_data.get("group_id"), user_id)
 
     if update_data.get("barcode"):
         existing = db.query(Product).filter(

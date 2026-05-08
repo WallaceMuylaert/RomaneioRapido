@@ -18,6 +18,7 @@ class ProductBase(BaseModel):
     min_stock: float = Field(0.0, ge=0, le=MAX_QUANTITY)
     unit: str = Field("UN", max_length=20)
     category_id: Optional[int] = None
+    group_id: Optional[int] = None
     image_base64: Optional[str] = Field(None, max_length=_MAX_IMAGE_BASE64)
     is_active: bool = True
     color: Optional[str] = None
@@ -39,6 +40,7 @@ class ProductUpdate(BaseModel):
     min_stock: Optional[float] = Field(None, ge=0, le=MAX_QUANTITY)
     unit: Optional[str] = Field(None, max_length=20)
     category_id: Optional[int] = None
+    group_id: Optional[int] = None
     image_base64: Optional[str] = Field(None, max_length=_MAX_IMAGE_BASE64)
     is_active: Optional[bool] = None
     color: Optional[str] = None
@@ -68,6 +70,7 @@ class ProductSlimResponse(BaseModel):
     min_stock: float
     unit: str
     category_id: Optional[int] = None
+    group_id: Optional[int] = None
     is_active: bool
     color: Optional[str] = None
     size: Optional[str] = None

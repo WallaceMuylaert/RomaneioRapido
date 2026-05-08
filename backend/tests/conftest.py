@@ -17,6 +17,7 @@ def prepare_sqlite_test_database():
     from backend.models.clients import Client
     from backend.models.inventory import InventoryMovement
     from backend.models.pending_romaneio import PendingRomaneio
+    from backend.models.product_groups import ProductGroup
     from backend.models.products import Product
     from backend.models.users import User
 

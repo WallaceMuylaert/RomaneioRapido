@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast'
 import { translateError } from '@/utils/errors'
 import { Plus, Pencil, Trash2, X, Loader2, Tags, GripVertical, Check, MoreVertical, ArrowDownAZ, ArrowUp, ArrowDown } from 'lucide-react'
 import ConfirmModal from '@/components/ConfirmModal'
+import DismissibleTip from '@/components/DismissibleTip'
 
 interface Category {
     id: number
@@ -275,6 +276,21 @@ export default function CategoriesPage() {
                     )}
                 </div>
             </div>
+
+            {!isReordering && (
+                <DismissibleTip
+                    storageKey="categories-purpose"
+                    title="Para que serve uma categoria?"
+                    className="mb-5"
+                >
+                    <p>
+                        Use categorias para classificar seus produtos por <strong className="text-text-primary">tipo ou família comercial</strong> (ex.: Tecidos Leves, Alfaiataria, Brinquedos). Bom para organizar o catálogo em grandes seções.
+                    </p>
+                    <p>
+                        Diferente de <span className="text-text-primary">Grupos</span>, que reúnem variações do mesmo produto (ex.: <span className="font-mono uppercase tracking-wider">AIRFLOW DUNA</span> em várias cores). Você pode usar os dois ao mesmo tempo no produto.
+                    </p>
+                </DismissibleTip>
+            )}
 
             {isReordering && (
                 <div className="mb-4 rounded-2xl border border-brand-100 bg-card p-4 text-sm text-text-secondary">

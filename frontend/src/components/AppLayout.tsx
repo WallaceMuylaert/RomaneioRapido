@@ -6,6 +6,7 @@ import {
     LayoutDashboard,
     Boxes,
     Tags,
+    Layers,
     ClipboardList,
     LogOut,
     Menu,
@@ -33,6 +34,7 @@ const navItems = [
     { to: '/romaneio', label: 'Romaneio', icon: ClipboardList },
     { to: '/movimentacoes', label: 'Movimentações', icon: ArrowRightLeft },
     { to: '/produtos', label: 'Produtos', icon: Boxes },
+    { to: '/grupos', label: 'Grupos', icon: Layers },
     { to: '/categorias', label: 'Categorias', icon: Tags },
     { to: '/clientes', label: 'Clientes', icon: Users },
 ]

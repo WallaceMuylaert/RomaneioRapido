@@ -60,6 +60,7 @@ def delete_client(db: Session, client_id: int, user_id: int):
         "phone": db_client.phone,
         "document": db_client.document,
         "email": db_client.email,
+        "address": db_client.address,
         "notes": db_client.notes,
         "created_at": db_client.created_at,
         "updated_at": db_client.updated_at,

@@ -57,6 +57,7 @@ interface Movement {
         id: number
         name: string
         phone: string | null
+        address?: string | null
     }
     is_cancelled?: boolean
 }
@@ -73,7 +74,7 @@ export default function MovementsPage() {
     const [viewMode, setViewMode] = useState<'movements' | 'romaneios'>('romaneios')
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [sharingMovement, setSharingMovement] = useState<Movement | null>(null)
-    const [exportingMovement, setExportingMovement] = useState<{ clientId: number | null, customerName: string, createdAt: string, phone: string | null, image: string | null, items: CartItem[], discount?: number } | null>(null)
+    const [exportingMovement, setExportingMovement] = useState<{ clientId: number | null, customerName: string, createdAt: string, phone: string | null, address: string | null, image: string | null, items: CartItem[], discount?: number } | null>(null)
     const [openMenu, setOpenMenu] = useState<{
         id: string
         left: number
@@ -212,6 +213,7 @@ export default function MovementsPage() {
                         clientId: m.client_id || m.client?.id || null,
                         customerName: m.client?.name || cName || 'Consumidor',
                         customerPhone: m.client?.phone || null,
+                        customerAddress: m.client?.address || null,
                         items: [],
                         movement_type: m.movement_type,
                         totalQuantity: 0,
@@ -226,6 +228,7 @@ export default function MovementsPage() {
                 if (m.client || m.client_id) {
                     groups[m.romaneio_id].customerName = m.client?.name || groups[m.romaneio_id].customerName;
                     groups[m.romaneio_id].customerPhone = m.client?.phone || groups[m.romaneio_id].customerPhone;
+                    groups[m.romaneio_id].customerAddress = m.client?.address || groups[m.romaneio_id].customerAddress;
                     groups[m.romaneio_id].clientId = m.client_id || m.client?.id || groups[m.romaneio_id].clientId;
                 }
             } else {
@@ -1015,6 +1018,7 @@ export default function MovementsPage() {
                                                                                     customerName: gm.customerName,
                                                                                     createdAt: gm.created_at,
                                                                                     phone: gm.customerPhone,
+                                                                                    address: gm.customerAddress || null,
                                                                                     image: null,
                                                                                     items: gm.items.map((i: any) => ({
                                                                                         selectedKey: `gm-${i.id}`,
@@ -1036,6 +1040,7 @@ export default function MovementsPage() {
                                                                                     customerName: (m as any).client?.name || (m.notes?.startsWith('Romaneio: ') ? m.notes.replace('Romaneio: ', '').trim() : (m.notes || 'Consumidor')),
                                                                                     createdAt: m.created_at,
                                                                                     phone: (m as any).client?.phone || null,
+                                                                                    address: (m as any).client?.address || null,
                                                                                     image: m.product_image,
                                                                                     items: [{
                                                                                         selectedKey: `mov-${m.id}`,
@@ -1146,6 +1151,7 @@ export default function MovementsPage() {
                             customerName: (sharingMovement as any).client?.name || (sharingMovement.notes?.startsWith('Romaneio: ') ? sharingMovement.notes.replace('Romaneio: ', '').trim() : (sharingMovement.notes || 'Consumidor')),
                             createdAt: sharingMovement.created_at,
                             phone: (sharingMovement as any).client?.phone || null,
+                            address: (sharingMovement as any).client?.address || null,
                             image: sharingMovement.product_image,
                             items: [{
                                 selectedKey: `mov-${sharingMovement.id}`,
@@ -1172,6 +1178,7 @@ export default function MovementsPage() {
                     clientId={exportingMovement.clientId}
                     customerName={exportingMovement.customerName}
                     customerPhone={exportingMovement.phone}
+                    customerAddress={exportingMovement.address}
                     items={exportingMovement.items}
                     createdAt={exportingMovement.createdAt}
                     discount={exportingMovement.discount}

@@ -36,6 +36,7 @@ class ClientInfo(BaseModel):
     id: int
     name: str
     phone: Optional[str] = None
+    address: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
