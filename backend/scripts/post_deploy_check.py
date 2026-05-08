@@ -110,13 +110,19 @@ def check_trigram_indexes(conn):
 
 def check_index_actually_used(conn):
     """
-    EXPLAIN um ILIKE em clients e products para confirmar que o planner
-    está realmente usando os índices trigram (não Seq Scan).
+    Valida que os índices trigram estão presentes E utilizáveis.
 
-    Tabelas vazias caem para Seq Scan independente do índice — nesse caso
-    emitimos warning, não fail.
+    Em tabelas pequenas (até alguns milhares de linhas) o planner escolhe
+    Seq Scan legitimamente — o custo de fazer Bitmap Index Scan + recheck
+    é maior que escanear poucas linhas. Esse é o comportamento CORRETO
+    do Postgres, não uma falha do índice.
+
+    Por isso só falhamos se a tabela for grande o suficiente para o
+    índice realmente compensar (~5000+ linhas para GIN trigram). Abaixo
+    disso emitimos WARN e seguimos.
     """
     print("\n[3/3] Verificando uso efetivo dos índices em ILIKE...")
+    LARGE_TABLE_THRESHOLD = 5000
     all_ok = True
     targets = [
         ("clients", "name", "ix_clients_name_trgm"),
@@ -125,13 +131,13 @@ def check_index_actually_used(conn):
     for table, column, idx_name in targets:
         count = conn.execute(
             text(f"SELECT count(*) FROM {table};")
-        ).scalar()
-        if count is None or count < 100:
-            warn(
-                f"{table}: apenas {count} linhas — planner usa Seq Scan "
-                f"(o índice {idx_name} ainda funcionará quando crescer)"
-            )
-            continue
+        ).scalar() or 0
+
+        # Atualiza estatísticas para o planner refletir o estado atual.
+        try:
+            conn.execute(text(f"ANALYZE {table};"))
+        except Exception as e:
+            warn(f"ANALYZE {table} falhou (segue verificação): {e}")
 
         plan_rows = conn.execute(
             text(f"EXPLAIN SELECT id FROM {table} WHERE {column} ILIKE :q"),
@@ -140,17 +146,26 @@ def check_index_actually_used(conn):
         plan_text = "\n".join(r[0] for r in plan_rows)
 
         if "Bitmap Index Scan" in plan_text and idx_name in plan_text:
-            ok(f"{table}.{column} usa {idx_name}")
+            ok(f"{table}.{column} usa {idx_name} ({count} linhas)")
+        elif count < LARGE_TABLE_THRESHOLD:
+            # Tabela pequena: Seq Scan é a escolha ótima do planner.
+            # O índice está criado e será usado quando a base crescer.
+            warn(
+                f"{table}: {count} linhas — planner escolhe Seq Scan "
+                f"(comportamento ótimo p/ tabela pequena; {idx_name} "
+                f"existe e será ativado em ~{LARGE_TABLE_THRESHOLD}+ linhas)"
+            )
         elif "Seq Scan" in plan_text:
             fail(
-                f"{table}.{column} ainda faz Seq Scan — índice não está "
-                f"sendo usado. Rode: ANALYZE {table};"
+                f"{table}.{column} faz Seq Scan com {count} linhas — "
+                f"esperado uso de {idx_name}. Possível problema de "
+                f"estatísticas ou índice corrompido."
             )
             all_ok = False
         else:
             warn(
-                f"{table}.{column}: planner não escolheu {idx_name} "
-                "(plano alternativo). Plano:\n" + plan_text
+                f"{table}.{column}: planner escolheu plano alternativo. "
+                f"Detalhes:\n" + plan_text
             )
     return all_ok
 
