@@ -15,6 +15,7 @@ interface Client {
     phone: string | null
     document: string | null
     email: string | null
+    address: string | null
     notes: string | null
 }
 

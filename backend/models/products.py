@@ -19,6 +19,7 @@ class Product(Base):
     min_stock = Column(Float, nullable=False, default=0.0)
     unit = Column(String, nullable=False, default="UN")
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
+    group_id = Column(Integer, ForeignKey("product_groups.id", ondelete="SET NULL"), nullable=True, index=True)
     image_base64 = Column(Text, nullable=True) # Imagem em base64
     is_active = Column(Boolean, default=True)
     color = Column(String, nullable=True)
@@ -27,6 +28,7 @@ class Product(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     category = relationship("Category", back_populates="products")
+    group = relationship("ProductGroup", back_populates="products")
     movements = relationship("InventoryMovement", back_populates="product")
     user = relationship("User")
 

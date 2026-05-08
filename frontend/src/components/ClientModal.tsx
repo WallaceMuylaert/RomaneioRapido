@@ -12,6 +12,7 @@ interface Client {
     phone: string | null
     document: string | null
     email: string | null
+    address: string | null
     notes: string | null
 }
 
@@ -29,6 +30,7 @@ export default function ClientModal({ isOpen, onClose, onSuccess, editingClient 
         phone: '',
         document: '',
         email: '',
+        address: '',
         notes: ''
     })
 
@@ -39,10 +41,11 @@ export default function ClientModal({ isOpen, onClose, onSuccess, editingClient 
                 phone: editingClient.phone || '',
                 document: editingClient.document || '',
                 email: editingClient.email || '',
+                address: editingClient.address || '',
                 notes: editingClient.notes || ''
             })
         } else {
-            setForm({ name: '', phone: '', document: '', email: '', notes: '' })
+            setForm({ name: '', phone: '', document: '', email: '', address: '', notes: '' })
         }
     }, [editingClient, isOpen])
 
@@ -55,6 +58,7 @@ export default function ClientModal({ isOpen, onClose, onSuccess, editingClient 
                 phone: form.phone.trim() || null,
                 document: form.document.trim() || null,
                 email: form.email.trim() || null,
+                address: form.address.trim() || null,
                 notes: form.notes.trim() || null,
             }
 
@@ -152,13 +156,25 @@ export default function ClientModal({ isOpen, onClose, onSuccess, editingClient 
 
                             <div>
                                 <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-2 block ml-1">
+                                    Endereço de Entrega
+                                </label>
+                                <textarea
+                                    value={form.address}
+                                    onChange={e => setForm({ ...form, address: e.target.value })}
+                                    className="w-full p-4 text-sm font-semibold bg-background/50 border border-border rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-card transition-all placeholder-slate-400 min-h-[80px] resize-y"
+                                    placeholder="Rua, número, bairro, cidade — referências"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-2 block ml-1">
                                     Observações
                                 </label>
                                 <textarea
                                     value={form.notes}
                                     onChange={e => setForm({ ...form, notes: e.target.value })}
                                     className="w-full p-4 text-sm font-semibold bg-background/50 border border-border rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-400 focus:bg-card transition-all placeholder-slate-400 min-h-[100px] resize-y"
-                                    placeholder="Endereço de entrega, referências, etc."
+                                    placeholder="Anotações internas, condições especiais, etc."
                                 />
                             </div>
                         </div>

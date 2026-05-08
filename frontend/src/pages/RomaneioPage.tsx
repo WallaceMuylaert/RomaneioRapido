@@ -53,6 +53,7 @@ interface ClientResult {
     name: string
     document: string | null
     phone: string | null
+    address: string | null
 }
 
 interface StockLevel {
@@ -102,6 +103,7 @@ export default function RomaneioPage() {
     const [stockQuantities, setStockQuantities] = useState<Record<number, string>>({})
     const [customerName, setCustomerName] = useState('')
     const [customerPhone, setCustomerPhone] = useState<string | null>(null)
+    const [customerAddress, setCustomerAddress] = useState<string | null>(null)
     const [selectedClientId, setSelectedClientId] = useState<number | null>(null)
     const [showExportModal, setShowExportModal] = useState(false)
     const [showDraftModal, setShowDraftModal] = useState(false)
@@ -164,6 +166,11 @@ export default function RomaneioPage() {
     const hasInitializedRef = useRef(false)
     const isFinalizingRef = useRef(false)
 
+    // Debounce timers para evitar uma requisição por tecla nas buscas
+    const clientSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const productSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const SEARCH_DEBOUNCE_MS = 300
+
     const clearAutoSaveTimer = () => {
         if (autoSaveTimerRef.current) {
             clearTimeout(autoSaveTimerRef.current)
@@ -211,6 +218,14 @@ export default function RomaneioPage() {
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
+    // Cleanup dos timers de debounce ao desmontar
+    useEffect(() => {
+        return () => {
+            if (clientSearchTimerRef.current) clearTimeout(clientSearchTimerRef.current)
+            if (productSearchTimerRef.current) clearTimeout(productSearchTimerRef.current)
+        }
+    }, [])
+
     // Filtros e Paginação do Estoque
     const [estoqueSearch, setEstoqueSearch] = useState('')
     const [estoquePage, setEstoquePage] = useState(1)
@@ -232,55 +247,79 @@ export default function RomaneioPage() {
         fetchStockLevels(1, estoqueSearch, field, newDir)
     }
 
-    const handleSearchClient = async (query: string) => {
+    const handleSearchClient = (query: string) => {
         setCustomerName(query)
         setDropdownResults([])
         setActiveProductIndex(-1)
+
+        if (clientSearchTimerRef.current) {
+            clearTimeout(clientSearchTimerRef.current)
+        }
 
         if (query.length < 2) {
             setDropdownClients([])
             setShowClientDropdown(false)
             setActiveClientIndex(-1)
+            setIsSearchingClient(false)
             return
         }
+
         setIsSearchingClient(true)
-        try {
-            const res = await api.get('/clients/', { params: { search: query, per_page: 5 } })
-            setDropdownClients(res.data.items)
-            setShowClientDropdown(true)
-            setActiveClientIndex(res.data.items.length > 0 ? 0 : -1)
-        } catch (err) {
-            console.error('Erro ao buscar clientes:', err)
-        } finally {
-            setIsSearchingClient(false)
-        }
+        clientSearchTimerRef.current = setTimeout(async () => {
+            try {
+                const res = await api.get('/clients/', { params: { search: query, per_page: 5 } })
+                setDropdownClients(res.data.items)
+                setShowClientDropdown(true)
+                setActiveClientIndex(res.data.items.length > 0 ? 0 : -1)
+            } catch (err) {
+                console.error('Erro ao buscar clientes:', err)
+            } finally {
+                setIsSearchingClient(false)
+            }
+        }, SEARCH_DEBOUNCE_MS)
     }
 
-    const handleBarcodeSearch = async (val: string) => {
+    const handleBarcodeSearch = (val: string) => {
         setBarcodeInput(val)
         setShowClientDropdown(false)
         setActiveClientIndex(-1)
+
+        if (productSearchTimerRef.current) {
+            clearTimeout(productSearchTimerRef.current)
+        }
 
         if (val.trim().length < 2) {
             setDropdownResults([])
             setActiveProductIndex(-1)
             return
         }
-        try {
-            const res = await api.get('/products/', { params: { search: val, per_page: 5, include_images: false } })
-            setDropdownResults(res.data.items)
-            setActiveProductIndex(res.data.items.length > 0 ? 0 : -1)
-        } catch (err) {
-            console.error('Erro ao buscar produtos:', err)
-        }
+
+        productSearchTimerRef.current = setTimeout(async () => {
+            try {
+                const res = await api.get('/products/', { params: { search: val, per_page: 5, include_images: false } })
+                setDropdownResults(res.data.items)
+                setActiveProductIndex(res.data.items.length > 0 ? 0 : -1)
+            } catch (err) {
+                console.error('Erro ao buscar produtos:', err)
+            }
+        }, SEARCH_DEBOUNCE_MS)
     }
 
     const selectClient = (client: ClientResult) => {
+        // Cancela qualquer busca pendente para evitar que o dropdown reapareça
+        // depois da seleção (e sobreponha o cliente escolhido).
+        if (clientSearchTimerRef.current) {
+            clearTimeout(clientSearchTimerRef.current)
+            clientSearchTimerRef.current = null
+        }
+        setIsSearchingClient(false)
         setSelectedClientId(client.id)
         setCustomerName(client.name)
         setCustomerPhone(client.phone)
+        setCustomerAddress(client.address)
         setShowClientDropdown(false)
         setActiveClientIndex(-1)
+        setDropdownClients([])
     }
 
     const handleClientKeyDown = (e: React.KeyboardEvent) => {
@@ -315,6 +354,10 @@ export default function RomaneioPage() {
         } else if (e.key === 'Enter') {
             e.preventDefault()
             if (activeProductIndex >= 0) {
+                if (productSearchTimerRef.current) {
+                    clearTimeout(productSearchTimerRef.current)
+                    productSearchTimerRef.current = null
+                }
                 addToCart(dropdownResults[activeProductIndex])
                 setBarcodeInput('')
                 setDropdownResults([])
@@ -528,6 +571,15 @@ export default function RomaneioPage() {
             setCustomerName(pending.customer_name || '')
             setCustomerPhone(pending.customer_phone)
             setSelectedClientId(pending.client_id)
+            setCustomerAddress(null)
+            if (pending.client_id) {
+                api.get(`/clients/`, { params: { search: pending.customer_name || '', per_page: 5 } })
+                    .then(res => {
+                        const match = (res.data.items || []).find((c: ClientResult) => c.id === pending.client_id)
+                        if (match) setCustomerAddress(match.address)
+                    })
+                    .catch(() => {})
+            }
             setDiscountPercentage(pending.discount_percentage || 0)
 
             try {
@@ -991,6 +1043,7 @@ export default function RomaneioPage() {
         setCartItems([])
         setCustomerName('')
         setCustomerPhone(null)
+        setCustomerAddress(null)
         setSelectedClientId(null)
         setShowExportModal(false)
         setBarcodeInput('')
@@ -1452,6 +1505,15 @@ export default function RomaneioPage() {
                                                 setCustomerName(p.customer_name || '')
                                                 setCustomerPhone(p.customer_phone)
                                                 setSelectedClientId(p.client_id)
+                                                setCustomerAddress(null)
+                                                if (p.client_id) {
+                                                    api.get(`/clients/`, { params: { search: p.customer_name || '', per_page: 5 } })
+                                                        .then(res => {
+                                                            const match = (res.data.items || []).find((c: ClientResult) => c.id === p.client_id)
+                                                            if (match) setCustomerAddress(match.address)
+                                                        })
+                                                        .catch(() => {})
+                                                }
                                                 setDiscountPercentage(0)
                                                 setShowDraftModal(true)
                                             }}
@@ -1686,16 +1748,16 @@ export default function RomaneioPage() {
 
             {showExportModal && (
                 <Suspense fallback={null}>
-                    <RomaneioExportModal isOpen={showExportModal} onClose={resetCart} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} discount={discountAmount} />
+                    <RomaneioExportModal isOpen={showExportModal} onClose={resetCart} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} customerAddress={customerAddress} clientId={selectedClientId} items={cartItems} discount={discountAmount} />
                 </Suspense>
             )}
             {showDraftModal && (
                 <Suspense fallback={null}>
-                    <RomaneioExportModal isOpen={showDraftModal} onClose={() => setShowDraftModal(false)} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} clientId={selectedClientId} items={cartItems} discount={discountAmount} isDraft={true} />
+                    <RomaneioExportModal isOpen={showDraftModal} onClose={() => setShowDraftModal(false)} customerName={customerName || 'Consumidor'} customerPhone={customerPhone} customerAddress={customerAddress} clientId={selectedClientId} items={cartItems} discount={discountAmount} isDraft={true} />
                 </Suspense>
             )}
             <DiscountCalculatorModal isOpen={showDiscountModal} subtotal={romaneioSubtotal} currentPercentage={discountPercentage} onClose={() => setShowDiscountModal(false)} onApply={(_, pct) => { setDiscountPercentage(pct); if (pct > 0) { toast.success(`Desconto de ${pct.toFixed(2)}% aplicado!`, { id: 'discount-toast' }) } else { toast.success('Desconto removido!', { id: 'discount-toast' }) } }} />
-            <ClientModal isOpen={clientModalOpen} onClose={() => setClientModalOpen(false)} onSuccess={(newClient) => { setCustomerName(newClient.name); setSelectedClientId(newClient.id); setCustomerPhone(newClient.phone); }} />
+            <ClientModal isOpen={clientModalOpen} onClose={() => setClientModalOpen(false)} onSuccess={(newClient) => { setCustomerName(newClient.name); setSelectedClientId(newClient.id); setCustomerPhone(newClient.phone); setCustomerAddress(newClient.address); }} />
             {cameraOpen && (
                 <Suspense fallback={null}>
                     <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setCameraOpen(false)} status={scanStatus} />

@@ -18,6 +18,7 @@ from backend.core.limiter import limiter
 from backend.core import database
 from backend.models.users import User
 from backend.models.categories import Category
+from backend.models.product_groups import ProductGroup
 from backend.models.products import Product
 from backend.models.inventory import InventoryMovement
 from backend.models.clients import Client
