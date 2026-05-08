@@ -88,11 +88,13 @@ jobs:
             sleep 10
             backend_ready=false
             for i in $(seq 1 40); do
-              # Comando dentro de `if` não dispara script_stop nem set -e,
-              # mesmo se o exec retornar não-zero.
-              if docker compose -f docker-compose.prod.yml exec -T backend python -c "import urllib.request; urllib.request.urlopen('http://localhost:8002/health', timeout=2).read()" >/dev/null 2>&1; then
+              # TCP connect — verifica que uvicorn está aceitando conexões.
+              # Não usa GET /health porque o TrustedHostMiddleware rejeita
+              # Host headers fora de ALLOWED_HOSTS (retornando 400).
+              # Comando dentro de `if` não dispara script_stop nem set -e.
+              if docker compose -f docker-compose.prod.yml exec -T backend python -c "import socket; s=socket.socket(); s.settimeout(2); s.connect(('127.0.0.1', 8002)); s.close()" >/dev/null 2>&1; then
                 backend_ready=true
-                echo "  ✓ backend respondeu na tentativa $i"
+                echo "  ✓ backend aceitou conexão na tentativa $i"
                 break
               fi
               sleep 2
