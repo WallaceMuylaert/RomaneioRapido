@@ -52,8 +52,26 @@
   <meta name="twitter:image" content="https://romaneiorapido.com.br/login-warehouse-1200.jpg" />
   <meta name="twitter:image:alt" content="Romaneio Rápido — sistema web de romaneio e controle de estoque" />
 
-  <!-- Se editar este bloco JSON-LD, recompute o hash SHA-256 e atualize a CSP em nginx.conf:
-       node -e "const fs=require('fs'),c=require('crypto');const h=fs.readFileSync('index.html','utf8').match(/<script type=\"application\/ld\+json\">([\s\S]*?)<\/script>/)[1];console.log('sha256-'+c.createHash('sha256').update(h,'utf8').digest('base64'))" -->
+  <!-- Meta Pixel Code -->
+  <script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '1675584493780702');
+  fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=1675584493780702&ev=PageView&noscript=1"
+  /></noscript>
+  <!-- End Meta Pixel Code -->
+
+  <!-- Se editar este bloco JSON-LD ou o Meta Pixel acima, recompute os hashes SHA-256 e atualize a CSP em nginx.conf:
+       node -e "const fs=require('fs'),c=require('crypto');const html=fs.readFileSync('index.html','utf8');for(const m of html.matchAll(/<script(?: type=\"application\/ld\+json\")?>([\s\S]*?)<\/script>/g))console.log('sha256-'+c.createHash('sha256').update(m[1],'utf8').digest('base64'))" -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
