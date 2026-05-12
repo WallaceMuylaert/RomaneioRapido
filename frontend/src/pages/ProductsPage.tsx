@@ -20,7 +20,11 @@ import {
     ArrowDownUp,
     ChevronUp,
     ChevronDown,
-    Download
+    Download,
+    SlidersHorizontal,
+    CheckCircle2,
+    XCircle,
+    Check
 } from 'lucide-react'
 import ConfirmModal from '@/components/ConfirmModal'
 import { getBase64FromUrl } from '@/utils/imageUtils'
@@ -139,6 +143,8 @@ export default function ProductsPage() {
     const [sizeFilter, setSizeFilter] = useState('')
     const [categoryFilter, setCategoryFilter] = useState('')
     const [groupFilter, setGroupFilter] = useState('')
+    const [statusFilter, setStatusFilter] = useState<'' | 'ok' | 'low' | 'out'>('')
+    const [filtersOpen, setFiltersOpen] = useState(false)
     const [logoBase64, setLogoBase64] = useState<string>('')
     const [reportMenuOpen, setReportMenuOpen] = useState(false)
     const [stockModalOpen, setStockModalOpen] = useState(false)
@@ -164,6 +170,7 @@ export default function ProductsPage() {
             if (sizeFilter) params.size = sizeFilter
             if (categoryFilter) params.category_id = categoryFilter
             if (groupFilter) params.group_id = groupFilter
+            if (statusFilter) params.stock_status = statusFilter
             const res = await api.get('/products/', { params })
             setProducts(res.data.items)
             setTotalPages(res.data.pages)
@@ -253,7 +260,7 @@ export default function ProductsPage() {
             fetchProducts(1)
         }, 300)
         return () => clearTimeout(timeout)
-    }, [search, colorFilter, sizeFilter, categoryFilter, groupFilter])
+    }, [search, colorFilter, sizeFilter, categoryFilter, groupFilter, statusFilter])
 
     const handleSearchKeyDown = (e: React.KeyboardEvent) => {
         if (products.length === 0) return
@@ -594,6 +601,8 @@ export default function ProductsPage() {
             if (colorFilter) params.color = colorFilter
             if (sizeFilter) params.size = sizeFilter
             if (categoryFilter) params.category_id = categoryFilter
+            if (groupFilter) params.group_id = groupFilter
+            if (statusFilter) params.stock_status = statusFilter
 
             const res = await api.get('/products/', { params })
             const allProducts: Product[] = res.data.items
@@ -874,60 +883,252 @@ export default function ProductsPage() {
             </div>
 
             {/* Filters */}
-            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <div className="relative sm:col-span-2">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/60" />
-                    <input
-                        type="text"
-                        placeholder="Buscar por nome, código de barras ou SKU..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        onKeyDown={handleSearchKeyDown}
-                        className="w-full h-10 pl-10 pr-4 text-sm bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all placeholder-gray-300"
-                    />
-                </div>
-                <div className="sm:col-span-2 lg:col-span-1">
-                    <select
-                        value={categoryFilter}
-                        onChange={(e) => setCategoryFilter(e.target.value)}
-                        className="w-full h-10 px-3 text-sm bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all font-medium text-text-secondary"
-                    >
-                        <option value="">Todas Categorias</option>
-                        {categories.map(cat => (
-                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="sm:col-span-2 lg:col-span-1">
-                    <select
-                        value={groupFilter}
-                        onChange={(e) => setGroupFilter(e.target.value)}
-                        className="w-full h-10 px-3 text-sm bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all font-medium text-text-secondary"
-                    >
-                        <option value="">Todos os Grupos</option>
-                        <option value="0">Sem grupo</option>
-                        {groups.map(g => (
-                            <option key={g.id} value={g.id}>{g.code} — {g.name}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="grid grid-cols-2 gap-2 sm:col-span-2 lg:col-span-1">
-                    <input
-                        type="text"
-                        placeholder="Cor..."
-                        value={colorFilter}
-                        onChange={(e) => setColorFilter(e.target.value)}
-                        className="w-full h-10 px-3 text-sm bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Tam..."
-                        value={sizeFilter}
-                        onChange={(e) => setSizeFilter(e.target.value)}
-                        className="w-full h-10 px-3 text-sm bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all"
-                    />
-                </div>
-            </div>
+            {(() => {
+                const statusOptions: { value: 'ok' | 'low' | 'out'; label: string; icon: typeof CheckCircle2; activeClass: string; iconClass: string }[] = [
+                    { value: 'ok', label: 'OK', icon: CheckCircle2, activeClass: 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm', iconClass: 'text-emerald-500' },
+                    { value: 'low', label: 'Baixo', icon: AlertTriangle, activeClass: 'bg-amber-50 border-amber-300 text-amber-700 shadow-sm', iconClass: 'text-amber-500' },
+                    { value: 'out', label: 'Zerado', icon: XCircle, activeClass: 'bg-rose-50 border-rose-300 text-rose-700 shadow-sm', iconClass: 'text-rose-500' },
+                ]
+                const activeFilters: { key: string; label: string; onClear: () => void }[] = []
+                if (categoryFilter) {
+                    const cat = categories.find(c => String(c.id) === categoryFilter)
+                    activeFilters.push({ key: 'category', label: `Categoria: ${cat?.name || categoryFilter}`, onClear: () => setCategoryFilter('') })
+                }
+                if (groupFilter) {
+                    const label = groupFilter === '0' ? 'Sem grupo' : (groups.find(g => String(g.id) === groupFilter)?.name || groupFilter)
+                    activeFilters.push({ key: 'group', label: `Grupo: ${label}`, onClear: () => setGroupFilter('') })
+                }
+                if (statusFilter) {
+                    const opt = statusOptions.find(o => o.value === statusFilter)
+                    activeFilters.push({ key: 'status', label: `Status: ${opt?.label || statusFilter}`, onClear: () => setStatusFilter('') })
+                }
+                if (colorFilter) activeFilters.push({ key: 'color', label: `Cor: ${colorFilter}`, onClear: () => setColorFilter('') })
+                if (sizeFilter) activeFilters.push({ key: 'size', label: `Tam: ${sizeFilter}`, onClear: () => setSizeFilter('') })
+
+                const activeCount = activeFilters.length
+                const clearAll = () => {
+                    setCategoryFilter('')
+                    setGroupFilter('')
+                    setStatusFilter('')
+                    setColorFilter('')
+                    setSizeFilter('')
+                }
+
+                return (
+                    <div className="mb-5 space-y-3">
+                        {/* Linha principal: busca + status + toggle de filtros */}
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <div className="relative flex-1 min-w-0">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/60" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por nome, código de barras ou SKU..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    onKeyDown={handleSearchKeyDown}
+                                    className="w-full h-10 pl-10 pr-9 text-sm bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all placeholder-gray-300"
+                                />
+                                {search && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearch('')}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-text-secondary/60 hover:bg-border/50 hover:text-text-primary transition-colors"
+                                        aria-label="Limpar busca"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Pílulas rápidas de Status (visíveis em telas médias+) */}
+                            <div className="hidden md:inline-flex h-10 items-center gap-1 rounded-xl border border-border bg-card p-1 shadow-sm">
+                                <button
+                                    type="button"
+                                    onClick={() => setStatusFilter('')}
+                                    className={`h-8 px-3 inline-flex items-center gap-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === '' ? 'bg-background text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
+                                    aria-pressed={statusFilter === ''}
+                                >
+                                    Todos
+                                </button>
+                                {statusOptions.map(opt => {
+                                    const Icon = opt.icon
+                                    const isActive = statusFilter === opt.value
+                                    return (
+                                        <button
+                                            key={opt.value}
+                                            type="button"
+                                            onClick={() => setStatusFilter(isActive ? '' : opt.value)}
+                                            className={`h-8 px-3 inline-flex items-center gap-1.5 rounded-lg text-xs font-bold transition-all border ${isActive ? opt.activeClass : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-background'}`}
+                                            aria-pressed={isActive}
+                                            title={`Filtrar: ${opt.label}`}
+                                        >
+                                            <Icon className={`w-3.5 h-3.5 ${isActive ? '' : opt.iconClass}`} />
+                                            {opt.label}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setFiltersOpen(v => !v)}
+                                className={`relative inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl border text-xs font-bold transition-all ${filtersOpen || activeCount > 0 ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-border bg-card text-text-secondary hover:bg-background'}`}
+                                aria-expanded={filtersOpen}
+                            >
+                                <SlidersHorizontal className="w-4 h-4" />
+                                Filtros
+                                {activeCount > 0 && (
+                                    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-black text-card">
+                                        {activeCount}
+                                    </span>
+                                )}
+                                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                        </div>
+
+                        {/* Painel expansível com filtros detalhados */}
+                        {filtersOpen && (
+                            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                    {/* Status (visível em mobile no painel) */}
+                                    <div className="md:hidden">
+                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-text-secondary mb-1.5">Status do estoque</label>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            <button
+                                                type="button"
+                                                onClick={() => setStatusFilter('')}
+                                                className={`h-9 px-3 inline-flex items-center gap-1.5 rounded-lg text-xs font-bold border transition-all ${statusFilter === '' ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-border bg-background text-text-secondary'}`}
+                                            >
+                                                Todos
+                                            </button>
+                                            {statusOptions.map(opt => {
+                                                const Icon = opt.icon
+                                                const isActive = statusFilter === opt.value
+                                                return (
+                                                    <button
+                                                        key={opt.value}
+                                                        type="button"
+                                                        onClick={() => setStatusFilter(isActive ? '' : opt.value)}
+                                                        className={`h-9 px-3 inline-flex items-center gap-1.5 rounded-lg text-xs font-bold border transition-all ${isActive ? opt.activeClass : 'border-border bg-background text-text-secondary'}`}
+                                                    >
+                                                        <Icon className={`w-3.5 h-3.5 ${isActive ? '' : opt.iconClass}`} />
+                                                        {opt.label}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-text-secondary mb-1.5">Categoria</label>
+                                        <select
+                                            value={categoryFilter}
+                                            onChange={(e) => setCategoryFilter(e.target.value)}
+                                            className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all font-medium text-text-primary"
+                                        >
+                                            <option value="">Todas Categorias</option>
+                                            {categories.map(cat => (
+                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-text-secondary mb-1.5">Grupo</label>
+                                        <select
+                                            value={groupFilter}
+                                            onChange={(e) => setGroupFilter(e.target.value)}
+                                            className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all font-medium text-text-primary"
+                                        >
+                                            <option value="">Todos os Grupos</option>
+                                            <option value="0">Sem grupo</option>
+                                            {groups.map(g => (
+                                                <option key={g.id} value={g.id}>{g.code} — {g.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-text-secondary mb-1.5">Cor / Variante</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Ex: Vermelho"
+                                            value={colorFilter}
+                                            onChange={(e) => setColorFilter(e.target.value)}
+                                            className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-text-secondary mb-1.5">Tamanho</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Ex: M, 42"
+                                            value={sizeFilter}
+                                            onChange={(e) => setSizeFilter(e.target.value)}
+                                            className="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-blue-400 transition-all uppercase"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                                    <span className="text-[11px] font-semibold text-text-secondary">
+                                        {activeCount === 0 ? 'Nenhum filtro aplicado' : `${activeCount} filtro${activeCount > 1 ? 's' : ''} aplicado${activeCount > 1 ? 's' : ''}`}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={clearAll}
+                                            disabled={activeCount === 0}
+                                            className="h-9 px-3 text-xs font-bold text-text-secondary rounded-lg hover:bg-background transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            Limpar tudo
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFiltersOpen(false)}
+                                            className="h-9 px-4 inline-flex items-center gap-1.5 rounded-lg bg-primary text-card text-xs font-bold shadow-sm hover:bg-primary-dark transition-colors"
+                                        >
+                                            <Check className="w-3.5 h-3.5" />
+                                            Aplicar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Chips de filtros ativos */}
+                        {activeCount > 0 && (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                {activeFilters.map(f => (
+                                    <span
+                                        key={f.key}
+                                        className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-bold text-brand-700 border border-brand-200"
+                                    >
+                                        {f.label}
+                                        <button
+                                            type="button"
+                                            onClick={f.onClear}
+                                            className="ml-0.5 inline-flex items-center justify-center rounded-full p-0.5 hover:bg-brand-100 transition-colors"
+                                            aria-label={`Remover ${f.label}`}
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </span>
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={clearAll}
+                                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold text-text-secondary hover:text-error hover:bg-error/10 transition-colors"
+                                >
+                                    <X className="w-3 h-3" />
+                                    Limpar tudo
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )
+            })()}
 
             {/* Table */}
             {loading ? (
