@@ -24,6 +24,8 @@ const MovementsPage = lazy(() => import('@/pages/MovementsPage'))
 const SuperAdminPage = lazy(() => import('@/pages/SuperAdminPage'))
 const ErrorPage = lazy(() => import('@/pages/ErrorPage'))
 const OnboardingPage = lazy(() => import('@/pages/OnboardingPage'))
+const FiscalSettingsPage = lazy(() => import('@/pages/FiscalSettingsPage'))
+const NFePage = lazy(() => import('@/pages/NFePage'))
 const TermsPage = lazy(() => import('@/pages/TermsPage'))
 const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'))
 const CookiesPage = lazy(() => import('@/pages/CookiesPage'))
@@ -181,6 +183,22 @@ const router = createBrowserRouter([
         element: (
           <AdminRoute>
             <LazyPage><SuperAdminPage /></LazyPage>
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "/fiscal/configuracao",
+        element: (
+          <AdminRoute>
+            <LazyPage><FiscalSettingsPage /></LazyPage>
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "/fiscal/nfe",
+        element: (
+          <AdminRoute>
+            <LazyPage><NFePage /></LazyPage>
           </AdminRoute>
         ),
       },

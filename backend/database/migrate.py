@@ -193,6 +193,7 @@ def run_migrations():
     from backend.models.api_keys import ApiKey
     from backend.models.auth_sessions import RefreshSession
     from backend.models.pending_romaneio import PendingRomaneio
+    from backend.fiscal.models import FiscalConfig, FiscalCertificate, NFe, NFeItem
     from sqlalchemy import Enum as _SAEnum
 
     # Cria todas as tabelas (DDL principal) - Base para novas instalações
@@ -218,7 +219,11 @@ def run_migrations():
         InventoryMovement,
         Client,
         ApiKey,
-        RefreshSession
+        RefreshSession,
+        FiscalConfig,
+        FiscalCertificate,
+        NFe,
+        NFeItem,
     ]
 
     for model in models:

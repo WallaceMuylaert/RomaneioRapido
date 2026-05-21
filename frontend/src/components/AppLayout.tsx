@@ -19,7 +19,9 @@ import {
     Clock,
     ShieldCheck,
     AlertTriangle,
-    LifeBuoy
+    LifeBuoy,
+    FileText,
+    Settings2
 } from 'lucide-react'
 import { getWhatsAppLink } from '@/constants/contacts'
 import { WhatsAppIcon } from '@/assets/WhatsAppIcon'
@@ -138,7 +140,11 @@ export default function AppLayout() {
                 <nav className={`flex-1 py-6 space-y-1.5 overflow-y-auto transition-all ${isCollapsed ? 'px-2' : 'px-4'}`}>
                     {[
                         ...navItems,
-                        ...(user?.is_admin ? [{ to: '/super-admin', label: 'Gerenciamento', icon: ShieldCheck }] : [])
+                        ...(user?.is_admin ? [
+                            { to: '/fiscal/nfe', label: 'NF-e', icon: FileText },
+                            { to: '/fiscal/configuracao', label: 'Config. Fiscal', icon: Settings2 },
+                            { to: '/super-admin', label: 'Gerenciamento', icon: ShieldCheck }
+                        ] : [])
                     ].map((item) => {
                         // Se o bloqueio estiver ativo, TUDO exceto perfil é desabilitado
                         const isDisabled = isLockEnabled && item.to !== '/perfil'

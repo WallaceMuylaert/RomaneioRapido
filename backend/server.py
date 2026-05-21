@@ -23,6 +23,7 @@ from backend.models.products import Product
 from backend.models.inventory import InventoryMovement
 from backend.models.clients import Client
 from backend.models.api_keys import ApiKey
+from backend.fiscal.models import FiscalConfig, FiscalCertificate, NFe, NFeItem  # noqa: F401
 from sqlalchemy.orm import configure_mappers
 from backend.core.router_loader import include_routers
 

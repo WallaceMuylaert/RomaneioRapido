@@ -16,3 +16,9 @@ slowapi
 Pillow
 email-validator
 stripe
+PyNFe
+signxml
+lxml
+xmlsec
+cryptography
+qrcode[pil]
