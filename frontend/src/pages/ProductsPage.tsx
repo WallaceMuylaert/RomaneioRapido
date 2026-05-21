@@ -595,7 +595,7 @@ export default function ProductsPage() {
                 per_page: 1000, // Limite alto para o relatório
                 sort_by: sortBy,
                 order: sortOrder,
-                include_images: false
+                include_images: true
             }
             if (search) params.search = search
             if (colorFilter) params.color = colorFilter
@@ -724,6 +724,28 @@ export default function ProductsPage() {
                         }
                         .row-main { font-weight: 600; color: #111827; }
                         .row-sub { font-size: 10px; color: #9ca3af; text-transform: uppercase; font-weight: 700; margin-top: 2px; }
+                        .row-img-cell { width: 60px; padding: 8px; }
+                        .row-img {
+                            width: 48px;
+                            height: 48px;
+                            object-fit: cover;
+                            border-radius: 8px;
+                            border: 1px solid #e5e7eb;
+                            display: block;
+                        }
+                        .row-img-placeholder {
+                            width: 48px;
+                            height: 48px;
+                            border-radius: 8px;
+                            background: #f3f4f6;
+                            border: 1px dashed #e5e7eb;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: #9ca3af;
+                            font-size: 14px;
+                            font-weight: 700;
+                        }
                         .variant-info { font-size: 11px; color: #6b7280; font-weight: 600; }
                         .row-qty { font-weight: 700; color: #111827; text-align: center; }
                         .row-val { font-weight: 700; color: #4b5563; text-align: right; }
@@ -745,6 +767,8 @@ export default function ProductsPage() {
                             body { padding: 30px; }
                             .stat-card { background: #f9fafb !important; -webkit-print-color-adjust: exact; }
                             th { background: #f9fafb !important; -webkit-print-color-adjust: exact; }
+                            .row-img, .row-img-placeholder { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            tr { page-break-inside: avoid; }
                         }
                     </style>
                 </head>
@@ -780,6 +804,7 @@ export default function ProductsPage() {
                     <table>
                         <thead>
                             <tr>
+                                <th style="width: 60px;">Imagem</th>
                                 <th>Produto / Referência</th>
                                 <th>Cor/Variação</th>
                                 <th>Tam.</th>
@@ -793,6 +818,12 @@ export default function ProductsPage() {
                         <tbody>
                             ${allProducts.map(p => `
                                 <tr>
+                                    <td class="row-img-cell">
+                                        ${p.image_base64
+                                            ? `<img src="${p.image_base64}" class="row-img" alt="${p.name}" />`
+                                            : `<div class="row-img-placeholder">—</div>`
+                                        }
+                                    </td>
                                     <td>
                                         <div class="row-main">${p.name}</div>
                                         <div class="row-sub">${p.barcode || p.sku || 'SEM SKU'}</div>
